@@ -1,0 +1,7 @@
+# Debug files
+*.dSYM/
+*.su
+aarch64-rpi/LIC*
+aarch64-rpi/*.bin
+aarch64-rpi/*.dat
+aarch64-rpi/*.elf
