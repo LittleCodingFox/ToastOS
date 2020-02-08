@@ -32,33 +32,30 @@ kernel: makedirs $(OBJECTS) $(RESOURCEOBJECTS)
 	x86_64-elf-readelf -hls $(BINDIR)/mykernel.x86_64.elf >$(BINDIR)/mykernel.x86_64.txt
 
 bootdir:
+	mkdir -p boot/BOOTBOOT
+	mkdir -p boot/EFI/BOOT
 	mkdir -p $(TMPDIR)/sys
 	cp $(BINDIR)/mykernel.x86_64.elf $(TMPDIR)/sys/core
-	tar -czf INITRD tmp/*
+	tar -czf boot/INITRD tmp/*
 
-	rm -Rf boot
+	cp bootboot/bootboot.efi boot/EFI/BOOT/BOOTX64.EFI
+	cp bootboot/bootboot.bin boot/BOOTBOOT/LOADER
+	mv boot/INITRD boot/BOOTBOOT/INITRD
+	
+iso-osx: bootdir
+	sh makeisoosx.sh
+	
+iso-linux: bootdir
+	sh makeisolinux.sh
 
+clean:
 	rm -Rf $(BINDIR)/*.img
 	rm -Rf $(BINDIR)/*.iso
 	rm -Rf $(BINDIR)/*.cdr
 	rm -Rf $(BINDIR)/*.bin
 	rm -Rf $(BINDIR)/*.vdi
-
-	mkdir -p boot/EFI/BOOT
-	mkdir -p boot/BOOTBOOT
-
-	cp bootboot/bootboot.efi boot/EFI/BOOT/BOOTX64.EFI
-	cp bootboot/bootboot.bin boot/BOOTBOOT/LOADER
-	mv INITRD boot/BOOTBOOT/INITRD
-	
-iso-osx:
-	sh makeisoosx.sh
-	
-iso-linux:
-	sh makeisolinux.sh
-
-clean:
 	rm $(OBJDIR)/*.o bin/*.elf bin/*.txt $(BINDIR)/*.img
 	rm -Rf tmp
+	rm -Rf boot
 
 .PHONY: all clean bootdir iso-osx iso-linux makedirs
