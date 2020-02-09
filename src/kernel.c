@@ -29,16 +29,16 @@
  */
 
 /* function to display a string, see below */
-void puts(char *s);
+void puts(const char *s);
 
 #include <stdint.h>
 #include <framebuffer/framebuffer.h>
+#include <text/psf2.h>
 #include <bootboot.h>
 
 /* imported virtual addresses, see linker script */
 extern BOOTBOOT bootboot;           // see bootboot.h
 extern unsigned char *environment;  // configuration, UTF-8 text key=value pairs
-extern uint8_t fb;                  // linear framebuffer mapped
 
 /******************************************
  * Entry point, called by BOOTBOOT Loader *
@@ -51,6 +51,7 @@ void _start()
 	h=framebuffer_height();
 
     framebuffer_init();
+    kernel_init_text();
 
     // cross-hair to see screen dimension detected correctly
     for(y=0;y<h;y++)
@@ -71,7 +72,7 @@ void _start()
     framebuffer_put_pixels(80, 20, 20, 20, 0x000000FF);
 
     // say hello
-    //puts("Hello from a simple BOOTBOOT kernel");
+    puts("A");
 
     // hang for now
     while(1);
@@ -80,36 +81,9 @@ void _start()
 /**************************
  * Display text on screen *
  **************************/
-typedef struct {
-    uint32_t magic;
-    uint32_t version;
-    uint32_t headersize;
-    uint32_t flags;
-    uint32_t numglyph;
-    uint32_t bytesperglyph;
-    uint32_t height;
-    uint32_t width;
-    uint8_t glyphs;
-} __attribute__((packed)) psf2_t;
-extern volatile unsigned char _binary_font_psf_start;
 
-void puts(char *s)
+void puts(const char *s)
 {
-    psf2_t *font = (psf2_t*)&_binary_font_psf_start;
-    int x,y,kx=0,line,mask,offs;
-    int bpl=(font->width+7)/8;
-    while(*s) {
-        unsigned char *glyph = (unsigned char*)&_binary_font_psf_start + font->headersize +
-            (*s>0&&*s<font->numglyph?*s:0)*font->bytesperglyph;
-        offs = (kx * (font->width+1) * 4);
-        for(y=0;y<font->height;y++) {
-            line=offs; mask=1<<(font->width-1);
-            for(x=0;x<font->width;x++) {
-                *((uint32_t*)((uint64_t)&fb+line))=((int)*glyph) & (mask)?0xFFFFFF:0;
-                mask>>=1; line+=4;
-            }
-            *((uint32_t*)((uint64_t)&fb+line))=0; glyph+=bpl; offs+=bootboot.fb_scanline;
-        }
-        s++; kx++;
-    }
+	kernel_render_text(50, 50, s, kernel_default_font);
 }
+

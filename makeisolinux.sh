@@ -34,7 +34,7 @@ sudo umount /dev/loop0
 
 sudo losetup -d /dev/loop0
 
-#rm -Rf boot
+rm -Rf boot
 
 sh makevboxdisk.sh
 
