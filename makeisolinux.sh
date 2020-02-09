@@ -2,16 +2,40 @@
 
 export BINDIR=bin
 
-mkdir -p boot/boot/grub
+rm -Rf $BINDIR/*.img
 
-echo -e "screen=800x600\nkernel=sys/core\n" > boot/BOOTBOOT/CONFIG || true
+dd if=/dev/zero of=$BINDIR/disk.img bs=1M count=500
 
-echo -e "menuentry \"BOOTBOOT test\" {\n  multiboot /BOOTBOOT/LOADER\n  module /BOOTBOOT/INITRD\n  module /BOOTBOOT/CONFIG\n  boot\n}" > boot/boot/grub/grub.cfg || true
+(echo o
+echo n
+echo p
+echo 1
+echo 
+echo 
+echo t
+echo b
+echo a
+echo p
+echo w) | fdisk -u -C500 -S63 -H16 $BINDIR/disk.img
 
-grub-mkrescue -o $BINDIR/disk.iso boot
+sudo mkdir -p /mnt/osdev
 
-rm -Rf boot
+sudo umount /dev/loop0
 
-#sh makevboxdisk.sh
+sudo losetup -o1048576 /dev/loop0 $BINDIR/disk.img
+
+sudo mkdosfs -F32 /dev/loop0
+
+sudo mount -tvfat /dev/loop0 /mnt/osdev
+
+sudo cp -R boot/* /mnt/osdev
+
+sudo umount /dev/loop0
+
+sudo losetup -d /dev/loop0
+
+#rm -Rf boot
+
+sh makevboxdisk.sh
 
 echo Done!

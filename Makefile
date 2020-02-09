@@ -32,15 +32,7 @@ kernel: makedirs $(OBJECTS) $(RESOURCEOBJECTS)
 	x86_64-elf-readelf -hls $(BINDIR)/mykernel.x86_64.elf >$(BINDIR)/mykernel.x86_64.txt
 
 bootdir:
-	mkdir -p boot/BOOTBOOT
-	mkdir -p boot/EFI/BOOT
-	mkdir -p $(TMPDIR)/sys
-	cp $(BINDIR)/mykernel.x86_64.elf $(TMPDIR)/sys/core
-	tar -czf boot/INITRD tmp/*
-
-	cp bootboot/bootboot.efi boot/EFI/BOOT/BOOTX64.EFI
-	cp bootboot/bootboot.bin boot/BOOTBOOT/LOADER
-	mv boot/INITRD boot/BOOTBOOT/INITRD
+	sh makebootdir.sh
 	
 iso-osx: bootdir
 	sh makeisoosx.sh
