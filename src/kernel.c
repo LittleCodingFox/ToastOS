@@ -31,13 +31,8 @@
 /* function to display a string, see below */
 void puts(char *s);
 
-/* we don't assume stdint.h exists */
-typedef short int           int16_t;
-typedef unsigned char       uint8_t;
-typedef unsigned short int  uint16_t;
-typedef unsigned int        uint32_t;
-typedef unsigned long int   uint64_t;
-
+#include <stdint.h>
+#include <framebuffer/framebuffer.h>
 #include <bootboot.h>
 
 /* imported virtual addresses, see linker script */
@@ -51,19 +46,32 @@ extern uint8_t fb;                  // linear framebuffer mapped
 void _start()
 {
     /*** NOTE: this code runs on all cores in parallel ***/
-    int x, y, s=bootboot.fb_scanline, w=bootboot.fb_width, h=bootboot.fb_height;
+    int x = 0, y = 0,
+	w=framebuffer_width(),
+	h=framebuffer_height();
+
+    framebuffer_init();
 
     // cross-hair to see screen dimension detected correctly
-    for(y=0;y<h;y++) { *((uint32_t*)(&fb + s*y + (w*2)))=0x00FFFFFF; }
-    for(x=0;x<w;x++) { *((uint32_t*)(&fb + s*(h/2)+x*4))=0x00FFFFFF; }
+    for(y=0;y<h;y++)
+    {
+	framebuffer_put_pixel(w / 2, y, 0x00FFFFFF);
+    }
+
+    for(x=0;x<w;x++)
+    {
+	framebuffer_put_pixel(x, h / 2, 0x00FFFFFF);
+    }
 
     // red, green, blue boxes in order
-    for(y=0;y<20;y++) { for(x=0;x<20;x++) { *((uint32_t*)(&fb + s*(y+20) + (x+20)*4))=0x00FF0000; } }
-    for(y=0;y<20;y++) { for(x=0;x<20;x++) { *((uint32_t*)(&fb + s*(y+20) + (x+50)*4))=0x0000FF00; } }
-    for(y=0;y<20;y++) { for(x=0;x<20;x++) { *((uint32_t*)(&fb + s*(y+20) + (x+80)*4))=0x000000FF; } }
+    framebuffer_put_pixels(20, 20, 20, 20, 0x00FF0000);
+
+    framebuffer_put_pixels(50, 20, 20, 20, 0x0000FF00);
+
+    framebuffer_put_pixels(80, 20, 20, 20, 0x000000FF);
 
     // say hello
-    puts("Hello from a simple BOOTBOOT kernel");
+    //puts("Hello from a simple BOOTBOOT kernel");
 
     // hang for now
     while(1);

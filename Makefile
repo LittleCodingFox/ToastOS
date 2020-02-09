@@ -1,4 +1,3 @@
-
 CFLAGS = -Wall -fpic -ffreestanding -fno-stack-protector -nostdinc -nostdlib -Ibootboot -Isrc
 
 SRCDIR   = src
@@ -7,9 +6,11 @@ OBJDIR   = obj
 BINDIR   = bin
 TMPDIR	 = tmp
 
-SOURCES  := $(wildcard $(SRCDIR)/*.c)
-RESOURCES  := $(wildcard $(RESDIR)/*.psf)
-OBJECTS  := $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
+SOURCES := $(wildcard $(SRCDIR)/*.c)
+SOURCES += $(wildcard $(SRCDIR)/**/*.c)
+RESOURCES := $(wildcard $(RESDIR)/*.psf)
+RESOURCES += $(wildcard $(RESDIR)/**/*.psf)
+OBJECTS := $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 RESOURCEOBJECTS := $(RESOURCES:$(RESDIR)/%.psf=$(OBJDIR)/%.o)
 
 all: makedirs kernel iso
@@ -21,9 +22,11 @@ makedirs:
 	mkdir -p obj
 
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
+	mkdir -p $(shell dirname $@)
 	x86_64-elf-gcc $(CFLAGS) -mno-red-zone -c $< -o $@ 
 
 $(RESOURCEOBJECTS): $(OBJDIR)/%.o : $(RESDIR)/%.psf
+	mkdir -p $(shell dirname $@)
 	x86_64-elf-ld -r -b binary -o $@ $< 
 
 kernel: makedirs $(OBJECTS) $(RESOURCEOBJECTS)
