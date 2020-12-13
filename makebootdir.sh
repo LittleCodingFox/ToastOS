@@ -12,7 +12,7 @@ cd $TMPDIR
 tar -czf ../INITRD *
 cd ..
 
-cp bootboot/bootboot.efi boot/EFI/BOOT/BOOTX64.EFI
-cp bootboot/bootboot.bin boot/BOOTBOOT/LOADER
+cp bootboot/dist/bootboot.efi boot/EFI/BOOT/BOOTX64.EFI
+cp bootboot/dist/bootboot.bin boot/BOOTBOOT/LOADER
 mv INITRD boot/BOOTBOOT/INITRD
 

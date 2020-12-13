@@ -1,4 +1,8 @@
-CFLAGS = -Wall -fpic -ffreestanding -fno-stack-protector -nostdinc -nostdlib -Ibootboot -Isrc
+CC = x86_64-elf-gcc
+LD = x86_64-elf-ld
+STRIP = x86_64-elf-strip
+READELF = x86_64-elf-readelf
+CFLAGS = -Wall -fpic -ffreestanding -fno-stack-protector -nostdinc -nostdlib -Ibootboot/dist -Isrc
 
 SRCDIR   = src
 RESDIR   = .
@@ -21,16 +25,16 @@ makedirs:
 
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
 	mkdir -p $(shell dirname $@)
-	x86_64-elf-gcc $(CFLAGS) -mno-red-zone -c $< -o $@ 
+	$(CC) $(CFLAGS) -mno-red-zone -c $< -o $@ 
 
 $(RESOURCEOBJECTS): $(OBJDIR)/%.o : $(RESDIR)/%.psf
 	mkdir -p $(shell dirname $@)
-	x86_64-elf-ld -r -b binary -o $@ $< 
+	$(LD) -r -b binary -o $@ $< 
 
 kernel: makedirs $(OBJECTS) $(RESOURCEOBJECTS)
-	x86_64-elf-ld -nostdlib -nostartfiles -T $(SRCDIR)/link.ld $(OBJECTS) $(RESOURCEOBJECTS) -o $(BINDIR)/mykernel.x86_64.elf
-	x86_64-elf-strip -s -K mmio -K fb -K bootboot -K environment $(BINDIR)/mykernel.x86_64.elf
-	x86_64-elf-readelf -hls $(BINDIR)/mykernel.x86_64.elf >$(BINDIR)/mykernel.x86_64.txt
+	$(LD) -nostdlib -nostartfiles -T $(SRCDIR)/link.ld $(OBJECTS) $(RESOURCEOBJECTS) -o $(BINDIR)/mykernel.x86_64.elf
+	$(STRIP) -s -K mmio -K fb -K bootboot -K environment $(BINDIR)/mykernel.x86_64.elf
+	$(READELF) -hls $(BINDIR)/mykernel.x86_64.elf >$(BINDIR)/mykernel.x86_64.txt
 
 bootdir:
 	sh makebootdir.sh
@@ -41,7 +45,7 @@ iso-osx: bootdir
 iso-linux: bootdir
 	sh makeisolinux.sh
 
-run-linux:
+run-linux: kernel iso-linux
 	qemu-system-x86_64 -bios /usr/share/qemu/OVMF.fd -drive file=$(BINDIR)/disk.img,format=raw,index=0,media=disk
 
 clean:
@@ -50,7 +54,7 @@ clean:
 	rm -Rf $(BINDIR)/*.cdr
 	rm -Rf $(BINDIR)/*.bin
 	rm -Rf $(BINDIR)/*.vdi
-	rm $(OBJDIR)/*.o bin/*.elf bin/*.txt $(BINDIR)/*.img
+	rm -f $(OBJDIR)/*.o bin/*.elf bin/*.txt $(BINDIR)/*.img
 	rm -Rf tmp
 	rm -Rf boot
 
