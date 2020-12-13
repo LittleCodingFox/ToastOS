@@ -36,6 +36,6 @@ sudo losetup -d /dev/loop0
 
 rm -Rf boot
 
-sh makevboxdisk.sh
+#sh makevboxdisk.sh
 
 echo Done!

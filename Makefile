@@ -13,8 +13,6 @@ RESOURCES += $(wildcard $(RESDIR)/**/*.psf)
 OBJECTS := $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 RESOURCEOBJECTS := $(RESOURCES:$(RESDIR)/%.psf=$(OBJDIR)/%.o)
 
-all: makedirs kernel iso
-
 makedirs:
 	rm -Rf bin
 	rm -Rf tmp
@@ -42,6 +40,9 @@ iso-osx: bootdir
 	
 iso-linux: bootdir
 	sh makeisolinux.sh
+
+run-linux:
+	qemu-system-x86_64 -bios /usr/share/qemu/OVMF.fd -drive file=$(BINDIR)/disk.img,format=raw,index=0,media=disk
 
 clean:
 	rm -Rf $(BINDIR)/*.img
