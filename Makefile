@@ -1,20 +1,21 @@
-CC = x86_64-elf-gcc
-LD = x86_64-elf-ld
-STRIP = x86_64-elf-strip
-READELF = x86_64-elf-readelf
-CFLAGS = -Wall -fpic -ffreestanding -fno-stack-protector -nostdinc -nostdlib -Ibootboot/dist -Isrc
+CC				= clang #x86_64-elf-gcc
+LD				= x86_64-elf-ld
+STRIP			= x86_64-elf-strip
+READELF			= x86_64-elf-readelf
+CFLAGS			= -Wall -fpic -ffreestanding -fno-stack-protector -nostdinc -nostdlib -Ibootboot/dist -Isrc
+KERNEL_NAME		= kernel
 
-SRCDIR   = src
-RESDIR   = .
-OBJDIR   = obj
-BINDIR   = bin
-TMPDIR	 = tmp
+SRCDIR  		= src
+RESDIR   		= .
+OBJDIR   		= obj
+BINDIR   		= bin
+TMPDIR	 		= tmp
 
-SOURCES := $(wildcard $(SRCDIR)/*.c)
-SOURCES += $(wildcard $(SRCDIR)/**/*.c)
-RESOURCES := $(wildcard $(RESDIR)/*.psf)
-RESOURCES += $(wildcard $(RESDIR)/**/*.psf)
-OBJECTS := $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
+SOURCES 		:= $(wildcard $(SRCDIR)/*.c)
+SOURCES 		+= $(wildcard $(SRCDIR)/**/*.c)
+RESOURCES 		:= $(wildcard $(RESDIR)/*.psf)
+RESOURCES		+= $(wildcard $(RESDIR)/**/*.psf)
+OBJECTS 		:= $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 RESOURCEOBJECTS := $(RESOURCES:$(RESDIR)/%.psf=$(OBJDIR)/%.o)
 
 makedirs:
@@ -32,9 +33,9 @@ $(RESOURCEOBJECTS): $(OBJDIR)/%.o : $(RESDIR)/%.psf
 	$(LD) -r -b binary -o $@ $< 
 
 kernel: makedirs $(OBJECTS) $(RESOURCEOBJECTS)
-	$(LD) -nostdlib -nostartfiles -T $(SRCDIR)/link.ld $(OBJECTS) $(RESOURCEOBJECTS) -o $(BINDIR)/mykernel.x86_64.elf
-	$(STRIP) -s -K mmio -K fb -K bootboot -K environment $(BINDIR)/mykernel.x86_64.elf
-	$(READELF) -hls $(BINDIR)/mykernel.x86_64.elf >$(BINDIR)/mykernel.x86_64.txt
+	$(LD) -nostdlib -nostartfiles -T $(SRCDIR)/link.ld $(OBJECTS) $(RESOURCEOBJECTS) -o $(BINDIR)/$(KERNEL_NAME).x86_64.elf
+	$(STRIP) -s -K mmio -K fb -K bootboot -K environment $(BINDIR)/$(KERNEL_NAME).x86_64.elf
+	$(READELF) -hls $(BINDIR)/$(KERNEL_NAME).x86_64.elf >$(BINDIR)/$(KERNEL_NAME).x86_64.txt
 
 bootdir:
 	sh makebootdir.sh
