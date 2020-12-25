@@ -17,11 +17,10 @@ typedef struct {
 typedef struct {
 	uint32_t width;
 	uint32_t height;
-}psf2_size_t;
+} psf2_size_t;
 
-extern psf2_t *kernel_default_font;
+extern psf2_t *kernelDefaultFont;
 
-void kernel_init_text();
-void kernel_render_text(int x, int y, const char *text, psf2_t *font);
-psf2_size_t kernel_measure_text(const char *text, psf2_t *font);
-
+void kernelInitText();
+void kernelRenderText(int x, int y, const char *text, psf2_t *font);
+psf2_size_t kernelMeasureText(const char *text, psf2_t *font);

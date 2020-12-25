@@ -16,4 +16,3 @@ cd ..
 cp bootboot/dist/bootboot.efi boot/EFI/BOOT/BOOTX64.EFI
 cp bootboot/dist/bootboot.bin boot/BOOTBOOT/LOADER
 mv INITRD boot/BOOTBOOT/INITRD
-

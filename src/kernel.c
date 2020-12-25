@@ -34,6 +34,7 @@ void puts(const char *s);
 #include <stdint.h>
 #include <framebuffer/framebuffer.h>
 #include <text/psf2.h>
+#include <low-level/serial/serial.h>
 #include <bootboot.h>
 
 /* imported virtual addresses, see linker script */
@@ -43,33 +44,35 @@ extern unsigned char *environment;  // configuration, UTF-8 text key=value pairs
 /******************************************
  * Entry point, called by BOOTBOOT Loader *
  ******************************************/
-void _start()
-{
+void _start() {
+
+    framebufferInit();
+    kernelInitText();
+
+    serialPortInit(SERIAL_PORT_COM1, SERIAL_PORT_SPEED_115200);
+
     /*** NOTE: this code runs on all cores in parallel ***/
     int x = 0, y = 0,
-	w=framebuffer_width(),
-	h=framebuffer_height();
-
-    framebuffer_init();
-    kernel_init_text();
+	w=framebufferWidth(),
+	h=framebufferHeight();
 
     // cross-hair to see screen dimension detected correctly
-    for(y=0;y<h;y++)
-    {
-	framebuffer_put_pixel(w / 2, y, 0x00FFFFFF);
+    for(y=0;y<h;y++) {
+
+    	framebufferPutPixel(w / 2, y, 0x00FFFFFF);
     }
 
-    for(x=0;x<w;x++)
-    {
-	framebuffer_put_pixel(x, h / 2, 0x00FFFFFF);
+    for(x=0;x<w;x++) {
+
+    	framebufferPutPixel(x, h / 2, 0x00FFFFFF);
     }
 
     // red, green, blue boxes in order
-    framebuffer_put_pixels(20, 20, 20, 20, 0x00FF0000);
+    framebufferPutPixels(20, 20, 20, 20, 0x00FF0000);
 
-    framebuffer_put_pixels(50, 20, 20, 20, 0x0000FF00);
+    framebufferPutPixels(50, 20, 20, 20, 0x0000FF00);
 
-    framebuffer_put_pixels(80, 20, 20, 20, 0x000000FF);
+    framebufferPutPixels(80, 20, 20, 20, 0x000000FF);
 
     // say hello
     puts("A");
@@ -82,8 +85,7 @@ void _start()
  * Display text on screen *
  **************************/
 
-void puts(const char *s)
-{
-	kernel_render_text(50, 50, s, kernel_default_font);
+void puts(const char *s) {
+    
+	kernelRenderText(50, 50, s, kernelDefaultFont);
 }
-

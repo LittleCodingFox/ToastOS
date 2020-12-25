@@ -5,79 +5,79 @@ extern BOOTBOOT bootboot;
 extern uint8_t fb; //Framebuffer ptr
 
 ////// INTERNAL USAGE
-int internal_framebuffer_width()
+int internalFramebufferWidth()
 {
 	return bootboot.fb_width;
 }
 
-int internal_framebuffer_height()
+int internalFramebufferHeight()
 {
 	return bootboot.fb_height;
 }
 
-int internal_framebuffer_scanline()
+int internalFramebufferScanline()
 {
 	return bootboot.fb_scanline;
 }
 
-void internal_framebuffer_put_pixel(int x, int y, uint32_t color)
+void internalFramebufferPutPixel(int x, int y, uint32_t color)
 {
-	*((uint32_t*)(&fb + y * internal_framebuffer_scanline() + x * sizeof(uint32_t))) = color;
+	*((uint32_t*)(&fb + y * internalFramebufferScanline() + x * sizeof(uint32_t))) = color;
 }
 
-void internal_framebuffer_put_pixels(int x, int y, int blockWidth, int blockHeight, uint32_t color)
+void internalFramebufferPutPixels(int x, int y, int blockWidth, int blockHeight, uint32_t color)
 {
-	int width = internal_framebuffer_width();
-	int height = internal_framebuffer_height();
-	int scanline = internal_framebuffer_scanline();
+	int width = internalFramebufferWidth();
+	int height = internalFramebufferHeight();
+	int scanline = internalFramebufferScanline();
 
 	if(x < 0 || x + blockWidth > width ||
-		y < 0 || y + blockHeight > height)
-	{
+		y < 0 || y + blockHeight > height) {
+
 		return;
 	}
 
-	for(int ty = 0, yIndex = y * scanline; ty < blockHeight; ty++, yIndex += scanline)
-	{
-		for(int tx = 0, xIndex = x * sizeof(uint32_t); tx < blockWidth; tx++, xIndex += sizeof(uint32_t))
-		{
+	for(int ty = 0, yIndex = y * scanline; ty < blockHeight; ty++, yIndex += scanline) {
+
+		for(int tx = 0, xIndex = x * sizeof(uint32_t); tx < blockWidth; tx++, xIndex += sizeof(uint32_t)) {
+
 			*((uint32_t*)(&fb + yIndex + xIndex)) = color;
 		}
 	}
 }
 
-void internal_framebuffer_clear(uint32_t color)
+void internalFramebufferClear(uint32_t color)
 {
-	internal_framebuffer_put_pixels(0, 0, internal_framebuffer_width(), internal_framebuffer_height(), color);
+	internalFramebufferPutPixels(0, 0, internalFramebufferWidth(), internalFramebufferHeight(), color);
 }
 
 ///// PUBLIC INTERFACE
-void framebuffer_init()
+void framebufferInit()
 {
-	framebuffer_clear(0x00000000);
+	framebufferClear(0);
 }
 
-int framebuffer_width()
+int framebufferWidth()
 {
-	return internal_framebuffer_width();
+	return internalFramebufferWidth();
 }
 
-int framebuffer_height()
+int framebufferHeight()
 {
-	return internal_framebuffer_height();
+	return internalFramebufferHeight();
 }
 
-void framebuffer_clear(uint32_t color)
+void framebufferClear(uint32_t color)
 {
-	internal_framebuffer_clear(color);
+	internalFramebufferClear(color);
 }
 
-void framebuffer_put_pixel(int x, int y, uint32_t color)
+void framebufferPutPixel(int x, int y, uint32_t color)
 {
-	internal_framebuffer_put_pixel(x, y, color);
+	internalFramebufferPutPixel(x, y, color);
 }
 
-void framebuffer_put_pixels(int x, int y, int blockWidth, int blockHeight, uint32_t color)
+void framebufferPutPixels(int x, int y, int blockWidth, int blockHeight, uint32_t color)
 {
-	internal_framebuffer_put_pixels(x, y, blockWidth, blockHeight, color);
+	internalFramebufferPutPixels(x, y, blockWidth, blockHeight, color);
 }

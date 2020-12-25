@@ -7,21 +7,21 @@ extern unsigned char *environment;  // configuration, UTF-8 text key=value pairs
 extern uint8_t fb;                  // linear framebuffer mapped
 extern volatile unsigned char _binary_font_psf_start;
 
-psf2_t *kernel_default_font = NULL;
+psf2_t *kernelDefaultFont = NULL;
 
-void kernel_init_text()
-{
-	kernel_default_font = (psf2_t *)&_binary_font_psf_start;
+void kernelInitText() {
+
+	kernelDefaultFont = (psf2_t *)&_binary_font_psf_start;
 }
 
-psf2_size_t kernel_measure_text(const char *text, psf2_t *font)
-{
+psf2_size_t kernelMeasureText(const char *text, psf2_t *font) {
+
 	psf2_size_t outValue;
 	outValue.width = 0;
 	outValue.height = 0;
 	
-	if(font == NULL)
-	{
+	if(font == NULL) {
+
 		return outValue;
 	}
 
@@ -29,22 +29,22 @@ psf2_size_t kernel_measure_text(const char *text, psf2_t *font)
 	int lineCounter = 1;
 	int maxWidth = 0;
 
-	while(*text)
-	{
-		if(*text == '\n')
-		{
+	while(*text) {
+
+		if(*text == '\n') {
+
 			maxWidth = maxWidth < counter ? counter : maxWidth;
 			counter = 0;
 			lineCounter++;
-		}
-		else
-		{
+
+		} else {
+
 			counter++;
 		}
 	}
 
-	if(counter > 0)
-	{
+	if(counter > 0) {
+
 		maxWidth = maxWidth < counter ? counter : maxWidth;
 	}
 
@@ -54,10 +54,10 @@ psf2_size_t kernel_measure_text(const char *text, psf2_t *font)
 	return outValue;
 }
 
-void kernel_render_text(int x, int y, const char *text, psf2_t *font)
+void kernelRenderText(int x, int y, const char *text, psf2_t *font)
 {
-	if(font == NULL)
-	{
+	if(font == NULL) {
+
 		return;
 	}
 
@@ -65,29 +65,29 @@ void kernel_render_text(int x, int y, const char *text, psf2_t *font)
 	int bytesPerLine = (font->width + 7) / 8;
 	int characterx = 0;
 
-	while(*text)
-	{
+	while(*text) {
+
 		unsigned char *glyph = fontData + font->headersize +
             (*text > 0 && *text < font->numglyph ? *text : 0) * font->bytesperglyph;
 		int offset = (characterx * (font->width + 1));
 
-	        for(int ty=0; ty<font->height; ty++)
-		{
+		for(int ty=0; ty<font->height; ty++) {
+
 			int line = offset;
 			int mask = 1 << (font->width - 1);
 
 			for(int tx = 0; tx < font->width; tx++) {
-				framebuffer_put_pixel(x + line, y + ty, ((int)*glyph) & (mask) ? 0xFFFFFF : 0);
-		                mask >>= 1;
+
+				framebufferPutPixel(x + line, y + ty, ((int)*glyph) & (mask) ? 0xFFFFFF : 0);
+				mask >>= 1;
 				line++;
-    			}
+			}
 
-			framebuffer_put_pixel(x + line, y + ty, 0);
-		        glyph+=bytesPerLine;
-	        }
+			framebufferPutPixel(x + line, y + ty, 0);
+			glyph+=bytesPerLine;
+		}
 
-        	text++;
+		text++;
 		characterx++;
 	}
 }
-

@@ -1,8 +1,8 @@
-CC				= clang #x86_64-elf-gcc
+CC				= x86_64-elf-gcc
 LD				= x86_64-elf-ld
 STRIP			= x86_64-elf-strip
 READELF			= x86_64-elf-readelf
-CFLAGS			= -Wall -fpic -ffreestanding -fno-stack-protector -nostdinc -nostdlib -Ibootboot/dist -Isrc
+CFLAGS			= -Wall -fpic -ffreestanding -fno-stack-protector -nostdinc -nostdlib -Ibootboot/dist -Isrc -Isrc/include -O0
 KERNEL_NAME		= kernel
 
 SRCDIR  		= src
@@ -11,10 +11,10 @@ OBJDIR   		= obj
 BINDIR   		= bin
 TMPDIR	 		= tmp
 
-SOURCES 		:= $(wildcard $(SRCDIR)/*.c)
-SOURCES 		+= $(wildcard $(SRCDIR)/**/*.c)
+SOURCES         := $(wildcard $(SRCDIR)/*.c)
+SOURCES         += $(wildcard $(SRCDIR)/**/*.c)
+SOURCES         += $(wildcard $(SRCDIR)/low-level/**/*.c)
 RESOURCES 		:= $(wildcard $(RESDIR)/*.psf)
-RESOURCES		+= $(wildcard $(RESDIR)/**/*.psf)
 OBJECTS 		:= $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 RESOURCEOBJECTS := $(RESOURCES:$(RESDIR)/%.psf=$(OBJDIR)/%.o)
 
@@ -47,7 +47,7 @@ iso-linux: bootdir
 	sh makeisolinux.sh
 
 run-linux: kernel iso-linux
-	qemu-system-x86_64 -bios /usr/share/qemu/OVMF.fd -drive file=$(BINDIR)/disk.img,format=raw,index=0,media=disk
+	qemu-system-x86_64 -bios /usr/share/qemu/OVMF.fd -drive file=$(BINDIR)/disk.img,format=raw,index=0,media=disk -serial file:./debug.log -d int --no-reboot
 
 clean:
 	rm -Rf $(BINDIR)/*.img
@@ -55,8 +55,9 @@ clean:
 	rm -Rf $(BINDIR)/*.cdr
 	rm -Rf $(BINDIR)/*.bin
 	rm -Rf $(BINDIR)/*.vdi
-	rm -f $(OBJDIR)/*.o bin/*.elf bin/*.txt $(BINDIR)/*.img
+	rm -f bin/*.elf bin/*.txt $(BINDIR)/*.img
 	rm -Rf tmp
 	rm -Rf boot
+	rm -Rf obj
 
 .PHONY: all clean bootdir iso-osx iso-linux makedirs
