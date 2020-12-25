@@ -13,4 +13,6 @@ void serialPortInit(uint16_t port, uint16_t speed);
 
 void serialPortPrint(uint16_t port, const char *string);
 
+void serialPortPrintLine(uint16_t port, const char *string);
+
 #endif

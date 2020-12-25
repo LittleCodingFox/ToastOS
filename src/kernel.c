@@ -36,6 +36,7 @@ void puts(const char *s);
 #include <text/psf2.h>
 #include <low-level/serial/serial.h>
 #include <bootboot.h>
+#include <string.h>
 
 /* imported virtual addresses, see linker script */
 extern BOOTBOOT bootboot;           // see bootboot.h

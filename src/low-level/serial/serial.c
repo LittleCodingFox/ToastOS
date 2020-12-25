@@ -42,3 +42,9 @@ void serialPortPrint(uint16_t port, const char *string) {
         string++;
     }
 }
+
+void serialPortPrintLine(uint16_t port, const char *string) {
+
+    serialPortPrint(port, string);
+    serialPortPrint(port, "\n");
+}

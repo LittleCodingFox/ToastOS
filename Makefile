@@ -2,7 +2,7 @@ CC				= x86_64-elf-gcc
 LD				= x86_64-elf-ld
 STRIP			= x86_64-elf-strip
 READELF			= x86_64-elf-readelf
-CFLAGS			= -Wall -fpic -ffreestanding -fno-stack-protector -nostdinc -nostdlib -Ibootboot/dist -Isrc -Isrc/include -O0
+CFLAGS			= -Wall -fpic -ffreestanding -fno-stack-protector -nostdlib -Ibootboot/dist -Isrc -Isrc/include -Isrc/klibc -O0
 KERNEL_NAME		= kernel
 
 SRCDIR  		= src
@@ -14,6 +14,8 @@ TMPDIR	 		= tmp
 SOURCES         := $(wildcard $(SRCDIR)/*.c)
 SOURCES         += $(wildcard $(SRCDIR)/**/*.c)
 SOURCES         += $(wildcard $(SRCDIR)/low-level/**/*.c)
+SOURCES         += $(wildcard $(SRCDIR)/klibc/*.c)
+SOURCES         += $(wildcard $(SRCDIR)/klibc/**/*.c)
 RESOURCES 		:= $(wildcard $(RESDIR)/*.psf)
 OBJECTS 		:= $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 RESOURCEOBJECTS := $(RESOURCES:$(RESDIR)/%.psf=$(OBJDIR)/%.o)
