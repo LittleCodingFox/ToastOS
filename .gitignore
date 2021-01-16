@@ -8,3 +8,4 @@ INITRD
 debug.log
 .vscode
 *.o
+gnu-efi/x86_64/
