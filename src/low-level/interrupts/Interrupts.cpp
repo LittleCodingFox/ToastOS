@@ -1,7 +1,9 @@
 #include "Interrupts.hpp"
 #include "Panic.hpp"
 #include "ports/Ports.hpp"
-#include "framebuffer/BasicRenderer.hpp"
+#include "framebuffer/FramebufferRenderer.hpp"
+#include "printf/printf.h"
+#include "keyboard/keyboard.hpp"
 
 __attribute__((interrupt)) void PageFault_Handler(struct interrupt_frame* frame){
     Panic("Page Fault Detected");
@@ -19,8 +21,10 @@ __attribute__((interrupt)) void GPFault_Handler(struct interrupt_frame* frame){
 }
 
 __attribute__((interrupt)) void KeyboardInt_Handler(struct interrupt_frame* frame){
-    GlobalRenderer->Print("Pressed");
     uint8_t scancode = inport8(0x60);
+
+    HandleKeyboardKeyPress(scancode);
+
     PIC_EndMaster();
 }
 

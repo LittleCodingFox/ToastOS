@@ -1,6 +1,5 @@
 #include <stdint.h>
-#include <framebuffer/Framebuffer.hpp>
-#include <framebuffer/BasicRenderer.hpp>
+#include <framebuffer/FramebufferRenderer.hpp>
 #include "psf2.hpp"
 
 psf2_size_t psf2MeasureText(const char *text, psf2_font_t *font)
@@ -43,7 +42,7 @@ psf2_size_t psf2MeasureText(const char *text, psf2_font_t *font)
 	return outValue;
 }
 
-void psf2PutChar(int x, int y, char c, psf2_font_t *font, BasicRenderer *renderer)
+void psf2PutChar(int x, int y, char c, psf2_font_t *font, FramebufferRenderer *renderer)
 {
 	if(font == NULL)
 	{
@@ -73,7 +72,7 @@ void psf2PutChar(int x, int y, char c, psf2_font_t *font, BasicRenderer *rendere
 	}
 }
 
-void psf2RenderText(int x, int y, const char *text, psf2_font_t *font, BasicRenderer *renderer)
+void psf2RenderText(int x, int y, const char *text, psf2_font_t *font, FramebufferRenderer *renderer)
 {
 	if(font == NULL)
 	{

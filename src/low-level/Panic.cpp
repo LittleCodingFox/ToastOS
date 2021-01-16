@@ -1,6 +1,6 @@
 #include "Panic.hpp"
 #include "debug.hpp"
-#include "framebuffer/BasicRenderer.hpp"
+#include "framebuffer/FramebufferRenderer.hpp"
 
 void Panic(const char* panicMessage)
 {

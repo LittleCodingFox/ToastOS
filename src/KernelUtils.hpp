@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "framebuffer/BasicRenderer.hpp"
+#include "framebuffer/FramebufferRenderer.hpp"
 #include "cstring/cstring.hpp"
 #include "efimemory/EFIMemory.hpp"
 #include "Bitmap.hpp"

@@ -89,11 +89,11 @@ void PrepareInterrupts()
     asm ("sti");
 }
 
-BasicRenderer r = BasicRenderer(NULL, NULL);
+FramebufferRenderer r = FramebufferRenderer(NULL, NULL);
 
 KernelInfo InitializeKernel(BootInfo* bootInfo)
 {
-    r = BasicRenderer(bootInfo->framebuffer, bootInfo->font);
+    r = FramebufferRenderer(bootInfo->framebuffer, bootInfo->font);
 
     GlobalRenderer = &r;
 
