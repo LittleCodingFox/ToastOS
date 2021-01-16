@@ -49,25 +49,28 @@ void psf2PutChar(int x, int y, char c, psf2_font_t *font, FramebufferRenderer *r
 		return;
 	}
 
-	int bytesPerLine = (font->header->width + 7) / 8;
-	unsigned char *glyph = (unsigned char*)font->glyph_buffer + (c > 0 && c < font->header->numGlyph ? c : 0) * font->header->bytesPerGlyph;
+	FramebufferArea area = renderer->FrameBufferAreaAt(x, y, font->header->width, font->header->height);
 
-	for(int ty=0; ty<font->header->height; ty++)
+	if(!area.IsValid())
+	{
+		return;
+	}
+
+	int bytesPerLine = (font->header->width + 7) / 8;
+	unsigned char *glyph = (unsigned char*)font->glyph_buffer + (c > 0 && c < font->header->numGlyph ? c : 0) * font->header->bytesPerGlyph +
+		area.targetY * bytesPerLine;
+
+	for(int ty = 0, yIndex = area.y * area.width; ty < area.targetHeight; ty++, yIndex += area.width)
 	{
 		int line = 0;
 		int mask = 1 << (font->header->width - 1);
+		mask >>= area.targetX;
 
-		uint32_t *pixels = renderer->FrameBufferPtrAt(x, y + ty);
-
-		for(int tx = 0; tx < font->header->width; tx++)
+		for(int tx = 0; tx < area.targetWidth; tx++)
 		{
-			pixels[line] = ((int)*glyph) & (mask) ? 0xFFFFFFFF : 0;
-
+			area.buffer[yIndex + area.x + tx] = ((int)*glyph) & (mask) ? 0xFFFFFFFF : 0;
 			mask >>= 1;
-			line++;
 		}
-
-		pixels[line] = 0;
 		glyph+=bytesPerLine;
 	}
 }
