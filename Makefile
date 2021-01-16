@@ -2,23 +2,35 @@ CC				= x86_64-elf-gcc
 LD				= x86_64-elf-ld
 STRIP			= x86_64-elf-strip
 READELF			= x86_64-elf-readelf
-CFLAGS			= -Wall -fpic -ffreestanding -fno-stack-protector -nostdlib -Ibootboot/dist -Isrc -Isrc/include -Isrc/klibc -O0
+GNUEFI			= gnu-efi
+OVMFDIR			= OVMFbin
+ASMC			= nasm
+BOOTEFI 		:= $(GNUEFI)/x86_64/bootloader/main.efi
+
 KERNEL_NAME		= kernel
 
+OS_NAME			= ToastOS
+
 SRCDIR  		= src
-RESDIR   		= .
 OBJDIR   		= obj
 BINDIR   		= bin
 TMPDIR	 		= tmp
 
-SOURCES         := $(wildcard $(SRCDIR)/*.c)
-SOURCES         += $(wildcard $(SRCDIR)/**/*.c)
-SOURCES         += $(wildcard $(SRCDIR)/low-level/**/*.c)
-SOURCES         += $(wildcard $(SRCDIR)/klibc/*.c)
-SOURCES         += $(wildcard $(SRCDIR)/klibc/**/*.c)
-RESOURCES 		:= $(wildcard $(RESDIR)/*.psf)
-OBJECTS 		:= $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
-RESOURCEOBJECTS := $(RESOURCES:$(RESDIR)/%.psf=$(OBJDIR)/%.o)
+rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
+
+SRC				= $(call rwildcard,$(SRCDIR),*.cpp)
+CSRC			= $(call rwildcard,$(SRCDIR),*.c)
+EXTSRC			+= $(call rwildcard, $(SRCDIR)/../ext-libs/printf,*.c)
+ASMSRC			= $(call rwildcard,$(SRCDIR),*.asm)
+OBJECTS			= $(SRC:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
+ASMOBJECTS		= $(ASMSRC:$(SRCDIR)/%.asm=$(OBJDIR)/%_asm.o)
+COBJECTS		= $(SRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
+EXTOBJECTS		= $(EXTSRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
+
+INCLUDEDIRS		= -Isrc -Isrc/include -Isrc/low-level -Iext-libs
+ASMFLAGS		=
+CFLAGS			= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -nostdlib -Wall -fpic
+LDFLAGS			= -T $(SRCDIR)/link.ld -static -Bsymbolic -nostdlib
 
 makedirs:
 	rm -Rf bin
@@ -26,30 +38,47 @@ makedirs:
 	mkdir -p bin
 	mkdir -p obj
 
-$(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
+$(COBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
 	mkdir -p $(shell dirname $@)
-	$(CC) $(CFLAGS) -mno-red-zone -c $< -o $@ 
+	$(CC) $(CFLAGS) -c $< -o $@
 
-$(RESOURCEOBJECTS): $(OBJDIR)/%.o : $(RESDIR)/%.psf
+$(EXTOBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
 	mkdir -p $(shell dirname $@)
-	$(LD) -r -b binary -o $@ $< 
+	$(CC) $(CFLAGS) -c $< -o $@
 
-kernel: makedirs $(OBJECTS) $(RESOURCEOBJECTS)
-	$(LD) -nostdlib -nostartfiles -T $(SRCDIR)/link.ld $(OBJECTS) $(RESOURCEOBJECTS) -o $(BINDIR)/$(KERNEL_NAME).x86_64.elf
-	$(STRIP) -s -K mmio -K fb -K bootboot -K environment $(BINDIR)/$(KERNEL_NAME).x86_64.elf
-	$(READELF) -hls $(BINDIR)/$(KERNEL_NAME).x86_64.elf >$(BINDIR)/$(KERNEL_NAME).x86_64.txt
+$(OBJDIR)/low-level/interrupts/Interrupts.o: CFLAGS += -mno-red-zone -mgeneral-regs-only -ffreestanding
 
-bootdir:
-	sh makebootdir.sh
-	
-iso-osx: bootdir
-	sh makeisoosx.sh
-	
-iso-linux: bootdir
-	sh makeisolinux.sh
+$(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
+	mkdir -p $(shell dirname $@)
+	$(CC) $(CFLAGS) -c $< -o $@
 
-run-linux: kernel iso-linux
-	qemu-system-x86_64 -bios /usr/share/qemu/OVMF.fd -drive file=$(BINDIR)/disk.img,format=raw,index=0,media=disk -serial file:./debug.log -d int --no-reboot
+$(ASMOBJECTS): $(OBJDIR)/%_asm.o : $(SRCDIR)/%.asm
+	mkdir -p $(shell dirname $@)
+	$(ASMC) $(ASMFLAGS) $< -f elf64 -o $@
+
+kernel: makedirs $(OBJECTS) $(COBJECTS) $(EXTOBJECTS) $(ASMOBJECTS)
+	$(LD) -nostdlib -T $(SRCDIR)/link.ld -static -Bsymbolic $(OBJECTS) $(EXTOBJECTS) $(ASMOBJECTS) -o $(BINDIR)/kernel.elf
+
+iso:
+	dd if=/dev/zero of=$(BINDIR)/$(OS_NAME).img bs=512 count=195313
+	mformat -i $(BINDIR)/$(OS_NAME).img -f 2880 ::
+	mmd -i $(BINDIR)/$(OS_NAME).img ::/EFI
+	mmd -i $(BINDIR)/$(OS_NAME).img ::/EFI/BOOT
+	mcopy -i $(BINDIR)/$(OS_NAME).img $(BOOTEFI) ::/EFI/BOOT
+	mcopy -i $(BINDIR)/$(OS_NAME).img startup.nsh ::
+	mcopy -i $(BINDIR)/$(OS_NAME).img $(BINDIR)/kernel.elf ::
+	mcopy -i $(BINDIR)/$(OS_NAME).img font.psf ::
+
+run: gnuefi kernel iso
+	qemu-system-x86_64 -drive file=$(BINDIR)/$(OS_NAME).img,format=raw,index=0,media=disk \
+	-bios /usr/share/qemu/OVMF.fd \
+	-m 256M -cpu qemu64 -serial file:./debug.log -net none -d int --no-reboot
+
+debug: CFLAGS += -DKERNEL_DEBUG=1
+debug: run
+
+gnuefi:
+	(cd gnu-efi && make && make bootloader)
 
 clean:
 	rm -Rf $(BINDIR)/*.img
@@ -62,4 +91,4 @@ clean:
 	rm -Rf boot
 	rm -Rf obj
 
-.PHONY: all clean bootdir iso-osx iso-linux makedirs
+.PHONY: all clean iso run makedirs debug

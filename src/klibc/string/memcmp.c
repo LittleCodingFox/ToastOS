@@ -2,20 +2,27 @@
 #include <stddef.h>
 #include <stdint.h>
 
-int memcmp(const void *src1, const void *src2, size_t size) {
-
-    if(!size) {
-
+int memcmp(const void *src1, const void *src2, size_t size)
+{
+    if(!size)
+    {
         return 0;
     }
 
-    __asm__ volatile (
+    const unsigned char* a = (const unsigned char*) src1;
+	const unsigned char* b = (const unsigned char*) src2;
 
-        "repe cmpsb"
-        :"=D"(src1), "=S"(src2), "=c"(size)
-        :"0"(src1),"1"(src2),"2"(size)
-        :"memory","cc"
-    );
-
-    return ((const uint8_t *)src1)[-1] - ((const uint8_t *)src2)[-1];
+	for (size_t i = 0; i < size; i++)
+    {
+		if (a[i] < b[i])
+        {
+			return -1;
+        }
+		else if (b[i] < a[i])
+        {
+			return 1;
+        }
+	}
+    
+	return 0;
 }

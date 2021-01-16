@@ -6,3 +6,5 @@ tmp
 INITRD
 .vs
 debug.log
+.vscode
+*.o

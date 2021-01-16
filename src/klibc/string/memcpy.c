@@ -1,17 +1,15 @@
 #include "string.h"
 #include <stddef.h>
 
-void *memcpy(void *dst, const void *src, size_t size) {
+void *memcpy(void *dst, const void *src, size_t size)
+{
+    unsigned char* dstptr = (unsigned char*) dst;
+	const unsigned char* srcptr = (const unsigned char*) src;
 
-    void *temp = dst;
-
-    __asm__ volatile (
-        
-        "rep movsb"
-        :"=D"(dst),"=S"(src),"=c"(size)
-        :"0"(dst),"1"(src),"2"(size)
-        :"memory"
-    );
-
-    return temp;
+	for (size_t i = 0; i < size; i++)
+    {
+		dstptr[i] = srcptr[i];
+    }
+    
+	return dstptr;
 }
