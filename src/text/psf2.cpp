@@ -42,7 +42,7 @@ psf2_size_t psf2MeasureText(const char *text, psf2_font_t *font)
 	return outValue;
 }
 
-void psf2PutChar(int x, int y, char c, psf2_font_t *font, FramebufferRenderer *renderer)
+void psf2PutChar(int x, int y, char c, psf2_font_t *font, uint32_t color, FramebufferRenderer *renderer)
 {
 	if(font == NULL)
 	{
@@ -68,14 +68,15 @@ void psf2PutChar(int x, int y, char c, psf2_font_t *font, FramebufferRenderer *r
 
 		for(int tx = 0; tx < area.targetWidth; tx++)
 		{
-			area.buffer[yIndex + area.x + tx] = ((int)*glyph) & (mask) ? 0xFFFFFFFF : 0;
+			area.buffer[yIndex + area.x + tx] = ((int)*glyph) & (mask) ? color : 0;
 			mask >>= 1;
 		}
+
 		glyph+=bytesPerLine;
 	}
 }
 
-void psf2RenderText(int x, int y, const char *text, psf2_font_t *font, FramebufferRenderer *renderer)
+void psf2RenderText(int x, int y, const char *text, uint32_t color, psf2_font_t *font, FramebufferRenderer *renderer)
 {
 	if(font == NULL)
 	{
@@ -88,7 +89,7 @@ void psf2RenderText(int x, int y, const char *text, psf2_font_t *font, Framebuff
 	{
 		int offset = characterx * (font->header->width + 1);
 
-		psf2PutChar(x + offset, y, *text, font, renderer);
+		psf2PutChar(x + offset, y, *text, font, color, renderer);
 
 		text++;
 		characterx++;

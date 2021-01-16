@@ -64,6 +64,26 @@ public:
 
         return 0;
     }
+
+    inline int FontWidth() const
+    {
+        if(font != NULL)
+        {
+            return font->header->width;
+        }
+
+        return 0;
+    }
+
+    inline int FontHeight() const
+    {
+        if(font != NULL)
+        {
+            return font->header->height;
+        }
+
+        return 0;
+    }
 };
 
 extern FramebufferRenderer* GlobalRenderer;

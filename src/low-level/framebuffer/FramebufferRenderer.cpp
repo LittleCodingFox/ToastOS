@@ -10,8 +10,6 @@ FramebufferRenderer::FramebufferRenderer(Framebuffer* targetFramebuffer, psf2_fo
 
     Colour = 0xffffffff;
     CursorPosition = {0, 0};
-
-    DEBUG_OUT("Received font: %p", font);
 }
 
 void FramebufferRenderer::Clear(uint32_t colour)
@@ -103,7 +101,7 @@ void FramebufferRenderer::PutChar(char chr, unsigned int xOff, unsigned int yOff
         return;
     }
 
-    psf2PutChar(xOff, yOff, chr, font, this);
+    psf2PutChar(xOff, yOff, chr, font, 0xFFFFFFFF, this);
 }
 
 void FramebufferRenderer::PutChar(char chr)
@@ -114,22 +112,24 @@ void FramebufferRenderer::PutChar(char chr)
     if (CursorPosition.x + font->header->width > targetFramebuffer->width)
     {
         CursorPosition.x = 0; 
-        CursorPosition.y += 16;
+        CursorPosition.y += font->header->height;
     }
 }
 
 FramebufferArea FramebufferRenderer::FrameBufferAreaAt(int x, int y, int width, int height)
 {
-    FramebufferArea outArea = { 0 };
-    outArea.x = x;
-    outArea.y = y;
-    outArea.width = targetFramebuffer->width;
-    outArea.height = targetFramebuffer->height;
-    outArea.targetX = 0;
-    outArea.targetY = 0;
-    outArea.targetWidth = width;
-    outArea.targetHeight = height;
-    outArea.buffer = NULL;
+    FramebufferArea outArea
+    {
+        .x = x,
+        .y = y,
+        .width = targetFramebuffer->width,
+        .height = targetFramebuffer->height,
+        .targetX = 0,
+        .targetY = 0,
+        .targetWidth = width,
+        .targetHeight = height,
+        .buffer = NULL,
+    };
 
     if(x >= targetFramebuffer->width || y >= targetFramebuffer->height || width <= 0 || height <= 0)
     {

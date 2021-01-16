@@ -14,6 +14,7 @@ public:
     void LockPage(void* address);
     void LockPages(void* address, uint64_t pageCount);
     void* RequestPage();
+    void *RequestPages(uint32_t count);
     uint64_t GetFreeRAM();
     uint64_t GetUsedRAM();
     uint64_t GetReservedRAM();

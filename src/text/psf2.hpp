@@ -27,6 +27,6 @@ typedef struct {
 	uint32_t height;
 } psf2_size_t;
 
-void psf2PutChar(int x, int y, char c, psf2_font_t *font, FramebufferRenderer *renderer);
-void psf2RenderText(int x, int y, const char *text, psf2_font_t *font, FramebufferRenderer *renderer);
+void psf2PutChar(int x, int y, char c, psf2_font_t *font, uint32_t color, FramebufferRenderer *renderer);
+void psf2RenderText(int x, int y, const char *text, psf2_font_t *font, uint32_t color, FramebufferRenderer *renderer);
 psf2_size_t psf2MeasureText(const char *text, psf2_font_t *font);

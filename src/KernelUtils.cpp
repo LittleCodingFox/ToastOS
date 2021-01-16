@@ -47,7 +47,7 @@ void PrepareMemory(BootInfo* bootInfo)
 
     asm ("mov %0, %%cr3" : : "r" (PML4));
 
-    kernelInfo.pageTableManager = &pageTableManager;
+    GlobalPageTableManager = kernelInfo.pageTableManager = &pageTableManager;
 
     DEBUG_OUT("%s", "Finished initializing the kernel");
 }

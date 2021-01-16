@@ -20,14 +20,17 @@ rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(su
 
 SRC				= $(call rwildcard,$(SRCDIR),*.cpp)
 CSRC			= $(call rwildcard,$(SRCDIR),*.c)
-EXTSRC			+= $(call rwildcard, $(SRCDIR)/../ext-libs/printf,*.c)
+EXTSRC			= $(call rwildcard, $(SRCDIR)/../ext-libs/vtconsole,*.cpp)
+EXTCSRC			= $(call rwildcard, $(SRCDIR)/../ext-libs/printf,*.c)
+EXTCSRC			+= $(call rwildcard, $(SRCDIR)/../ext-libs/liballoc,*.c)
 ASMSRC			= $(call rwildcard,$(SRCDIR),*.asm)
 OBJECTS			= $(SRC:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 ASMOBJECTS		= $(ASMSRC:$(SRCDIR)/%.asm=$(OBJDIR)/%_asm.o)
 COBJECTS		= $(SRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
-EXTOBJECTS		= $(EXTSRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
+EXTOBJECTS		= $(EXTSRC:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
+EXTCOBJECTS		= $(EXTCSRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
-INCLUDEDIRS		= -Isrc -Isrc/include -Isrc/low-level -Iext-libs
+INCLUDEDIRS		= -Isrc -Isrc/include -Isrc/low-level -Iext-libs -Iext-libs/liballoc/
 ASMFLAGS		=
 CFLAGS			= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -nostdlib -Wall -fpic
 LDFLAGS			= -T $(SRCDIR)/link.ld -static -Bsymbolic -nostdlib
@@ -42,7 +45,11 @@ $(COBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
 	mkdir -p $(shell dirname $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(EXTOBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
+$(EXTCOBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
+	mkdir -p $(shell dirname $@)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(EXTOBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
 	mkdir -p $(shell dirname $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
@@ -56,8 +63,8 @@ $(ASMOBJECTS): $(OBJDIR)/%_asm.o : $(SRCDIR)/%.asm
 	mkdir -p $(shell dirname $@)
 	$(ASMC) $(ASMFLAGS) $< -f elf64 -o $@
 
-kernel: makedirs $(OBJECTS) $(COBJECTS) $(EXTOBJECTS) $(ASMOBJECTS)
-	$(LD) -nostdlib -T $(SRCDIR)/link.ld -static -Bsymbolic $(OBJECTS) $(EXTOBJECTS) $(ASMOBJECTS) -o $(BINDIR)/kernel.elf
+kernel: makedirs $(OBJECTS) $(COBJECTS) $(EXTOBJECTS) $(EXTCOBJECTS) $(ASMOBJECTS)
+	$(LD) -nostdlib -T $(SRCDIR)/link.ld -static -Bsymbolic $(OBJECTS) $(EXTOBJECTS) $(EXTCOBJECTS) $(ASMOBJECTS) -o $(BINDIR)/kernel.elf
 
 iso:
 	dd if=/dev/zero of=$(BINDIR)/$(OS_NAME).img bs=512 count=195313

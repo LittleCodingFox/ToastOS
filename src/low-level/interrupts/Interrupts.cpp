@@ -5,22 +5,26 @@
 #include "printf/printf.h"
 #include "keyboard/keyboard.hpp"
 
-__attribute__((interrupt)) void PageFault_Handler(struct interrupt_frame* frame){
+__attribute__((interrupt)) void PageFault_Handler(struct interrupt_frame* frame)
+{
     Panic("Page Fault Detected");
     while(true);
 }
 
-__attribute__((interrupt)) void DoubleFault_Handler(struct interrupt_frame* frame){
+__attribute__((interrupt)) void DoubleFault_Handler(struct interrupt_frame* frame)
+{
     Panic("Double Fault Detected");
     while(true);
 }
 
-__attribute__((interrupt)) void GPFault_Handler(struct interrupt_frame* frame){
+__attribute__((interrupt)) void GPFault_Handler(struct interrupt_frame* frame)
+{
     Panic("General Protection Fault Detected");
     while(true);
 }
 
-__attribute__((interrupt)) void KeyboardInt_Handler(struct interrupt_frame* frame){
+__attribute__((interrupt)) void KeyboardInt_Handler(struct interrupt_frame* frame)
+{
     uint8_t scancode = inport8(0x60);
 
     HandleKeyboardKeyPress(scancode);
@@ -28,17 +32,20 @@ __attribute__((interrupt)) void KeyboardInt_Handler(struct interrupt_frame* fram
     PIC_EndMaster();
 }
 
-void PIC_EndMaster(){
+void PIC_EndMaster()
+{
     outport8(PIC1_COMMAND, PIC_EOI);
 }
 
-void PIC_EndSlave(){
+void PIC_EndSlave()
+{
     outport8(PIC2_COMMAND, PIC_EOI);
     outport8(PIC1_COMMAND, PIC_EOI);
 }
    
 
-void RemapPIC(){
+void RemapPIC()
+{
     uint8_t a1, a2; 
 
     a1 = inport8(PIC1_DATA);
@@ -69,5 +76,4 @@ void RemapPIC(){
     outport8(PIC1_DATA, a1);
     io_wait();
     outport8(PIC2_DATA, a2);
-
 }
