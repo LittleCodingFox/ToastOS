@@ -1,6 +1,8 @@
 #include "Serial.hpp"
 #include <ports/Ports.hpp>
 
+Serial SerialCOM1(SerialPorts::COM1, SerialSpeeds::Speed115200);
+
 #define SERIAL_PORT_DATA_PORT(base)             (base)
 #define SERIAL_PORT_FIFO_COMMAND_PORT(base)     (base + 2)
 #define SERIAL_PORT_LINE_COMMAND_PORT(base)     (base + 3)
@@ -9,8 +11,26 @@
 
 #define SERIAL_PORT_LINE_ENABLE_DLAB            0x80
 
-void serialPortInit(uint16_t port, uint16_t speed)
+bool serialPortIsTransmitFIFOEmpty(uint16_t port)
 {
+    return (inport8(SERIAL_PORT_LINE_STATUS_PORT(port)) & 0x20);
+}
+
+Serial::Serial(uint16_t port, uint16_t speed)
+{
+    this->port = port;
+    this->speed = speed;
+}
+
+void Serial::initialize()
+{
+    if(initialized)
+    {
+        return;
+    }
+
+    initialized = true;
+
     outport8(SERIAL_PORT_LINE_COMMAND_PORT(port), SERIAL_PORT_LINE_ENABLE_DLAB);
     outport8(SERIAL_PORT_DATA_PORT(port), (speed >> 8) & 0x00FF);
     outport8(SERIAL_PORT_DATA_PORT(port), speed & 0x00FF);
@@ -20,35 +40,34 @@ void serialPortInit(uint16_t port, uint16_t speed)
     outport8(SERIAL_PORT_MODEM_COMMAND_PORT(port), 0x08);
 }
 
-bool serialPortIsTransmitFIFOEmpty(uint16_t port)
+void Serial::write(char c)
 {
-    return (inport8(SERIAL_PORT_LINE_STATUS_PORT(port)) & 0x20);
-}
+    initialize();
 
-void serialPortWrite(uint16_t port, char c)
-{
     while(serialPortIsTransmitFIFOEmpty(port) == false);
 
     outport8(port, c);
 }
 
-void serialPortPrint(uint16_t port, const char *string)
+void Serial::print(const char *string)
 {
+    initialize();
+
     while(*string)
     {
-        serialPortWrite(port, *string);
+        write(*string);
 
         string++;
     }
 }
 
-void serialPortPrintLine(uint16_t port, const char *string)
+void Serial::printLine(const char *string)
 {
-    serialPortPrint(port, string);
-    serialPortPrint(port, "\n");
+    print(string);
+    print("\n");
 }
 
-void serialPortOutStream(char character, void *arg)
+void SerialPortOutStreamCOM1(char character, void *arg)
 {
-    serialPortWrite(SERIAL_PORT_COM1, character);
+    SerialCOM1.write(character);
 }

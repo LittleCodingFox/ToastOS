@@ -3,18 +3,40 @@
 
 #include <stdint.h>
 
-#define SERIAL_PORT_COM1            0x3F8
+enum SerialPorts
+{
+    COM1 = 0x3F8,
+};
 
-#define SERIAL_PORT_SPEED_115200    1
-#define SERIAL_PORT_SPEED_57600     2
-#define SERIAL_PORT_SPEED_38400     3
+enum SerialSpeeds
+{
+    Speed115200 = 1,
+    Speed57600  = 2,
+    Speed38400  = 3,
+};
 
-void serialPortInit(uint16_t port, uint16_t speed);
+class Serial
+{
+private:
 
-void serialPortPrint(uint16_t port, const char *string);
+    uint16_t port;
+    uint16_t speed;
+    bool initialized = false;
 
-void serialPortPrintLine(uint16_t port, const char *string);
+    void initialize();
 
-void serialPortOutStream(char character, void *arg);
+public:
+
+    Serial(uint16_t port, uint16_t speed);
+
+    void print(const char *string);
+    void printLine(const char *string);
+    void write(char c);
+
+};
+
+extern Serial SerialCOM1;
+
+void SerialPortOutStreamCOM1(char character, void *arg);
 
 #endif

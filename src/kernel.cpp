@@ -18,8 +18,6 @@ void CursorHandler (struct vtconsole* vtc, vtcursor_t* cur)
 
 extern "C" void _start(BootInfo* bootInfo)
 {
-    serialPortInit(SERIAL_PORT_COM1, SERIAL_PORT_SPEED_115200);
-
     KernelInfo kernelInfo = InitializeKernel(bootInfo);
     PageTableManager* pageTableManager = kernelInfo.pageTableManager;
 
@@ -40,5 +38,5 @@ extern "C" void _start(BootInfo* bootInfo)
 void _putchar(char character)
 {
     vtconsole_putchar(console, character);
-    serialPortOutStream(character, NULL);
+    SerialPortOutStreamCOM1(character, NULL);
 }

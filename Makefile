@@ -32,7 +32,7 @@ EXTCOBJECTS		= $(EXTCSRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
 INCLUDEDIRS		= -Isrc -Isrc/include -Isrc/low-level -Iext-libs -Iext-libs/liballoc/
 ASMFLAGS		=
-CFLAGS			= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -nostdlib -Wall -fpic -O2 -fno-omit-frame-pointer -fstack-protector-all
+CFLAGS			= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -nostdlib -Wall -fpic -O3 -fno-omit-frame-pointer -fstack-protector-all
 LDFLAGS			= -T $(SRCDIR)/link.ld -static -Bsymbolic -nostdlib
 
 QEMU_FLAGS		=
