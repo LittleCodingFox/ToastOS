@@ -68,27 +68,21 @@ $(ASMOBJECTS): $(OBJDIR)/%_asm.o : $(SRCDIR)/%.asm
 kernel: makedirs $(OBJECTS) $(COBJECTS) $(EXTOBJECTS) $(EXTCOBJECTS) $(ASMOBJECTS)
 	$(LD) -nostdlib -T $(SRCDIR)/link.ld -static -Bsymbolic $(OBJECTS) $(EXTOBJECTS) $(EXTCOBJECTS) $(ASMOBJECTS) -o $(BINDIR)/kernel.elf
 
-iso:
-	dd if=/dev/zero of=$(BINDIR)/$(OS_NAME).img bs=512 count=195313
-	mformat -i $(BINDIR)/$(OS_NAME).img -f 2880 ::
-	mmd -i $(BINDIR)/$(OS_NAME).img ::/EFI
-	mmd -i $(BINDIR)/$(OS_NAME).img ::/EFI/BOOT
-	mcopy -i $(BINDIR)/$(OS_NAME).img $(BOOTEFI) ::/EFI/BOOT
-	mcopy -i $(BINDIR)/$(OS_NAME).img startup.nsh ::
-	mcopy -i $(BINDIR)/$(OS_NAME).img $(BINDIR)/kernel.elf ::
-	mcopy -i $(BINDIR)/$(OS_NAME).img font.psf ::
+iso-linux:
+	sh makebootdir.sh
+	sh makeisolinux.sh
 
-run: gnuefi kernel iso
+run-linux: gnuefi kernel iso-linux
 	qemu-system-x86_64 -drive file=$(BINDIR)/$(OS_NAME).img,format=raw,index=0,media=disk \
 	-bios /usr/share/qemu/OVMF.fd \
 	-m 256M -cpu qemu64 -serial file:./debug.log -net none -d int --no-reboot $(QEMU_FLAGS)
 
-debug: CFLAGS += -DKERNEL_DEBUG=1 -g
+debug-linux: CFLAGS += -DKERNEL_DEBUG=1 -g
 #debug: QEMU_FLAGS += -s -S
-debug: run
+debug-linux: run-linux
 
 gnuefi:
-	(cd gnu-efi && make && make bootloader)
+	(cd gnu-efi && make clean && make && make bootloader)
 
 clean:
 	rm -Rf $(BINDIR)/*.img
