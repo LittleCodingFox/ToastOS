@@ -1,5 +1,5 @@
-CC				= x86_64-elf-gcc
-LD				= x86_64-elf-ld
+CC				= clang
+LD				= ld.lld
 STRIP			= x86_64-elf-strip
 READELF			= x86_64-elf-readelf
 GNUEFI			= gnu-efi
@@ -32,8 +32,10 @@ EXTCOBJECTS		= $(EXTCSRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
 INCLUDEDIRS		= -Isrc -Isrc/include -Isrc/low-level -Iext-libs -Iext-libs/liballoc/
 ASMFLAGS		=
-CFLAGS			= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -nostdlib -Wall -fpic
+CFLAGS			= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -nostdlib -Wall -fpic -O2 -fno-omit-frame-pointer -fstack-protector-all
 LDFLAGS			= -T $(SRCDIR)/link.ld -static -Bsymbolic -nostdlib
+
+QEMU_FLAGS		=
 
 makedirs:
 	rm -Rf bin
@@ -79,9 +81,10 @@ iso:
 run: gnuefi kernel iso
 	qemu-system-x86_64 -drive file=$(BINDIR)/$(OS_NAME).img,format=raw,index=0,media=disk \
 	-bios /usr/share/qemu/OVMF.fd \
-	-m 256M -cpu qemu64 -serial file:./debug.log -net none -d int --no-reboot
+	-m 256M -cpu qemu64 -serial file:./debug.log -net none -d int --no-reboot $(QEMU_FLAGS)
 
-debug: CFLAGS += -DKERNEL_DEBUG=1
+debug: CFLAGS += -DKERNEL_DEBUG=1 -g
+#debug: QEMU_FLAGS += -s -S
 debug: run
 
 gnuefi:

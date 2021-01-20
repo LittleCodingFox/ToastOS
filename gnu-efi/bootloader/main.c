@@ -258,11 +258,11 @@ EFI_STATUS efi_main (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
 	Framebuffer* newBuffer = InitializeGOP();
 
 	Print(L"Base: 0x%x\n\rSize: 0x%x\n\rWidth: %d\n\rHeight: %d\n\rPixelsPerScanline: %d\n\r", 
-	newBuffer->BaseAddress, 
-	newBuffer->BufferSize, 
-	newBuffer->Width, 
-	newBuffer->Height, 
-	newBuffer->PixelsPerScanLine);
+		newBuffer->BaseAddress, 
+		newBuffer->BufferSize, 
+		newBuffer->Width, 
+		newBuffer->Height, 
+		newBuffer->PixelsPerScanLine);
 
 	EFI_MEMORY_DESCRIPTOR* Map = NULL;
 	UINTN MapSize, MapKey;
@@ -282,9 +282,6 @@ EFI_STATUS efi_main (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
 	bootInfo.mMap = Map;
 	bootInfo.mMapSize = MapSize;
 	bootInfo.mMapDescSize = DescriptorSize;
-
-	Print(L"Memory Map located at %x\n", Map);
-	Print(L"Font ptr: %x\n", newFont);
 
 	SystemTable->BootServices->ExitBootServices(ImageHandle, MapKey);
 

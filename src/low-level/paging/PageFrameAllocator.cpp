@@ -67,17 +67,15 @@ void PageFrameAllocator::InitBitmap(size_t bitmapSize, void* bufferAddress)
     }
 }
 
-uint64_t pageBitmapIndex = 0;
-
 void* PageFrameAllocator::RequestPage()
 {
-    for (; pageBitmapIndex < PageBitmap.size * 8; pageBitmapIndex++)
+    for (uint64_t i = 0; i < PageBitmap.size * 8; i++)
     {
-        if (PageBitmap[pageBitmapIndex] == true) continue;
+        if (PageBitmap[i] == true) continue;
 
-        LockPage((void*)(pageBitmapIndex * 4096));
+        LockPage((void*)(i * 4096));
 
-        return (void*)(pageBitmapIndex * 4096);
+        return (void*)(i * 4096);
     }
 
     return NULL; // Page Frame Swap to file
@@ -87,7 +85,7 @@ void *PageFrameAllocator::RequestPages(uint32_t count)
 {
     uint32_t freeCount = 0;
 
-    for (uint32_t i = pageBitmapIndex; i < PageBitmap.size * 8; i++)
+    for (uint32_t i = 0; i < PageBitmap.size * 8; i++)
     {
         if (PageBitmap[i] == false)
         {
@@ -97,10 +95,7 @@ void *PageFrameAllocator::RequestPages(uint32_t count)
             {
                 uint32_t index = i - count;
 
-                for(uint32_t t = 0; t < count; t++)
-                {
-                    LockPage((void*)((uint64_t)(index + t) * 4096));
-                }
+                LockPages((void*)((uint64_t)index), count);
 
                 return (void *)((uint64_t)index * 4096);
             }
@@ -124,8 +119,6 @@ void PageFrameAllocator::FreePage(void* address)
     {
         freeMemory += 4096;
         usedMemory -= 4096;
-
-        if (pageBitmapIndex > index) pageBitmapIndex = index;
     }
 }
 
@@ -168,8 +161,6 @@ void PageFrameAllocator::UnreservePage(void* address)
     {
         freeMemory += 4096;
         reservedMemory -= 4096;
-
-        if (pageBitmapIndex > index) pageBitmapIndex = index;
     }
 }
 

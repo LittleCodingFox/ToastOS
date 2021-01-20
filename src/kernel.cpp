@@ -30,11 +30,15 @@ extern "C" void _start(BootInfo* bootInfo)
 
     console = vtconsole(consoleWidth, consoleHeight, PaintHandler, CursorHandler);
 
+    DEBUG_OUT("Console buffer: %p", console->buffer);
+
+    printf("test\n");
+
     for(;;);
 }
 
 void _putchar(char character)
 {
-    //vtconsole_putchar(console, character);
+    vtconsole_putchar(console, character);
     serialPortOutStream(character, NULL);
 }
