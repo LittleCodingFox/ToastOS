@@ -20,10 +20,10 @@ struct PageDirectoryEntry
 {
     uint64_t Value;
 
-    void SetFlag(PT_Flag flag, bool enabled);
-    bool GetFlag(PT_Flag flag);
-    void SetAddress(uint64_t address);
-    uint64_t GetAddress();
+    void setFlag(PT_Flag flag, bool enabled);
+    bool getFlag(PT_Flag flag);
+    void setAddress(uint64_t address);
+    uint64_t getAddress();
 };
 
 struct PageTable

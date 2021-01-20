@@ -6,8 +6,8 @@ class PageTableManager
 public:
     PageTableManager(PageTable* PML4Address);
     PageTable* PML4;
-    void MapMemory(void* virtualMemory, void* physicalMemory);
-    void UnmapMemory(void* virtualMemory);
+    void mapMemory(void* virtualMemory, void* physicalMemory);
+    void unmapMemory(void* virtualMemory);
 };
 
-extern PageTableManager *GlobalPageTableManager;
+extern PageTableManager *globalPageTableManager;

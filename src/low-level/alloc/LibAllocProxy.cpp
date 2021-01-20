@@ -16,7 +16,7 @@ int liballoc_unlock()
 
 void* liballoc_alloc(size_t pages)
 {
-    void *ptr = GlobalAllocator.RequestPages(pages);
+    void *ptr = globalAllocator.requestPages(pages);
 
     if(ptr == NULL)
     {
@@ -25,7 +25,7 @@ void* liballoc_alloc(size_t pages)
 
     for(uint32_t i = 0; i < pages; i++)
     {
-        GlobalPageTableManager->MapMemory((void*)((uint64_t)ptr + i * 4096), (void*)((uint64_t)ptr + i * 4096));
+        globalPageTableManager->mapMemory((void*)((uint64_t)ptr + i * 4096), (void*)((uint64_t)ptr + i * 4096));
     }
 
     return ptr;
@@ -33,11 +33,11 @@ void* liballoc_alloc(size_t pages)
 
 int liballoc_free(void* ptr, size_t pages)
 {
-    GlobalAllocator.FreePages(ptr, pages);
+    globalAllocator.freePages(ptr, pages);
 
     for(uint32_t i = 0; i < pages; i++)
     {
-        GlobalPageTableManager->UnmapMemory((void*)((uint64_t)ptr + i * 4096));
+        globalPageTableManager->unmapMemory((void*)((uint64_t)ptr + i * 4096));
     }
 
     return 0;
