@@ -1,25 +1,40 @@
 #pragma once
 #include <stdint.h>
 
-#define IDT_TA_InterruptGate    0b10001110
-#define IDT_TA_CallGate         0b10001100
-#define IDT_TA_TrapGate         0b10001111
+#define IDT_INTERRUPT_GATE  0xE
+#define IDT_TRAP_GATE       0xF
+#define IDT_ENTRIES         256
 
-struct IDTDescEntry
+struct __attribute__((packed)) IDTDescEntry
 {
-    uint16_t offset0; 
+    uint16_t ptrLow; 
     uint16_t selector;  
     uint8_t ist;
-    uint8_t type_attr;
-    uint16_t offset1;
-    uint32_t offset2;
-    uint32_t ignore;
-    void SetOffset(uint64_t offset);
-    uint64_t GetOffset();
+    union
+    {
+        uint8_t flags;
+
+        struct
+        {
+            uint8_t type : 4;
+            uint8_t s : 1;
+            uint8_t dpl : 2;
+            uint8_t present : 1;
+        };
+    };
+    uint16_t ptrMid;
+    uint32_t ptrHigh;
+    uint32_t reserved;
 };
 
-struct IDTR
+class IDT
 {
-    uint16_t Limit;
-    uint64_t Offset;
-} __attribute__((packed));
+private:
+    IDTDescEntry idt[IDT_ENTRIES];
+public:
+    void init();
+    void registerGate(uint16_t n, uint64_t handler, uint8_t type, uint8_t dpl);
+    void registerInterrupt(uint16_t n, uint64_t handler);
+};
+
+extern IDT idt;

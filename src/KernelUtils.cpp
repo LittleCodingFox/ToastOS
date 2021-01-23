@@ -1,3 +1,4 @@
+#include <string.h>
 #include "KernelUtils.hpp"
 #include "gdt/gdt.hpp"
 #include "interrupts/IDT.hpp"
@@ -69,34 +70,13 @@ void PrepareMemory(BootInfo* bootInfo)
     DEBUG_OUT("%s", "Finished initializing the kernel");
 }
 
-IDTR idtr;
-
 void PrepareInterrupts()
 {
-    idtr.Limit = 0x0FFF;
-    idtr.Offset = (uint64_t)globalAllocator.requestPage();
-
-    IDTDescEntry* int_PageFault = (IDTDescEntry*)(idtr.Offset + 0xE * sizeof(IDTDescEntry));
-    int_PageFault->SetOffset((uint64_t)PageFault_Handler);
-    int_PageFault->type_attr = IDT_TA_InterruptGate;
-    int_PageFault->selector = 0x08;
-
-    IDTDescEntry* int_DoubleFault = (IDTDescEntry*)(idtr.Offset + 0x8 * sizeof(IDTDescEntry));
-    int_DoubleFault->SetOffset((uint64_t)DoubleFault_Handler);
-    int_DoubleFault->type_attr = IDT_TA_InterruptGate;
-    int_DoubleFault->selector = 0x08;
-
-    IDTDescEntry* int_GPFault = (IDTDescEntry*)(idtr.Offset + 0xD * sizeof(IDTDescEntry));
-    int_GPFault->SetOffset((uint64_t)GPFault_Handler);
-    int_GPFault->type_attr = IDT_TA_InterruptGate;
-    int_GPFault->selector = 0x08;
-
-    IDTDescEntry* int_Keyboard = (IDTDescEntry*)(idtr.Offset + 0x21 * sizeof(IDTDescEntry));
-    int_Keyboard->SetOffset((uint64_t)KeyboardInt_Handler);
-    int_Keyboard->type_attr = IDT_TA_InterruptGate;
-    int_Keyboard->selector = 0x08;
-
-    asm ("lidt %0" : : "m" (idtr));
+    idt.init();
+    idt.registerInterrupt(0xE, (uint64_t)PageFault_Handler);
+    idt.registerInterrupt(0x8, (uint64_t)DoubleFault_Handler);
+    idt.registerInterrupt(0xD, (uint64_t)GPFault_Handler);
+    idt.registerInterrupt(0x21, (uint64_t)KeyboardInt_Handler);
 
     RemapPIC();
 

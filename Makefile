@@ -26,7 +26,7 @@ EXTCSRC			+= $(call rwildcard, $(SRCDIR)/../ext-libs/liballoc,*.c)
 ASMSRC			= $(call rwildcard,$(SRCDIR),*.asm)
 OBJECTS			= $(SRC:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 ASMOBJECTS		= $(ASMSRC:$(SRCDIR)/%.asm=$(OBJDIR)/%_asm.o)
-COBJECTS		= $(SRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
+COBJECTS		= $(CSRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 EXTOBJECTS		= $(EXTSRC:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 EXTCOBJECTS		= $(EXTCSRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
@@ -66,7 +66,7 @@ $(ASMOBJECTS): $(OBJDIR)/%_asm.o : $(SRCDIR)/%.asm
 	$(ASMC) $(ASMFLAGS) $< -f elf64 -o $@
 
 kernel: makedirs $(OBJECTS) $(COBJECTS) $(EXTOBJECTS) $(EXTCOBJECTS) $(ASMOBJECTS)
-	$(LD) -nostdlib -T $(SRCDIR)/link.ld -static -Bsymbolic $(OBJECTS) $(EXTOBJECTS) $(EXTCOBJECTS) $(ASMOBJECTS) -o $(BINDIR)/kernel.elf
+	$(LD) -nostdlib -T $(SRCDIR)/link.ld -static -Bsymbolic $(OBJECTS) $(COBJECTS) $(EXTOBJECTS) $(EXTCOBJECTS) $(ASMOBJECTS) -o $(BINDIR)/kernel.elf
 
 iso-linux:
 	sh makebootdir.sh

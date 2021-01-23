@@ -1,6 +1,7 @@
 #include "PageTableManager.hpp"
 #include "PageMapIndexer.hpp"
 #include <stdint.h>
+#include <string.h>
 #include "PageFrameAllocator.hpp"
 
 PageTableManager *globalPageTableManager = NULL;

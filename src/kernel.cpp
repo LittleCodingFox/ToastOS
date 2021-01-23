@@ -21,15 +21,6 @@ extern "C" void _start(BootInfo* bootInfo)
     KernelInfo kernelInfo = InitializeKernel(bootInfo);
     PageTableManager* pageTableManager = kernelInfo.pageTableManager;
 
-    int consoleWidth = globalRenderer->Width() / globalRenderer->FontWidth();
-    int consoleHeight = globalRenderer->Height() / globalRenderer->FontHeight();
-
-    DEBUG_OUT("creating console: width: %d; height: %d;", consoleWidth, consoleHeight);
-
-    console = vtconsole(consoleWidth, consoleHeight, PaintHandler, CursorHandler);
-
-    DEBUG_OUT("Console buffer: %p", console->buffer);
-
     printf("test\n");
 
     for(;;);
@@ -37,6 +28,6 @@ extern "C" void _start(BootInfo* bootInfo)
 
 void _putchar(char character)
 {
-    vtconsole_putchar(console, character);
+    globalRenderer->PutChar(character);
     SerialPortOutStreamCOM1(character, NULL);
 }
