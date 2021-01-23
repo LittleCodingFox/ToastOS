@@ -24,6 +24,19 @@ struct FramebufferArea
     }
 };
 
+union Color32
+{
+    struct
+    {
+        uint8_t r;
+        uint8_t g;
+        uint8_t b;
+        uint8_t a;
+    } pixels;
+
+    uint32_t value;
+};
+
 class FramebufferRenderer
 {
 private:
@@ -33,8 +46,8 @@ private:
 
 public:
 
-    Point CursorPosition;
-    unsigned int Colour;
+    Point cursorPosition;
+    uint32_t colour;
 
     FramebufferRenderer(Framebuffer* targetFramebuffer, psf2_font_t* font);
     void Print(const char* str);
@@ -86,4 +99,4 @@ public:
     }
 };
 
-extern FramebufferRenderer* GlobalRenderer;
+extern FramebufferRenderer* globalRenderer;

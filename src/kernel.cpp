@@ -9,7 +9,7 @@ vtconsole_t *console = NULL;
 
 void PaintHandler(struct vtconsole* vtc, vtcell_t* cell, int x, int y)
 {
-    GlobalRenderer->PutChar(cell->c, x * GlobalRenderer->FontWidth(), y * GlobalRenderer->FontHeight());
+    globalRenderer->PutChar(cell->c, x * globalRenderer->FontWidth(), y * globalRenderer->FontHeight());
 }
 
 void CursorHandler (struct vtconsole* vtc, vtcursor_t* cur)
@@ -21,8 +21,8 @@ extern "C" void _start(BootInfo* bootInfo)
     KernelInfo kernelInfo = InitializeKernel(bootInfo);
     PageTableManager* pageTableManager = kernelInfo.pageTableManager;
 
-    int consoleWidth = GlobalRenderer->Width() / GlobalRenderer->FontWidth();
-    int consoleHeight = GlobalRenderer->Height() / GlobalRenderer->FontHeight();
+    int consoleWidth = globalRenderer->Width() / globalRenderer->FontWidth();
+    int consoleHeight = globalRenderer->Height() / globalRenderer->FontHeight();
 
     DEBUG_OUT("creating console: width: %d; height: %d;", consoleWidth, consoleHeight);
 

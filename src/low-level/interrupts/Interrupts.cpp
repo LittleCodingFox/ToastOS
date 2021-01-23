@@ -3,7 +3,7 @@
 #include "ports/Ports.hpp"
 #include "framebuffer/FramebufferRenderer.hpp"
 #include "printf/printf.h"
-#include "keyboard/keyboard.hpp"
+#include "keyboard/Keyboard.hpp"
 
 __attribute__((interrupt)) void PageFault_Handler(struct interrupt_frame* frame)
 {

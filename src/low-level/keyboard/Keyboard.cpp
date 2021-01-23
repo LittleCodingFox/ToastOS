@@ -1,4 +1,4 @@
-#include "keyboard.hpp"
+#include "Keyboard.hpp"
 #include "layouts/QWERTYKeyboard.hpp"
 #include "framebuffer/FramebufferRenderer.hpp"
 
@@ -26,15 +26,15 @@ void HandleKeyboardKeyPress(uint8_t scancode)
             return;
 
         case Enter:
-            GlobalRenderer->Newline();
+            globalRenderer->Newline();
             return;
 
         case Spacebar:
-            GlobalRenderer->PutChar(' ');
+            globalRenderer->PutChar(' ');
             return;
 
         case BackSpace:
-            GlobalRenderer->ClearChar();
+            globalRenderer->ClearChar();
             return;
     }
 
@@ -42,6 +42,6 @@ void HandleKeyboardKeyPress(uint8_t scancode)
 
     if (ascii != 0)
     {
-        GlobalRenderer->PutChar(ascii);
+        globalRenderer->PutChar(ascii);
     }
 }

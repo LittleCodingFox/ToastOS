@@ -1,9 +1,9 @@
 #include "KernelUtils.hpp"
-#include "low-level/gdt/gdt.hpp"
-#include "low-level/interrupts/IDT.hpp"
-#include "low-level/interrupts/Interrupts.hpp"
-#include "low-level/ports/Ports.hpp"
-#include "low-level/registers/Registers.hpp"
+#include "gdt/gdt.hpp"
+#include "interrupts/IDT.hpp"
+#include "interrupts/Interrupts.hpp"
+#include "ports/Ports.hpp"
+#include "registers/Registers.hpp"
 
 KernelInfo kernelInfo; 
 PageTableManager pageTableManager = NULL;
@@ -112,7 +112,7 @@ KernelInfo InitializeKernel(BootInfo* bootInfo)
 {
     r = FramebufferRenderer(bootInfo->framebuffer, bootInfo->font);
 
-    GlobalRenderer = &r;
+    globalRenderer = &r;
 
     GDTDescriptor gdtDescriptor;
 

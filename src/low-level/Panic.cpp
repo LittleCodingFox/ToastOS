@@ -9,16 +9,16 @@ void Panic(const char* panicMessage)
 
     kernel_dump_stacktrace();
 
-    GlobalRenderer->Clear(0x00ff0000);
+    globalRenderer->Clear(0x00ff0000);
 
-    GlobalRenderer->CursorPosition = {0, 0};
+    globalRenderer->cursorPosition = {0, 0};
 
-    GlobalRenderer->Colour = 0;
+    globalRenderer->colour = 0;
 
-    GlobalRenderer->Print("Kernel Panic");
+    globalRenderer->Print("Kernel Panic");
 
-    GlobalRenderer->Newline();
-    GlobalRenderer->Newline();
+    globalRenderer->Newline();
+    globalRenderer->Newline();
 
-    GlobalRenderer->Print(panicMessage);
+    globalRenderer->Print(panicMessage);
 }

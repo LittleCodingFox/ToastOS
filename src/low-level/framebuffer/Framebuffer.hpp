@@ -1,11 +1,12 @@
 #pragma once
+#include <stdint.h>
 #include <stddef.h>
 
 struct Framebuffer
 {
 	void* baseAddress;
 	size_t bufferSize;
-	unsigned int width;
-	unsigned int height;
-	unsigned int pixelsPerScanLine;
+	int32_t width;
+	int32_t height;
+	int32_t pixelsPerScanLine;
 };

@@ -1,15 +1,15 @@
 #include "FramebufferRenderer.hpp"
 #include "debug.hpp"
 
-FramebufferRenderer* GlobalRenderer;
+FramebufferRenderer* globalRenderer;
 
 FramebufferRenderer::FramebufferRenderer(Framebuffer* targetFramebuffer, psf2_font_t* font)
 {
     this->targetFramebuffer = targetFramebuffer;
     this->font = font;
 
-    Colour = 0xffffffff;
-    CursorPosition = {0, 0};
+    colour = 0xffffffff;
+    cursorPosition = {0, 0};
 }
 
 void FramebufferRenderer::Clear(uint32_t colour)
@@ -31,16 +31,16 @@ void FramebufferRenderer::Clear(uint32_t colour)
 
 void FramebufferRenderer::ClearChar()
 {
-    if (CursorPosition.x == 0)
+    if (cursorPosition.x == 0)
     {
-        CursorPosition.x = targetFramebuffer->width;
-        CursorPosition.y -= font->header->height;
+        cursorPosition.x = targetFramebuffer->width;
+        cursorPosition.y -= font->header->height;
 
-        if (CursorPosition.y < 0) CursorPosition.y = 0;
+        if (cursorPosition.y < 0) cursorPosition.y = 0;
     }
 
-    unsigned int xOff = CursorPosition.x;
-    unsigned int yOff = CursorPosition.y;
+    unsigned int xOff = cursorPosition.x;
+    unsigned int yOff = cursorPosition.y;
 
     unsigned int* pixPtr = (unsigned int*)targetFramebuffer->baseAddress;
     for (unsigned long y = yOff; y < yOff + font->header->height; y++)
@@ -51,22 +51,22 @@ void FramebufferRenderer::ClearChar()
         }
     }
 
-    CursorPosition.x -= font->header->width;
+    cursorPosition.x -= font->header->width;
 
-    if (CursorPosition.x < 0)
+    if (cursorPosition.x < 0)
     {
-        CursorPosition.x = targetFramebuffer->width;
-        CursorPosition.y -= font->header->height;
+        cursorPosition.x = targetFramebuffer->width;
+        cursorPosition.y -= font->header->height;
 
-        if (CursorPosition.y < 0) CursorPosition.y = 0;
+        if (cursorPosition.y < 0) cursorPosition.y = 0;
     }
 }
 
 
 void FramebufferRenderer::Newline()
 {
-    CursorPosition.x = 0;
-    CursorPosition.y += font->header->height;
+    cursorPosition.x = 0;
+    cursorPosition.y += font->header->height;
 }
 
 void FramebufferRenderer::Print(const char* str)
@@ -80,14 +80,14 @@ void FramebufferRenderer::Print(const char* str)
 
     while(*chr != 0)
     {
-        PutChar(*chr, CursorPosition.x, CursorPosition.y);
+        PutChar(*chr, cursorPosition.x, cursorPosition.y);
 
-        CursorPosition.x+=font->header->width;
+        cursorPosition.x += font->header->width;
 
-        if(CursorPosition.x + font->header->width > targetFramebuffer->width)
+        if(cursorPosition.x + font->header->width > targetFramebuffer->width)
         {
-            CursorPosition.x = 0;
-            CursorPosition.y += font->header->height;
+            cursorPosition.x = 0;
+            cursorPosition.y += font->header->height;
         }
 
         chr++;
@@ -106,13 +106,13 @@ void FramebufferRenderer::PutChar(char chr, unsigned int xOff, unsigned int yOff
 
 void FramebufferRenderer::PutChar(char chr)
 {
-    PutChar(chr, CursorPosition.x, CursorPosition.y);
-    CursorPosition.x += font->header->width;
+    PutChar(chr, cursorPosition.x, cursorPosition.y);
+    cursorPosition.x += font->header->width;
 
-    if (CursorPosition.x + font->header->width > targetFramebuffer->width)
+    if (cursorPosition.x + font->header->width > targetFramebuffer->width)
     {
-        CursorPosition.x = 0; 
-        CursorPosition.y += font->header->height;
+        cursorPosition.x = 0; 
+        cursorPosition.y += font->header->height;
     }
 }
 
