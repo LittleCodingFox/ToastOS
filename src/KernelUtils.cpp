@@ -72,18 +72,7 @@ void PrepareMemory(BootInfo* bootInfo)
 
 void PrepareInterrupts()
 {
-    idt.init();
-    idt.registerInterrupt(0xE, (uint64_t)PageFault_Handler);
-    idt.registerInterrupt(0x8, (uint64_t)DoubleFault_Handler);
-    idt.registerInterrupt(0xD, (uint64_t)GPFault_Handler);
-    idt.registerInterrupt(0x21, (uint64_t)KeyboardInt_Handler);
-
-    RemapPIC();
-
-    outport8(PIC1_DATA, 0b11111101);
-    outport8(PIC2_DATA, 0b11111111);
-
-    asm ("sti");
+    interrupts.init();
 }
 
 FramebufferRenderer r = FramebufferRenderer(NULL, NULL);

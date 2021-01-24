@@ -33,6 +33,7 @@ private:
     IDTDescEntry idt[IDT_ENTRIES];
 public:
     void init();
+    void load();
     void registerGate(uint16_t n, uint64_t handler, uint8_t type, uint8_t dpl);
     void registerInterrupt(uint16_t n, uint64_t handler);
 };

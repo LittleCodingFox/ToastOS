@@ -55,8 +55,6 @@ $(EXTOBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
 	mkdir -p $(shell dirname $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(OBJDIR)/low-level/interrupts/Interrupts.o: CFLAGS += -mno-red-zone -mgeneral-regs-only -ffreestanding
-
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
 	mkdir -p $(shell dirname $@)
 	$(CC) $(CFLAGS) -c $< -o $@

@@ -1,3 +1,3 @@
 #pragma once
 
-void Panic(const char* panicMessage);
+void Panic(const char* format, ...);

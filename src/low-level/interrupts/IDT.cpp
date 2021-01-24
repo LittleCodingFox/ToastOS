@@ -14,7 +14,10 @@ IDT idt;
 void IDT::init()
 {
     memset(idt, 0, sizeof(idt));
+}
 
+void IDT::load()
+{
     IDTR idtRegister = {
         .base = (uint64_t)idt,
         .limit = (uint16_t)(sizeof(idt) - 1)
