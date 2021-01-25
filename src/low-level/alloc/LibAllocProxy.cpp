@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <liballoc.h>
+#include <debug.hpp>
 #include "paging/PageFrameAllocator.hpp"
 #include "paging/PageTableManager.hpp"
 
@@ -23,6 +24,8 @@ void* liballoc_alloc(size_t pages)
         return NULL;
     }
 
+    DEBUG_OUT("liballoc_alloc: allocated %i pages at address %p", pages, ptr);
+
     /*
     for(uint32_t i = 0; i < pages; i++)
     {
@@ -36,6 +39,8 @@ void* liballoc_alloc(size_t pages)
 int liballoc_free(void* ptr, size_t pages)
 {
     globalAllocator.freePages(ptr, pages);
+
+    DEBUG_OUT("liballoc_free: freed %i pages at address %p", pages, ptr);
 
     /*
     for(uint32_t i = 0; i < pages; i++)

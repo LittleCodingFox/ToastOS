@@ -5,6 +5,7 @@
 #include "interrupts/Interrupts.hpp"
 #include "ports/Ports.hpp"
 #include "registers/Registers.hpp"
+#include "stacktrace/stacktrace.hpp"
 
 KernelInfo kernelInfo; 
 PageTableManager pageTableManager = NULL;
@@ -79,6 +80,8 @@ FramebufferRenderer r = FramebufferRenderer(NULL, NULL);
 
 KernelInfo InitializeKernel(BootInfo* bootInfo)
 {
+    kernelInitStacktrace(bootInfo->symbols, bootInfo->symbolsSize);
+
     r = FramebufferRenderer(bootInfo->framebuffer, bootInfo->font);
 
     globalRenderer = &r;

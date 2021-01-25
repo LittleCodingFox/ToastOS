@@ -8,6 +8,7 @@ public:
     PageTable* PML4;
     void mapMemory(void* virtualMemory, void* physicalMemory);
     void unmapMemory(void* virtualMemory);
+    void identityMap(void *physicalMemory);
 };
 
 extern PageTableManager *globalPageTableManager;

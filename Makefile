@@ -1,5 +1,5 @@
 CC				= clang
-LD				= ld.lld
+LD				= ld
 STRIP			= x86_64-elf-strip
 READELF			= x86_64-elf-readelf
 GNUEFI			= gnu-efi
@@ -30,10 +30,10 @@ COBJECTS		= $(CSRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 EXTOBJECTS		= $(EXTSRC:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 EXTCOBJECTS		= $(EXTCSRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
-INCLUDEDIRS		= -Isrc -Isrc/include -Isrc/low-level -Iext-libs -Iext-libs/liballoc/
+INCLUDEDIRS		= -Isrc -Isrc/klibc -Isrc/include -Isrc/low-level -Iext-libs -Iext-libs/liballoc/
 ASMFLAGS		=
 CFLAGS			= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -nostdlib -Wall -fpic -O3 -fno-omit-frame-pointer -fstack-protector-all
-LDFLAGS			= -T $(SRCDIR)/link.ld -static -Bsymbolic -nostdlib
+LDFLAGS			= -T $(SRCDIR)/link.ld -static -Bsymbolic -nostdlib -Map=linker.map
 
 QEMU_FLAGS		=
 
@@ -64,7 +64,9 @@ $(ASMOBJECTS): $(OBJDIR)/%_asm.o : $(SRCDIR)/%.asm
 	$(ASMC) $(ASMFLAGS) $< -f elf64 -o $@
 
 kernel: makedirs $(OBJECTS) $(COBJECTS) $(EXTOBJECTS) $(EXTCOBJECTS) $(ASMOBJECTS)
-	$(LD) -nostdlib -T $(SRCDIR)/link.ld -static -Bsymbolic $(OBJECTS) $(COBJECTS) $(EXTOBJECTS) $(EXTCOBJECTS) $(ASMOBJECTS) -o $(BINDIR)/kernel.elf
+	$(LD) $(LDFLAGS) $(OBJECTS) $(COBJECTS) $(EXTOBJECTS) $(EXTCOBJECTS) $(ASMOBJECTS) -o $(BINDIR)/kernel.elf
+	awk '$$1 ~ /0x[0-9a-f]{16}/ {print substr($$1, 3), $$2}' linker.map > symbols.map
+	rm linker.map
 
 iso-linux:
 	sh makebootdir.sh
@@ -88,6 +90,7 @@ clean:
 	rm -Rf $(BINDIR)/*.cdr
 	rm -Rf $(BINDIR)/*.bin
 	rm -Rf $(BINDIR)/*.vdi
+	rm -f *.map
 	rm -f bin/*.elf bin/*.txt $(BINDIR)/*.img
 	rm -Rf tmp
 	rm -Rf boot

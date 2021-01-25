@@ -18,10 +18,39 @@ enum PT_Flag
 
 struct PageDirectoryEntry
 {
-    uint64_t Value;
+    union
+    {
+        uint64_t packed;
+        struct
+        {
+            uint8_t present : 1;
+            uint8_t writable : 1;
+            uint8_t userAccessible : 1;
+            uint8_t writeThruCache : 1;
+            uint8_t disableCache : 1;
+            uint8_t accessed : 1;
+            uint8_t dirty : 1;
+            uint8_t hugePage : 1;
+            uint8_t global : 1;
+            uint8_t OS1 : 1;
+            uint8_t OS2 : 1;
+            uint8_t OS3 : 1;
+            uint64_t address : 40;
+            uint8_t OS4 : 1;
+            uint8_t OS5 : 1;
+            uint8_t OS6 : 1;
+            uint8_t OS7 : 1;
+            uint8_t OS8 : 1;
+            uint8_t OS9 : 1;
+            uint8_t OSA : 1;
+            uint8_t OSB : 1;
+            uint8_t OSC : 1;
+            uint8_t OSD : 1;
+            uint8_t OSE : 1;
+            uint8_t noExecute : 1;
+        };
+    };
 
-    void setFlag(PT_Flag flag, bool enabled);
-    bool getFlag(PT_Flag flag);
     void setAddress(uint64_t address);
     uint64_t getAddress();
 };

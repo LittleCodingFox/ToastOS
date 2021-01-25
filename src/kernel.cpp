@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <string.h>
 #include "liballoc/liballoc.h"
 #include "printf/printf.h"
 #include "vtconsole/vtconsole.h"
@@ -28,7 +29,7 @@ extern "C" void _start(BootInfo* bootInfo)
 
     console = vtconsole(consoleWidth, consoleHeight, PaintHandler, CursorHandler);
 
-    DEBUG_OUT("Console buffer: %p", console->buffer);
+    //DEBUG_OUT("Console buffer: %p", console->buffer);
 
     printf("test\n");
 

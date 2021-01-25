@@ -15,4 +15,5 @@ cd ..
 cp gnu-efi/x86_64/bootloader/main.efi boot/EFI/BOOT/BOOTX64.EFI
 cp startup.nsh boot/
 cp $BINDIR/$KERNEL_NAME.elf boot/
+mv symbols.map boot/
 cp font.psf boot/

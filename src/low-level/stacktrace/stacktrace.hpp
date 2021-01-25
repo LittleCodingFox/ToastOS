@@ -1,3 +1,5 @@
 #pragma once
+#include <stdint.h>
 
-void kernel_dump_stacktrace();
+void kernelInitStacktrace(char *symbols, size_t size);
+void kernelDumpStacktrace();

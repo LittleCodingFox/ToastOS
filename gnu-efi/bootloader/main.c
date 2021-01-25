@@ -99,6 +99,36 @@ EFI_FILE* LoadFile(EFI_FILE* Directory, CHAR16* Path, EFI_HANDLE ImageHandle, EF
 
 }
 
+void LoadSymbols(EFI_FILE *Directory, CHAR16 *Path, EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable, char **outSymbols, size_t *outSize)
+{
+	EFI_FILE *file = LoadFile(Directory, Path, ImageHandle, SystemTable);
+
+	if(file == NULL)
+	{
+		*outSymbols = NULL;
+		*outSize = 0;
+
+		return;
+	}
+
+	UINT64 size = 0;
+
+	EFI_FILE_INFO *fileInfo = LibFileInfo(file);
+	size = fileInfo->FileSize;
+	FreePool(fileInfo);
+
+	char *buffer = NULL;
+
+	SystemTable->BootServices->AllocatePool(EfiLoaderData, size + 1, (void**)&buffer);
+
+	file->Read(file, &size, (UINTN *)buffer);
+	
+	*outSymbols = buffer;
+	*outSize = size;
+
+	outSymbols[size] = '\0';
+}
+
 psf2_font_t* LoadPSF2Font(EFI_FILE* Directory, CHAR16* Path, EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 {
 	EFI_FILE* font = LoadFile(Directory, Path, ImageHandle, SystemTable);
@@ -142,12 +172,6 @@ psf2_font_t* LoadPSF2Font(EFI_FILE* Directory, CHAR16* Path, EFI_HANDLE ImageHan
 	return finishedFont;
 }
 
-void EFIPrintCallback(const uint16_t *str)
-{
-	Print(L"CALLBACK\n");
-	Print(L"%s\n", str);
-}
-
 int memcmp(const void* aptr, const void* bptr, size_t n){
 
 	const unsigned char* a = aptr, *b = bptr;
@@ -165,6 +189,8 @@ typedef struct {
 
 	Framebuffer* framebuffer;
 	psf2_font_t* psf2_Font;
+	char *symbols;
+	size_t symbolsSize;
 	EFI_MEMORY_DESCRIPTOR* mMap;
 	UINTN mMapSize;
 	UINTN mMapDescSize;
@@ -255,6 +281,10 @@ EFI_STATUS efi_main (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
 		Print(L"Font found. char size = %d\n\r", newFont->header->height);
 	}
 
+	char *symbols = NULL;
+	size_t symbolsSize = 0;
+	LoadSymbols(NULL, L"symbols.map", ImageHandle, SystemTable, &symbols, &symbolsSize);
+
 	Framebuffer* newBuffer = InitializeGOP();
 
 	Print(L"Base: 0x%x\n\rSize: 0x%x\n\rWidth: %d\n\rHeight: %d\n\rPixelsPerScanline: %d\n\r", 
@@ -279,6 +309,8 @@ EFI_STATUS efi_main (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
 	BootInfo bootInfo;
 	bootInfo.framebuffer = newBuffer;
 	bootInfo.psf2_Font = newFont;
+	bootInfo.symbols = symbols;
+	bootInfo.symbolsSize = symbolsSize;
 	bootInfo.mMap = Map;
 	bootInfo.mMapSize = MapSize;
 	bootInfo.mMapDescSize = DescriptorSize;

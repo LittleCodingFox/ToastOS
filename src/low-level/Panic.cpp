@@ -15,7 +15,7 @@ void Panic(const char* format, ...)
 
     DEBUG_OUT("Panic: %s", message);
 
-    kernel_dump_stacktrace();
+    kernelDumpStacktrace();
 
     globalRenderer->Clear(0x00ff0000);
 
