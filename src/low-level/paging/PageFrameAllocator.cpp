@@ -50,7 +50,7 @@ void PageFrameAllocator::readEFIMemoryMap(EFI_MEMORY_DESCRIPTOR* mMap, size_t mM
 
         if (desc->type != 7) // not efiConventionalMemory
         {
-            lockPages(desc->physAddr, desc->numPages);
+            reservePages(desc->physAddr, desc->numPages);
         }
     }
 
@@ -154,6 +154,48 @@ void PageFrameAllocator::lockPages(void* address, uint64_t pageCount)
     for (int t = 0; t < pageCount; t++)
     {
         lockPage((void*)((uint64_t)address + (t * 4096)));
+    }
+}
+
+void PageFrameAllocator::unreservePage(void* address)
+{
+    uint64_t index = (uint64_t)address / 4096;
+
+    if (PageBitmap[index] == false) return;
+
+    if (PageBitmap.Set(index, false))
+    {
+        freeMemory += 4096;
+        reservedMemory -= 4096;
+    }
+}
+
+void PageFrameAllocator::unreservePages(void* address, uint64_t pageCount)
+{
+    for (int t = 0; t < pageCount; t++)
+    {
+        unreservePage((void*)((uint64_t)address + (t * 4096)));
+    }
+}
+
+void PageFrameAllocator::reservePage(void* address)
+{
+    uint64_t index = (uint64_t)address / 4096;
+
+    if (PageBitmap[index] == true) return;
+
+    if (PageBitmap.Set(index, true))
+    {
+        freeMemory -= 4096;
+        reservedMemory += 4096;
+    }
+}
+
+void PageFrameAllocator::reservePages(void* address, uint64_t pageCount)
+{
+    for (int t = 0; t < pageCount; t++)
+    {
+        reservePage((void*)((uint64_t)address + (t * 4096)));
     }
 }
 
