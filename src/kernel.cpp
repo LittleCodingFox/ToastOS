@@ -25,19 +25,15 @@ extern "C" void _start(BootInfo* bootInfo)
     int consoleWidth = globalRenderer->Width() / globalRenderer->FontWidth();
     int consoleHeight = globalRenderer->Height() / globalRenderer->FontHeight();
 
-    //DEBUG_OUT("creating console: width: %d; height: %d;", consoleWidth, consoleHeight);
+    DEBUG_OUT("creating console: width: %d; height: %d;", consoleWidth, consoleHeight);
 
-    //console = vtconsole(consoleWidth, consoleHeight, PaintHandler, CursorHandler);
-
-    //DEBUG_OUT("Console buffer: %p", console->buffer);
-
-    printf("test\n");
+    console = vtconsole(consoleWidth, consoleHeight, PaintHandler, CursorHandler);
 
     for(;;);
 }
 
 void _putchar(char character)
 {
-    globalRenderer->PutChar(character);
+    vtconsole_putchar(console, character);
     SerialPortOutStreamCOM1(character, NULL);
 }

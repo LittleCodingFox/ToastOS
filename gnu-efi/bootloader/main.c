@@ -315,7 +315,11 @@ EFI_STATUS efi_main (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
 	bootInfo.mMapSize = MapSize;
 	bootInfo.mMapDescSize = DescriptorSize;
 
+	Print(L"Leaving boot services\n\r");
+
 	SystemTable->BootServices->ExitBootServices(ImageHandle, MapKey);
+
+	Print(L"Starting kernel\n\r");
 
 	KernelStart(&bootInfo);
 

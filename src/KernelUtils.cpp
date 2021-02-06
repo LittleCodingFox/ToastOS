@@ -41,14 +41,14 @@ void PrepareMemory(BootInfo* bootInfo)
     //Enables memory-wide identity mapping. probably not a good thing.
     for (uint64_t t = 0; t < getMemorySize(bootInfo->mMap, mMapEntries, bootInfo->mMapDescSize); t+= 0x1000)
     {
-        pageTableManager.mapMemory((void*)t, (void*)t);
+        pageTableManager.identityMap((void*)t);
     }
 
     //TODO: Make it map only specific memory
     /*
     for (uint64_t t = _KernelStart; t < _KernelStart + kernelSize; t+= 0x1000)
     {
-        pageTableManager.mapMemory((void*)t, (void*)t);
+        pageTableManager.identityMap((void*)t);
     }
     */
 
@@ -57,11 +57,11 @@ void PrepareMemory(BootInfo* bootInfo)
     uint64_t fbBase = (uint64_t)bootInfo->framebuffer->baseAddress;
     uint64_t fbSize = (uint64_t)bootInfo->framebuffer->bufferSize + 0x1000;
 
-    globalAllocator.lockPages((void*)fbBase, fbSize/ 0x1000 + 1);
+    globalAllocator.lockPages((void*)fbBase, fbSize / 0x1000 + 1);
 
     for (uint64_t t = fbBase; t < fbBase + fbSize; t += 4096)
     {
-        pageTableManager.mapMemory((void*)t, (void*)t);
+        pageTableManager.identityMap((void*)t);
     }
 
     Registers::writeCR3((uint64_t)PML4);

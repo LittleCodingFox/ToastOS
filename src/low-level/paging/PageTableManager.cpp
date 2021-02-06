@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "PageFrameAllocator.hpp"
+#include "debug.hpp"
 
 PageTableManager *globalPageTableManager = NULL;
 

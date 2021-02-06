@@ -75,8 +75,6 @@ void psf2PutChar(int x, int y, char c, psf2_font_t *font, uint32_t color, Frameb
 
 		glyph+=bytesPerLine;
 	}
-
-	DEBUG_OUT("%s", "Done printing");
 }
 
 void psf2RenderText(int x, int y, const char *text, uint32_t color, psf2_font_t *font, FramebufferRenderer *renderer)

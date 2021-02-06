@@ -93,7 +93,7 @@ void *PageFrameAllocator::requestPages(uint32_t count)
 
             if(freeCount == count)
             {
-                uint32_t index = i - count;
+                uint32_t index = 1 + i - count;
 
                 lockPages((void*)((uint64_t)index), count);
 
