@@ -99,5 +99,7 @@ KernelInfo InitializeKernel(BootInfo* bootInfo)
 
     PrepareInterrupts();
 
+    globalRenderer->initialize();
+
     return kernelInfo;
 }

@@ -19,8 +19,8 @@ void IDT::init()
 void IDT::load()
 {
     IDTR idtRegister = {
+        .limit = (uint16_t)(sizeof(idt) - 1),
         .base = (uint64_t)idt,
-        .limit = (uint16_t)(sizeof(idt) - 1)
     };
 
     asm ("lidt %0" : : "m"(idtRegister));

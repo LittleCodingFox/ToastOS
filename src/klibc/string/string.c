@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
 
@@ -50,7 +51,7 @@ char* strcat(char* dest, const char* src) {
 }
 
 char* strdup(const char* s) {
-#if 0
+#if 1
     char* buff = (char*) malloc((strlen(s)+1)*sizeof(char));
 #else
     char* buff = (char*) kmalloc((strlen(s)+1)*sizeof(char));

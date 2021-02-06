@@ -1,100 +1,50 @@
 #include "FramebufferRenderer.hpp"
 #include "debug.hpp"
+#include "paging/PageFrameAllocator.hpp"
+#include <stdlib.h>
+#include <string.h>
 
 FramebufferRenderer* globalRenderer;
 
-FramebufferRenderer::FramebufferRenderer(Framebuffer* targetFramebuffer, psf2_font_t* font)
+FramebufferRenderer::FramebufferRenderer(Framebuffer* targetFramebuffer, psf2_font_t* font) : initialized(false), doubleBuffer(NULL)
 {
     this->targetFramebuffer = targetFramebuffer;
     this->font = font;
-
-    colour = 0xffffffff;
-    cursorPosition = {0, 0};
 }
 
-void FramebufferRenderer::Clear(uint32_t colour)
+void FramebufferRenderer::initialize()
 {
-    uint64_t fbBase = (uint64_t)targetFramebuffer->baseAddress;
-    uint64_t bytesPerScanline = targetFramebuffer->pixelsPerScanLine * 4;
-    uint64_t fbHeight = targetFramebuffer->height;
-
-    for (int verticalScanline = 0; verticalScanline < fbHeight; verticalScanline ++)
-    {
-        uint64_t pixPtrBase = fbBase + (bytesPerScanline * verticalScanline);
-
-        for (uint32_t* pixPtr = (uint32_t*)pixPtrBase; pixPtr < (uint32_t*)(pixPtrBase + bytesPerScanline); pixPtr ++)
-        {
-            *pixPtr = colour;
-        }
-    }
-}
-
-void FramebufferRenderer::ClearChar()
-{
-    if (cursorPosition.x == 0)
-    {
-        cursorPosition.x = targetFramebuffer->width;
-        cursorPosition.y -= font->header->height;
-
-        if (cursorPosition.y < 0) cursorPosition.y = 0;
-    }
-
-    unsigned int xOff = cursorPosition.x;
-    unsigned int yOff = cursorPosition.y;
-
-    unsigned int* pixPtr = (unsigned int*)targetFramebuffer->baseAddress;
-    for (unsigned long y = yOff; y < yOff + font->header->height; y++)
-    {
-        for (unsigned long x = xOff - font->header->width; x < xOff; x++)
-        {
-            *(unsigned int*)(pixPtr + x + (y * targetFramebuffer->pixelsPerScanLine)) = 0;
-        }
-    }
-
-    cursorPosition.x -= font->header->width;
-
-    if (cursorPosition.x < 0)
-    {
-        cursorPosition.x = targetFramebuffer->width;
-        cursorPosition.y -= font->header->height;
-
-        if (cursorPosition.y < 0) cursorPosition.y = 0;
-    }
-}
-
-
-void FramebufferRenderer::Newline()
-{
-    cursorPosition.x = 0;
-    cursorPosition.y += font->header->height;
-}
-
-void FramebufferRenderer::Print(const char* str)
-{
-    if(font == NULL)
+    if(initialized)
     {
         return;
     }
 
-    char* chr = (char*)str;
+    initialized = true;
 
-    while(*chr != 0)
+    uint32_t size = sizeof(uint32_t) * targetFramebuffer->width * targetFramebuffer->height;
+
+    doubleBuffer = (uint32_t *)malloc(size);
+
+    clear(0);
+}
+
+void FramebufferRenderer::swapBuffers()
+{
+    if(doubleBuffer != NULL)
     {
-        PutChar(*chr, cursorPosition.x, cursorPosition.y);
-
-        cursorPosition.x += font->header->width;
-
-        if(cursorPosition.x + font->header->width > targetFramebuffer->width)
-        {
-            cursorPosition.x = 0;
-            cursorPosition.y += font->header->height;
-        }
-
-        chr++;
+        memcpy(targetFramebuffer->baseAddress, doubleBuffer, sizeof(uint32_t) * targetFramebuffer->width * targetFramebuffer->height);
     }
 }
 
-void FramebufferRenderer::PutChar(char chr, unsigned int xOff, unsigned int yOff)
+void FramebufferRenderer::clear(uint32_t colour)
+{
+    for(uint32_t i = 0; i < width() * height(); i++)
+    {
+        doubleBuffer[i] = colour;
+    }
+}
+
+void FramebufferRenderer::putChar(char chr, unsigned int xOff, unsigned int yOff)
 {
     if(font == NULL)
     {
@@ -104,19 +54,7 @@ void FramebufferRenderer::PutChar(char chr, unsigned int xOff, unsigned int yOff
     psf2PutChar(xOff, yOff, chr, font, 0xFFFFFFFF, this);
 }
 
-void FramebufferRenderer::PutChar(char chr)
-{
-    PutChar(chr, cursorPosition.x, cursorPosition.y);
-    cursorPosition.x += font->header->width;
-
-    if (cursorPosition.x + font->header->width > targetFramebuffer->width)
-    {
-        cursorPosition.x = 0; 
-        cursorPosition.y += font->header->height;
-    }
-}
-
-FramebufferArea FramebufferRenderer::FrameBufferAreaAt(int x, int y, int width, int height)
+FramebufferArea FramebufferRenderer::frameBufferAreaAt(int x, int y, int width, int height)
 {
     FramebufferArea outArea
     {
@@ -166,7 +104,7 @@ FramebufferArea FramebufferRenderer::FrameBufferAreaAt(int x, int y, int width, 
         return outArea;
     }
 
-    outArea.buffer = (uint32_t *)targetFramebuffer->baseAddress;
+    outArea.buffer = doubleBuffer != NULL ? doubleBuffer : (uint32_t *)targetFramebuffer->baseAddress;
 
     return outArea;
 }

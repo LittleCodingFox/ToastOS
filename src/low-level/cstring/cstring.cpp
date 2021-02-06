@@ -137,7 +137,7 @@ const char* to_string(int64_t value)
         intTo_StringOutput[0] = '-';
     }
 
-    uint8_t size;
+    uint8_t size = 0;
     uint64_t sizeTest = value;
 
     while (sizeTest / 10 > 0)

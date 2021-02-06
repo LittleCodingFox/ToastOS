@@ -89,6 +89,8 @@ CPPFLAGS += -DCONFIG_$(ARCH)
 
 CFLAGS += -Wno-error=pragmas
 
+CFLAGS += -fno-omit-frame-pointer
+
 ifeq ($(ARCH),ia64)
   CFLAGS += -mfixed-range=f32-f127
 endif

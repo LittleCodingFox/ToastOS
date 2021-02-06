@@ -26,15 +26,12 @@ void HandleKeyboardKeyPress(uint8_t scancode)
             return;
 
         case Enter:
-            globalRenderer->Newline();
             return;
 
         case Spacebar:
-            globalRenderer->PutChar(' ');
             return;
 
         case BackSpace:
-            globalRenderer->ClearChar();
             return;
     }
 
@@ -42,6 +39,5 @@ void HandleKeyboardKeyPress(uint8_t scancode)
 
     if (ascii != 0)
     {
-        globalRenderer->PutChar(ascii);
     }
 }

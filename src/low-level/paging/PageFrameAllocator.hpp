@@ -21,10 +21,6 @@ public:
 
 private:
     void initBitmap(size_t bitmapSize, void* bufferAddress);
-    void reservePage(void* address);
-    void reservePages(void* address, uint64_t pageCount);
-    void unreservePage(void* address);
-    void unreservePages(void* address, uint64_t pageCount);
 };
 
 extern PageFrameAllocator globalAllocator;

@@ -50,7 +50,7 @@ void psf2PutChar(int x, int y, char c, psf2_font_t *font, uint32_t color, Frameb
 		return;
 	}
 
-	FramebufferArea area = renderer->FrameBufferAreaAt(x, y, font->header->width, font->header->height);
+	FramebufferArea area = renderer->frameBufferAreaAt(x, y, font->header->width, font->header->height);
 
 	if(!area.IsValid())
 	{
@@ -63,7 +63,6 @@ void psf2PutChar(int x, int y, char c, psf2_font_t *font, uint32_t color, Frameb
 
 	for(int ty = 0, yIndex = area.y * area.width; ty < area.targetHeight; ty++, yIndex += area.width)
 	{
-		int line = 0;
 		int mask = 1 << (font->header->width - 1);
 		mask >>= area.targetX;
 
@@ -77,7 +76,7 @@ void psf2PutChar(int x, int y, char c, psf2_font_t *font, uint32_t color, Frameb
 	}
 }
 
-void psf2RenderText(int x, int y, const char *text, uint32_t color, psf2_font_t *font, FramebufferRenderer *renderer)
+void psf2RenderText(int x, int y, const char *text, psf2_font_t *font, uint32_t color, FramebufferRenderer *renderer)
 {
 	if(font == NULL)
 	{

@@ -32,17 +32,24 @@ union Color32
         uint8_t g;
         uint8_t b;
         uint8_t a;
-    } pixels;
+    };
 
     uint32_t value;
+
+    operator uint32_t() const
+    {
+        return value;
+    }
 };
 
 class FramebufferRenderer
 {
 private:
 
-    Framebuffer* targetFramebuffer;
-    psf2_font_t* font;
+    Framebuffer *targetFramebuffer;
+    psf2_font_t *font;
+    uint32_t *doubleBuffer;
+    bool initialized;
 
 public:
 
@@ -50,15 +57,13 @@ public:
     uint32_t colour;
 
     FramebufferRenderer(Framebuffer* targetFramebuffer, psf2_font_t* font);
-    void Print(const char* str);
-    void PutChar(char chr, unsigned int xOff, unsigned int yOff);
-    void PutChar(char chr);
-    void Clear(uint32_t colour);
-    void Newline();
-    void ClearChar();
-    FramebufferArea FrameBufferAreaAt(int x, int y, int width, int height);
+    void initialize();
+    void clear(uint32_t color);
+    void putChar(char chr, unsigned int xOff, unsigned int yOff);
+    FramebufferArea frameBufferAreaAt(int x, int y, int width, int height);
+    void swapBuffers();
 
-    inline int Width() const
+    inline int width() const
     {
         if(targetFramebuffer != NULL)
         {
@@ -68,7 +73,7 @@ public:
         return 0;
     }
 
-    inline int Height() const
+    inline int height() const
     {
         if(targetFramebuffer != NULL)
         {
@@ -78,7 +83,7 @@ public:
         return 0;
     }
 
-    inline int FontWidth() const
+    inline int fontWidth() const
     {
         if(font != NULL)
         {
@@ -88,7 +93,7 @@ public:
         return 0;
     }
 
-    inline int FontHeight() const
+    inline int fontHeight() const
     {
         if(font != NULL)
         {
@@ -96,6 +101,11 @@ public:
         }
 
         return 0;
+    }
+
+    inline psf2_font_t *getFont() const
+    {
+        return font;
     }
 };
 

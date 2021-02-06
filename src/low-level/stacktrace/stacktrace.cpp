@@ -58,10 +58,13 @@ void kernelDumpStacktrace()
   DEBUG_OUT("%s", "kernel stacktrace:");
 
   stack_frame_t* stackframe = NULL;
+
   __asm__("movq %%rbp, %0" : "=r"(stackframe));
 
-  while (stackframe != NULL) {
+  while (stackframe != NULL)
+  {
     uint64_t address = stackframe->rip;
+
     char *symbol = symbolForAddress(&address);
     char *end = strchr(symbol, '\n');
 
@@ -73,4 +76,6 @@ void kernelDumpStacktrace()
 
     stackframe = stackframe->rbp;
   }
+
+  DEBUG_OUT("%s", "stacktrace end");
 }
