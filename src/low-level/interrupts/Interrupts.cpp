@@ -10,8 +10,9 @@
 
 Interrupts interrupts;
 
-void breakpointHandler(interruptStack *stack);
-void pageFaultHandler(interruptStack *stack);
+void breakpointHandler(InterruptStack *stack);
+void pageFaultHandler(InterruptStack *stack);
+void keyboardHandler(InterruptStack *stack);
 
 static const char* exception_messages[] = { "Division By Zero",
                                             "Debug",
@@ -127,6 +128,7 @@ void Interrupts::init()
     // Specific handlers for exceptions.
     registerHandler(EXCEPTION_BP, breakpointHandler);
     registerHandler(EXCEPTION_PF, pageFaultHandler);
+    registerHandler(IRQ1, keyboardHandler);
 
     idt.load();
 
@@ -143,16 +145,18 @@ void Interrupts::disableInterrupts()
     __asm__("cli");
 }
 
-void interruptIntHandler(interruptStack stack)
+void interruptIntHandler(InterruptStack stack)
 {
-  interruptHandler handler = interrupts.getHandler(stack.id);
+    InterruptHandler handler = interrupts.getHandler(stack.id);
 
-  if (handler != 0) {
-    handler(&stack);
-    return;
-  }
+    if (handler != NULL)
+    {
+        handler(&stack);
 
-  Panic("received interrupt (see below)\n\n"
+        return;
+    }
+
+    Panic("received interrupt (see below)\n\n"
         "  %d - %s\n\n"
         "  error_code          = %#x\n"
         "  instruction_pointer = %p\n"
@@ -191,27 +195,38 @@ void interruptIntHandler(interruptStack stack)
         stack.r15);
 }
 
-void interruptIRQHandler(interruptStack stack)
+void interruptIRQHandler(InterruptStack stack)
 {
-    interruptHandler handler = interrupts.getHandler(stack.id);
+    InterruptHandler handler = interrupts.getHandler(stack.id);
 
-    if (handler != 0) {
+    if (handler != NULL)
+    {
         handler(&stack);
     }
 
-    if (stack.id >= 40) {
+    if (stack.id >= 40)
+    {
         outport8(PIC2, PIC_EOI);
     }
 
     outport8(PIC1, PIC_EOI);
 }
 
-void Interrupts::registerHandler(uint64_t id, interruptHandler handler)
+void Interrupts::registerHandler(uint64_t id, InterruptHandler handler)
 {
     handlers[id] = handler;
 }
 
-void breakpointHandler(interruptStack *stack)
+void keyboardHandler(InterruptStack *stack)
+{
+    uint8_t scancode = inport8(0x60);
+
+    HandleKeyboardKeyPress(scancode);
+
+    outport8(PIC1, PIC_EOI);
+}
+
+void breakpointHandler(InterruptStack *stack)
 {
     printf("Exception: BREAKPOINT\n"
             "  instruction_pointer = %p\n"
@@ -226,7 +241,7 @@ void breakpointHandler(interruptStack *stack)
             stack->stack_segment);
 }
 
-void pageFaultHandler(interruptStack* stack)
+void pageFaultHandler(InterruptStack* stack)
 {
     uint64_t error_code = stack->error_code;
     uint8_t is_present = (error_code >> 0) & 1;

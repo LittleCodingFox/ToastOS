@@ -118,21 +118,21 @@ typedef struct _stack
   uint64_t cpu_flags;
   uint64_t stack_pointer;
   uint64_t stack_segment;
-} __attribute__((packed)) interruptStack;
+} __attribute__((packed)) InterruptStack;
 
-typedef void (*interruptHandler)(interruptStack* stack);
+typedef void (*InterruptHandler)(InterruptStack* stack);
 
 class Interrupts
 {
 private:
-    interruptHandler handlers[256];
+    InterruptHandler handlers[256];
 public:
     void init();
     void enableInterrupts();
     void disableInterrupts();
-    void registerHandler(uint64_t id, interruptHandler handler);
+    void registerHandler(uint64_t id, InterruptHandler handler);
     
-    inline interruptHandler getHandler(int index)
+    inline InterruptHandler getHandler(int index)
     {
         if(index >= 0 && index <= sizeof(handlers) / sizeof(handlers[0]))
         {
@@ -158,7 +158,7 @@ extern Interrupts interrupts;
  *
  * @param s the interrupt stack
  */
-void interruptIntHandler(interruptStack s) __asm__("int_handler");
+void interruptIntHandler(InterruptStack s) __asm__("int_handler");
 
 /**
  * This is the handler for hardware interrupts.
@@ -169,4 +169,4 @@ void interruptIntHandler(interruptStack s) __asm__("int_handler");
  *
  * @param s the interrupt stack
  */
-void interruptIRQHandler(interruptStack s) __asm__("irq_handler");
+void interruptIRQHandler(InterruptStack s) __asm__("irq_handler");
