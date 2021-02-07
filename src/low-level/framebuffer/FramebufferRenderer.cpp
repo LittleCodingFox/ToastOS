@@ -6,10 +6,12 @@
 
 FramebufferRenderer* globalRenderer;
 
-FramebufferRenderer::FramebufferRenderer(Framebuffer* targetFramebuffer, psf2_font_t* font) : initialized(false), doubleBuffer(NULL)
+FramebufferRenderer::FramebufferRenderer(Framebuffer* targetFramebuffer, psf2_font_t* font) : initialized(false), doubleBuffer(NULL), doubleBufferSize(0)
 {
     this->targetFramebuffer = targetFramebuffer;
     this->font = font;
+
+    framebufferPixelCount = targetFramebuffer->width * targetFramebuffer->height;
 }
 
 void FramebufferRenderer::initialize()
@@ -21,9 +23,9 @@ void FramebufferRenderer::initialize()
 
     initialized = true;
 
-    uint32_t size = sizeof(uint32_t) * targetFramebuffer->width * targetFramebuffer->height;
+    doubleBufferSize = sizeof(uint32_t) * targetFramebuffer->width * targetFramebuffer->height;
 
-    doubleBuffer = (uint32_t *)malloc(size);
+    doubleBuffer = (uint32_t *)malloc(doubleBufferSize);
 
     clear(0);
 }
@@ -32,13 +34,13 @@ void FramebufferRenderer::swapBuffers()
 {
     if(doubleBuffer != NULL)
     {
-        memcpy(targetFramebuffer->baseAddress, doubleBuffer, sizeof(uint32_t) * targetFramebuffer->width * targetFramebuffer->height);
+        memcpy(targetFramebuffer->baseAddress, doubleBuffer, doubleBufferSize);
     }
 }
 
 void FramebufferRenderer::clear(uint32_t colour)
 {
-    for(uint32_t i = 0; i < width() * height(); i++)
+    for(uint32_t i = 0; i < framebufferPixelCount; i++)
     {
         doubleBuffer[i] = colour;
     }

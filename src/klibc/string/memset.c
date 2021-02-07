@@ -7,7 +7,7 @@ void *memset(void *ptr, int val, size_t size)
 
 	for (size_t i = 0; i < size; i++)
     {
-		buf[i] = (unsigned char) val;
+		*buf++ = (unsigned char) val;
     }
 
 	return ptr;

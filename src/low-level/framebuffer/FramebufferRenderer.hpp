@@ -50,6 +50,8 @@ private:
     psf2_font_t *font;
     uint32_t *doubleBuffer;
     bool initialized;
+    size_t doubleBufferSize;
+    size_t framebufferPixelCount;
 
 public:
 
