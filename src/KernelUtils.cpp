@@ -70,9 +70,9 @@ void PrepareMemory(BootInfo* bootInfo)
 
     DEBUG_OUT("%s", "Finished initializing the kernel");
 
-    int MBSize = 1024 * 1024;
+    double MBSize = 1024 * 1024;
 
-    DEBUG_OUT("Memory Stats: Free: %lluMB; Used: %lluMB; Reserved: %lluMB", globalAllocator.getFreeRAM() / MBSize,
+    DEBUG_OUT("Memory Stats: Free: %.2lfMB; Used: %.2lfMB; Reserved: %.2lfMB", globalAllocator.getFreeRAM() / MBSize,
         globalAllocator.getUsedRAM() / MBSize, globalAllocator.getReservedRAM() / MBSize);
 }
 
