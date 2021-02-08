@@ -1,9 +1,12 @@
 #include "Keyboard.hpp"
 #include "layouts/QWERTYKeyboard.hpp"
 #include "framebuffer/FramebufferRenderer.hpp"
+#include <vtconsole/vtconsole.h>
 
 bool isLeftShiftPressed;
 bool isRightShiftPressed;
+
+extern vtconsole_t *console;
 
 void HandleKeyboardKeyPress(uint8_t scancode)
 {
@@ -26,12 +29,18 @@ void HandleKeyboardKeyPress(uint8_t scancode)
             return;
 
         case Enter:
+            vtconsole_putchar(console, '\n');
+
             return;
 
         case Spacebar:
+            vtconsole_putchar(console, ' ');
+
             return;
 
         case BackSpace:
+            vtconsole_putchar(console, '\b');
+
             return;
     }
 
@@ -39,5 +48,6 @@ void HandleKeyboardKeyPress(uint8_t scancode)
 
     if (ascii != 0)
     {
+        vtconsole_putchar(console, ascii);
     }
 }
