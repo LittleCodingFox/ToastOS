@@ -69,6 +69,11 @@ void PrepareMemory(BootInfo* bootInfo)
     globalPageTableManager = kernelInfo.pageTableManager = &pageTableManager;
 
     DEBUG_OUT("%s", "Finished initializing the kernel");
+
+    int MBSize = 1024 * 1024;
+
+    DEBUG_OUT("Memory Stats: Free: %lluMB; Used: %lluMB; Reserved: %lluMB", globalAllocator.getFreeRAM() / MBSize,
+        globalAllocator.getUsedRAM() / MBSize, globalAllocator.getReservedRAM() / MBSize);
 }
 
 void PrepareInterrupts()

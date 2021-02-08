@@ -25,11 +25,14 @@ void PageFrameAllocator::readEFIMemoryMap(EFI_MEMORY_DESCRIPTOR* mMap, size_t mM
     {
         EFI_MEMORY_DESCRIPTOR* desc = (EFI_MEMORY_DESCRIPTOR*)((uint64_t)mMap + (i * mMapDescSize));
 
+        DEBUG_OUT("EFI MMap Entry %i: %u type (%s), size %llu, addr: %p", i, desc->type,
+            EFI_MEMORY_TYPE_STRINGS[desc->type], desc->numPages * 4096, desc->physAddr);
+
         if (desc->type == 7) // type = EfiConventionalMemory
         {
             if (desc->numPages * 4096 > largestFreeMemSegSize)
             {
-                largestFreeMemSeg = desc->physAddr;
+                largestFreeMemSeg = (void*)desc->physAddr;
                 largestFreeMemSegSize = desc->numPages * 4096;
             }
         }
@@ -48,9 +51,15 @@ void PageFrameAllocator::readEFIMemoryMap(EFI_MEMORY_DESCRIPTOR* mMap, size_t mM
     {
         EFI_MEMORY_DESCRIPTOR* desc = (EFI_MEMORY_DESCRIPTOR*)((uint64_t)mMap + (i * mMapDescSize));
 
-        if (desc->type != 7) // not efiConventionalMemory
+        if (desc->type == 7)
         {
-            reservePages(desc->physAddr, desc->numPages);
+            for(uint64_t index = 0, startIndex = desc->physAddr / 4096; index < desc->numPages; index++)
+            {
+                PageBitmap.Set(index + startIndex, false);
+
+                freeMemory += 4096;
+                reservedMemory -= 4096;
+            }
         }
     }
 
@@ -65,6 +74,15 @@ void PageFrameAllocator::initBitmap(size_t bitmapSize, void* bufferAddress)
     DEBUG_OUT("Initing bitmap with size %d at address %p", bitmapSize, bufferAddress);
 
     memset(PageBitmap.buffer, 0, bitmapSize);
+
+    //Set everything as locked due to gaps between memory, also takes care of reserved memory at the same time
+    for(uint64_t i = 0; i < PageBitmap.size * 8; i++)
+    {
+        PageBitmap.Set(i, true);
+        
+        freeMemory -= 4096;
+        reservedMemory += 4096;
+    }
 }
 
 void* PageFrameAllocator::requestPage()

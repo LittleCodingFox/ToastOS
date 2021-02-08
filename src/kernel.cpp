@@ -29,11 +29,10 @@ extern "C" void _start(BootInfo* bootInfo)
 
     console = vtconsole(consoleWidth, consoleHeight, PaintHandler, CursorHandler);
 
-    printf("Console Test");
+    printf("Console Test\n");
 
     for(;;)
     {
-        globalRenderer->clear(0x0000AAAA);
         globalRenderer->swapBuffers();
     }
 }

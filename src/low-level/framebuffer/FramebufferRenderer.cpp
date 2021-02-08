@@ -44,6 +44,16 @@ void FramebufferRenderer::clear(uint32_t colour)
     {
         doubleBuffer[i] = colour;
     }
+
+    for(uint32_t i = 0; i < framebufferPixelCount; i++)
+    {
+        if(doubleBuffer[i] != colour)
+        {
+            DEBUG_OUT("INVALID PIXEL AT DOUBLEBUFFER AT %i", i);
+
+            break;
+        }
+    }
 }
 
 void FramebufferRenderer::putChar(char chr, unsigned int xOff, unsigned int yOff)
