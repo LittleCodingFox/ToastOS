@@ -6,6 +6,7 @@
 #include "ports/Ports.hpp"
 #include "registers/Registers.hpp"
 #include "stacktrace/stacktrace.hpp"
+#include "timer/Timer.hpp"
 
 KernelInfo kernelInfo; 
 PageTableManager pageTableManager = NULL;
@@ -67,13 +68,6 @@ void PrepareMemory(BootInfo* bootInfo)
     Registers::writeCR3((uint64_t)PML4);
 
     globalPageTableManager = kernelInfo.pageTableManager = &pageTableManager;
-
-    DEBUG_OUT("%s", "Finished initializing the kernel");
-
-    double MBSize = 1024 * 1024;
-
-    DEBUG_OUT("Memory Stats: Free: %.2lfMB; Used: %.2lfMB; Reserved: %.2lfMB", globalAllocator.getFreeRAM() / MBSize,
-        globalAllocator.getUsedRAM() / MBSize, globalAllocator.getReservedRAM() / MBSize);
 }
 
 void PrepareInterrupts()
@@ -104,7 +98,16 @@ KernelInfo InitializeKernel(BootInfo* bootInfo)
 
     PrepareInterrupts();
 
+    timer.initialize();
+
     globalRenderer->initialize();
+
+    DEBUG_OUT("%s", "Finished initializing the kernel");
+
+    double MBSize = 1024 * 1024;
+
+    DEBUG_OUT("Memory Stats: Free: %.2lfMB; Used: %.2lfMB; Reserved: %.2lfMB", globalAllocator.getFreeRAM() / MBSize,
+        globalAllocator.getUsedRAM() / MBSize, globalAllocator.getReservedRAM() / MBSize);
 
     return kernelInfo;
 }

@@ -4,6 +4,7 @@
 #include "liballoc/liballoc.h"
 #include "printf/printf.h"
 #include "vtconsole/vtconsole.h"
+#include "timer/Timer.hpp"
 #include "KernelUtils.hpp"
 
 vtconsole_t *console = NULL;
@@ -31,10 +32,7 @@ extern "C" void _start(BootInfo* bootInfo)
 
     printf("Console Test\n");
 
-    for(;;)
-    {
-        globalRenderer->swapBuffers();
-    }
+    for(;;);
 }
 
 void _putchar(char character)

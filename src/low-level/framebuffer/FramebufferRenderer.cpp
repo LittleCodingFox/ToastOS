@@ -1,12 +1,20 @@
 #include "FramebufferRenderer.hpp"
 #include "debug.hpp"
 #include "paging/PageFrameAllocator.hpp"
+#include "timer/Timer.hpp"
 #include <stdlib.h>
 #include <string.h>
 
 FramebufferRenderer* globalRenderer;
 
-FramebufferRenderer::FramebufferRenderer(Framebuffer* targetFramebuffer, psf2_font_t* font) : initialized(false), doubleBuffer(NULL), doubleBufferSize(0)
+void RefreshFramebuffer()
+{
+    printf("Current Time: %f; Ticks: %u\n", timer.getTime(), timer.getTicks());
+    globalRenderer->swapBuffers();
+}
+
+FramebufferRenderer::FramebufferRenderer(Framebuffer* targetFramebuffer, psf2_font_t* font) : initialized(false), doubleBuffer(NULL),
+    doubleBufferSize(0), lockedCount(0)
 {
     this->targetFramebuffer = targetFramebuffer;
     this->font = font;
@@ -28,11 +36,30 @@ void FramebufferRenderer::initialize()
     doubleBuffer = (uint32_t *)malloc(doubleBufferSize);
 
     clear(0);
+
+    timer.registerHandler(RefreshFramebuffer);
+}
+
+void FramebufferRenderer::lock()
+{
+    lockedCount++;
+}
+
+void FramebufferRenderer::unlock()
+{
+    if(lockedCount == 0)
+    {
+        DEBUG_OUT("%s", "Unexpectedly unlocking framebuffer renderer while it's already unlocked!");
+
+        return;
+    }
+
+    lockedCount--;
 }
 
 void FramebufferRenderer::swapBuffers()
 {
-    if(doubleBuffer != NULL)
+    if(doubleBuffer != NULL && lockedCount == 0)
     {
         memcpy(targetFramebuffer->baseAddress, doubleBuffer, doubleBufferSize);
     }

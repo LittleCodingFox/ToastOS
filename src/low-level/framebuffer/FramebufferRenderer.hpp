@@ -46,6 +46,7 @@ class FramebufferRenderer
 {
 private:
 
+    uint32_t lockedCount;
     Framebuffer *targetFramebuffer;
     psf2_font_t *font;
     uint32_t *doubleBuffer;
@@ -64,6 +65,8 @@ public:
     void putChar(char chr, unsigned int xOff, unsigned int yOff);
     FramebufferArea frameBufferAreaAt(int x, int y, int width, int height);
     void swapBuffers();
+    void lock();
+    void unlock();
 
     inline int width() const
     {
