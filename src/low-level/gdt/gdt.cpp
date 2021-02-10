@@ -2,10 +2,52 @@
 
 __attribute__((aligned(0x1000)))
 GDT DefaultGDT = {
-    {0, 0, 0, 0x00, 0x00, 0}, // null
-    {0, 0, 0, 0x9a, 0xa0, 0}, // kernel code segment
-    {0, 0, 0, 0x92, 0xa0, 0}, // kernel data segment
-    {0, 0, 0, 0x00, 0x00, 0}, // user null
-    {0, 0, 0, 0x9a, 0xa0, 0}, // kernel code segment
-    {0, 0, 0, 0x92, 0xa0, 0}, // kernel data segment
+    {
+        .limitLow = 0,
+        .baseLow = 0,
+        .baseMiddle = 0,
+        .accessFlag = 0x00,
+        .limitFlags = 0x00,
+        .baseHigh = 0
+    }, // null
+    {
+        .limitLow = 0,
+        .baseLow = 0,
+        .baseMiddle = 0,
+        .accessFlag = GDTAccessKernelCode,
+        .limitFlags = 0xa0, 
+        .baseHigh = 0
+    }, // kernel code segment
+    {
+        .limitLow = 0,
+        .baseLow = 0,
+        .baseMiddle = 0,
+        .accessFlag = GDTAccessKernelData,
+        .limitFlags = 0xa0,
+        .baseHigh = 0
+    }, // kernel data segment
+    {
+        .limitLow = 0,
+        .baseLow = 0,
+        .baseMiddle = 0,
+        .accessFlag = 0x00,
+        .limitFlags = 0x00,
+        .baseHigh = 0
+    }, // user null
+    {
+        .limitLow = 0,
+        .baseLow = 0,
+        .baseMiddle = 0,
+        .accessFlag = GDTAccessUserCode,
+        .limitFlags = 0xa0,
+        .baseHigh = 0
+    }, // user code segment
+    {
+        .limitLow = 0,
+        .baseLow = 0,
+        .baseMiddle = 0,
+        .accessFlag = GDTAccessUserData,
+        .limitFlags = 0xa0,
+        .baseHigh = 0
+    }, // user data segment
 };

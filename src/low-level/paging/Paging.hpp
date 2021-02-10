@@ -1,26 +1,30 @@
 #pragma once
 #include <stdint.h>
 
-enum PT_Flag
+namespace PagingFlag
 {
-    Present = 0,
-    ReadWrite = 1,
-    UserSuper = 2,
-    WriteThrough = 3,
-    CacheDisabled = 4,
-    Accessed = 5,
-    LargerPages = 7,
-    Custom0 = 9,
-    Custom1 = 10,
-    Custom2 = 11,
-    NX = 63 // only if supported
-};
+    enum PagingFlag
+    {
+        Present = 0,
+        ReadWrite = 1,
+        UserSuper = 2,
+        WriteThrough = 3,
+        CacheDisabled = 4,
+        Accessed = 5,
+        LargerPages = 7,
+        Custom0 = 9,
+        Custom1 = 10,
+        Custom2 = 11,
+        NX = 63 // only if supported
+    };
+}
 
 struct PageDirectoryEntry
 {
     union
     {
         uint64_t packed;
+        
         struct
         {
             uint8_t present : 1;
