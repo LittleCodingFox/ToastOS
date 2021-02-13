@@ -22,6 +22,7 @@ struct BootInfo
 	EFI_MEMORY_DESCRIPTOR* mMap;
 	uint64_t mMapSize;
 	uint64_t mMapDescSize;
+	void *rsdp;
 };
 
 extern uint64_t _KernelStart;

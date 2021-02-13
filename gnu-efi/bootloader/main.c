@@ -194,6 +194,7 @@ typedef struct {
 	EFI_MEMORY_DESCRIPTOR* mMap;
 	UINTN mMapSize;
 	UINTN mMapDescSize;
+	void *rsdp;
 } BootInfo;
 
 EFI_STATUS efi_main (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
@@ -304,6 +305,25 @@ EFI_STATUS efi_main (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
 		SystemTable->BootServices->GetMemoryMap(&MapSize, Map, &MapKey, &DescriptorSize, &DescriptorVersion);
 	}
 
+	EFI_CONFIGURATION_TABLE *configurationTable = SystemTable->ConfigurationTable;
+	void *rsdp = NULL;
+	EFI_GUID Acpi2TableGUID = ACPI_20_TABLE_GUID;
+
+	for(UINTN i = 0; i < SystemTable->NumberOfTableEntries; i++)
+	{
+		if(CompareGuid(&configurationTable[i].VendorGuid, &Acpi2TableGUID))
+		{
+			if(strncmpa((CHAR8 *)"RSD PTR ", (CHAR8 *)configurationTable[i].VendorTable, 8) == 0)
+			{
+				rsdp = (void*)configurationTable[i].VendorTable;
+
+				//APrint((CHAR8 *)"Found RSDP at %lX (%a)\n\r", rsdp, (CHAR8 *)configurationTable[i].VendorTable);
+
+				break;
+			}
+		}
+	}
+
 	void (*KernelStart)(BootInfo*) = ((__attribute__((sysv_abi)) void (*)(BootInfo*) ) header.e_entry);
 
 	BootInfo bootInfo;
@@ -314,6 +334,7 @@ EFI_STATUS efi_main (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
 	bootInfo.mMap = Map;
 	bootInfo.mMapSize = MapSize;
 	bootInfo.mMapDescSize = DescriptorSize;
+	bootInfo.rsdp = rsdp;
 
 	Print(L"Leaving boot services\n\r");
 
