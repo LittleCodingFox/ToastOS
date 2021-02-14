@@ -68,7 +68,7 @@ void psf2PutChar(int x, int y, char c, psf2_font_t *font, uint32_t color, Frameb
 
 		for(int tx = 0; tx < area.targetWidth; tx++)
 		{
-			area.buffer[yIndex + area.x + tx] = ((int)*glyph) & (mask) ? color : 0;
+			area.buffer[yIndex + area.x + tx] = ((int)*glyph) & (mask) ? color : renderer->backgroundColor;
 			mask >>= 1;
 		}
 
@@ -87,6 +87,16 @@ void psf2RenderText(int x, int y, const char *text, psf2_font_t *font, uint32_t 
 
 	while(*text)
 	{
+		if(*text == '\n')
+		{
+			y += font->header->height;
+
+			text++;
+			characterx = 0;
+
+			continue;
+		}
+
 		int offset = characterx * (font->header->width + 1);
 
 		psf2PutChar(x + offset, y, *text, font, color, renderer);

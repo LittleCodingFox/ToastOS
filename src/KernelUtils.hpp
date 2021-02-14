@@ -11,6 +11,7 @@
 #include "paging/PageTableManager.hpp"
 #include "text/psf2.hpp"
 #include "serial/Serial.hpp"
+#include "acpi/ACPI.hpp"
 #include "debug.hpp"
 
 struct BootInfo
@@ -22,7 +23,7 @@ struct BootInfo
 	EFI_MEMORY_DESCRIPTOR* mMap;
 	uint64_t mMapSize;
 	uint64_t mMapDescSize;
-	void *rsdp;
+	RSDP2 *rsdp;
 };
 
 extern uint64_t _KernelStart;

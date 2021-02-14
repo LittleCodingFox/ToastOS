@@ -311,13 +311,15 @@ EFI_STATUS efi_main (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
 
 	for(UINTN i = 0; i < SystemTable->NumberOfTableEntries; i++)
 	{
-		if(CompareGuid(&configurationTable[i].VendorGuid, &Acpi2TableGUID))
-		{
-			if(strncmpa((CHAR8 *)"RSD PTR ", (CHAR8 *)configurationTable[i].VendorTable, 8) == 0)
-			{
-				rsdp = (void*)configurationTable[i].VendorTable;
+		EFI_CONFIGURATION_TABLE *table = &configurationTable[i];
 
-				//APrint((CHAR8 *)"Found RSDP at %lX (%a)\n\r", rsdp, (CHAR8 *)configurationTable[i].VendorTable);
+		if(CompareGuid(&table->VendorGuid, &Acpi2TableGUID))
+		{
+			if(strncmpa((CHAR8 *)"RSD PTR ", (CHAR8 *)table->VendorTable, 8) == 0)
+			{
+				rsdp = (void*)table->VendorTable;
+
+				APrint((CHAR8 *)"Found RSDP at %lX (%a)\n\r", rsdp, (CHAR8 *)table->VendorTable);
 
 				break;
 			}

@@ -17,13 +17,13 @@ void Panic(const char* format, ...)
 
     kernelDumpStacktrace();
 
-    globalRenderer->clear(0x00ff0000);
+    globalRenderer->clear(0x0000AAAA);
 
     char buffer[10240];
 
     snprintf(buffer, sizeof(buffer), "Kernel Panic\n\n%s", message);
 
-    psf2RenderText(0, 0, buffer, globalRenderer->getFont(), 0xFFFFFFFF, globalRenderer);
+    psf2RenderText(0, 0, buffer, globalRenderer->getFont(), 0x00005555, globalRenderer);
 
     globalRenderer->swapBuffers();
 

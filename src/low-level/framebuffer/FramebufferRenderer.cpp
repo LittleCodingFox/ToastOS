@@ -9,12 +9,11 @@ FramebufferRenderer* globalRenderer;
 
 void RefreshFramebuffer()
 {
-    printf("Current Time: %f; Ticks: %u\n", timer.getTime(), timer.getTicks());
     globalRenderer->swapBuffers();
 }
 
 FramebufferRenderer::FramebufferRenderer(Framebuffer* targetFramebuffer, psf2_font_t* font) : initialized(false), doubleBuffer(NULL),
-    doubleBufferSize(0), lockedCount(0)
+    doubleBufferSize(0), lockedCount(0), backgroundColor(0)
 {
     this->targetFramebuffer = targetFramebuffer;
     this->font = font;
@@ -36,8 +35,6 @@ void FramebufferRenderer::initialize()
     doubleBuffer = (uint32_t *)malloc(doubleBufferSize);
 
     clear(0);
-
-    timer.registerHandler(RefreshFramebuffer);
 }
 
 void FramebufferRenderer::lock()
@@ -67,6 +64,8 @@ void FramebufferRenderer::swapBuffers()
 
 void FramebufferRenderer::clear(uint32_t colour)
 {
+    backgroundColor = colour;
+
     for(uint32_t i = 0; i < framebufferPixelCount; i++)
     {
         doubleBuffer[i] = colour;

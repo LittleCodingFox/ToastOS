@@ -56,8 +56,7 @@ private:
 
 public:
 
-    Point cursorPosition;
-    uint32_t colour;
+    uint32_t backgroundColor;
 
     FramebufferRenderer(Framebuffer* targetFramebuffer, psf2_font_t* font);
     void initialize();

@@ -7,11 +7,13 @@
 #include "registers/Registers.hpp"
 #include "stacktrace/stacktrace.hpp"
 #include "timer/Timer.hpp"
+#include "pci/PCI.hpp"
+#include "vtconsole/vtconsole.h"
 
 KernelInfo kernelInfo; 
 PageTableManager pageTableManager = NULL;
 
-void PrepareMemory(BootInfo* bootInfo)
+void InitializeMemory(BootInfo* bootInfo)
 {
     uint64_t mMapEntries = bootInfo->mMapSize / bootInfo->mMapDescSize;
 
@@ -70,12 +72,76 @@ void PrepareMemory(BootInfo* bootInfo)
     globalPageTableManager = kernelInfo.pageTableManager = &pageTableManager;
 }
 
-void PrepareInterrupts()
+void InitializeInterrupts()
 {
+    printf("Initializing Interrupts\n");
+
     interrupts.init();
 }
 
+void InitializeACPI(BootInfo *bootInfo)
+{
+    printf("Initializing ACPI\n");
+
+    if(bootInfo->rsdp == NULL)
+    {
+        printf("[ACPI] Missing RSDP!\n");
+
+        return;
+    }
+
+    char signature[9] = { 0 };
+
+    char OEMID[7] = { 0 };
+
+    memcpy(signature, bootInfo->rsdp->signature, 8);
+    memcpy(OEMID, bootInfo->rsdp->OEMID, 6);
+
+    printf("[ACPI] RSDP Signature: %s\n[ACPI] OEMID: %s\n", signature, OEMID);
+
+    printf("[ACPI] Length: %u\n[ACPI] RSDT Address: %08x\n[ACPI] XSDT Address: %p\n",
+        bootInfo->rsdp->length, bootInfo->rsdp->RSDTAddress,
+        bootInfo->rsdp->XSDTAddress);
+
+    SDTHeader *xsdt = (SDTHeader *)bootInfo->rsdp->XSDTAddress;
+
+    printf("[ACPI] Got XSDT: %p\n", xsdt);
+
+    if(xsdt == NULL)
+    {
+        printf("[ACPI] Failed to get XSDT!\n");
+
+        return;
+    }
+
+    MCFGHeader *mcfg = (MCFGHeader *)ACPI::findTable(xsdt, "MCFG");
+
+    printf("[ACPI] Got MCFG: %p\n", mcfg);
+
+    if(mcfg == NULL)
+    {
+        printf("[ACPI] Failed to get MCFG!");
+
+        return;
+    }
+
+    PCI::enumeratePCI(mcfg);
+}
+
 FramebufferRenderer r = FramebufferRenderer(NULL, NULL);
+
+vtconsole_t *console = NULL;
+
+void PaintHandler(struct vtconsole* vtc, vtcell_t* cell, int x, int y)
+{
+    globalRenderer->putChar(cell->c, x * globalRenderer->fontWidth(), y * globalRenderer->fontHeight());
+}
+
+void CursorHandler (struct vtconsole* vtc, vtcursor_t* cur)
+{
+}
+
+void RefreshFramebuffer();
 
 KernelInfo InitializeKernel(BootInfo* bootInfo)
 {
@@ -92,15 +158,24 @@ KernelInfo InitializeKernel(BootInfo* bootInfo)
 
     LoadGDT(&gdtDescriptor);
 
-    PrepareMemory(bootInfo);
+    InitializeMemory(bootInfo);
 
-    memset(bootInfo->framebuffer->baseAddress, 0, bootInfo->framebuffer->bufferSize);
+    globalRenderer->initialize();
 
-    PrepareInterrupts();
+    int consoleWidth = globalRenderer->width() / globalRenderer->fontWidth();
+    int consoleHeight = globalRenderer->height() / globalRenderer->fontHeight();
+
+    DEBUG_OUT("creating console: width: %d; height: %d;", consoleWidth, consoleHeight);
+
+    console = vtconsole(consoleWidth, consoleHeight, PaintHandler, CursorHandler);
+
+    InitializeInterrupts();
 
     timer.initialize();
 
-    globalRenderer->initialize();
+    timer.registerHandler(RefreshFramebuffer);
+
+    InitializeACPI(bootInfo);
 
     DEBUG_OUT("%s", "Finished initializing the kernel");
 
@@ -110,4 +185,10 @@ KernelInfo InitializeKernel(BootInfo* bootInfo)
         globalAllocator.getUsedRAM() / MBSize, globalAllocator.getReservedRAM() / MBSize);
 
     return kernelInfo;
+}
+
+void _putchar(char character)
+{
+    vtconsole_putchar(console, character);
+    SerialPortOutStreamCOM1(character, NULL);
 }
