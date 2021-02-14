@@ -43,6 +43,33 @@ typedef struct {
 	uint32_t height;
 } psf2_size_t;
 
+typedef struct {
+    CHAR8   Signature[8];
+    UINT8   Checksum;
+    UINT8   OemId[6];
+    UINT8   Revision;
+    UINT32  RsdtAddress;
+    UINT32  Length;
+    UINT64  XsdtAddress;
+    UINT8   ExtendedChecksum;
+    UINT8   Reserved[3];
+} EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER;
+ 
+// XSDT is the main System Description Table. 
+// There are many kinds of SDT. An SDT may be split into two parts - 
+// A common header and a data section which is different for each table.
+typedef struct {
+    CHAR8   Signature[4];
+    UINT32  Length;
+    UINT8   Revision;
+    UINT8   Checksum;
+    CHAR8   OemId[6];
+    CHAR8   OemTableId[8];
+    UINT32  OemRevision;
+    UINT32  CreatorId;
+    UINT32  CreatorRevision;
+} EFI_ACPI_SDT_HEADER;
+
 Framebuffer framebuffer;
 
 Framebuffer* InitializeGOP() {
@@ -195,6 +222,7 @@ typedef struct {
 	UINTN mMapSize;
 	UINTN mMapDescSize;
 	void *rsdp;
+	void *xsdt;
 } BootInfo;
 
 EFI_STATUS efi_main (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
@@ -305,23 +333,54 @@ EFI_STATUS efi_main (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
 		SystemTable->BootServices->GetMemoryMap(&MapSize, Map, &MapKey, &DescriptorSize, &DescriptorVersion);
 	}
 
-	EFI_CONFIGURATION_TABLE *configurationTable = SystemTable->ConfigurationTable;
-	void *rsdp = NULL;
+#define EFI_ACPI_TABLE_GUID \
+    { 0xeb9d2d30, 0x2d88, 0x11d3, {0x9a, 0x16, 0x0, 0x90, 0x27, 0x3f, 0xc1, 0x4d }}
+
+#define EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER_REVISION 0x02
+
 	EFI_GUID Acpi2TableGUID = ACPI_20_TABLE_GUID;
+
+	EFI_CONFIGURATION_TABLE *configurationTable = SystemTable->ConfigurationTable;
+	EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER *rsdp = NULL;
+	EFI_ACPI_SDT_HEADER *xsdt = NULL;
 
 	for(UINTN i = 0; i < SystemTable->NumberOfTableEntries; i++)
 	{
 		EFI_CONFIGURATION_TABLE *table = &configurationTable[i];
 
-		if(CompareGuid(&table->VendorGuid, &Acpi2TableGUID))
+		if(CompareGuid(&table->VendorGuid, &Acpi2TableGUID) ||
+			CompareGuid(&table->VendorGuid, &AcpiTableGuid))
 		{
 			if(strncmpa((CHAR8 *)"RSD PTR ", (CHAR8 *)table->VendorTable, 8) == 0)
 			{
-				rsdp = (void*)table->VendorTable;
+				rsdp = (EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER *)table->VendorTable;
 
 				APrint((CHAR8 *)"Found RSDP at %lX (%a)\n\r", rsdp, (CHAR8 *)table->VendorTable);
 
-				break;
+				if(rsdp->Revision >= EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER_REVISION)
+				{
+					xsdt = (EFI_ACPI_SDT_HEADER *)rsdp->XsdtAddress;
+
+					if(strncmpa((CHAR8 *)"XSDT", (CHAR8 *)xsdt->Signature, 4))
+					{
+						Print(L"Invalid XSDT Table found!\n\r");
+
+						rsdp = NULL;
+						xsdt = NULL;
+
+						continue;
+					}
+
+					break;
+				}
+				else
+				{
+					Print(L"No XSDT table found.\n\r");
+
+					rsdp = NULL;
+
+					continue;
+				}
 			}
 		}
 	}
@@ -337,6 +396,7 @@ EFI_STATUS efi_main (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
 	bootInfo.mMapSize = MapSize;
 	bootInfo.mMapDescSize = DescriptorSize;
 	bootInfo.rsdp = rsdp;
+	bootInfo.xsdt = xsdt;
 
 	Print(L"Leaving boot services\n\r");
 

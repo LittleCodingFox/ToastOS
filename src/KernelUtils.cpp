@@ -47,6 +47,21 @@ void InitializeMemory(BootInfo* bootInfo)
         pageTableManager.identityMap((void*)t);
     }
 
+    for (int i = 0; i < mMapEntries; i++)
+    {
+        EFI_MEMORY_DESCRIPTOR* desc = (EFI_MEMORY_DESCRIPTOR*)((uint64_t)bootInfo->mMap + (i * bootInfo->mMapDescSize));
+
+        if (desc->type != 7)
+        {
+            DEBUG_OUT("Identity Mapping %s (%p-%p)", EFI_MEMORY_TYPE_STRINGS[desc->type], desc->physAddr, desc->physAddr + desc->numPages * 4096);
+
+            for(uint64_t index = 0, startIndex = desc->physAddr / 4096; index < desc->numPages; index++, startIndex += 4096)
+            {
+                pageTableManager.identityMap((void *)startIndex);
+            }
+        }
+    }
+
     //TODO: Make it map only specific memory
     /*
     for (uint64_t t = _KernelStart; t < _KernelStart + kernelSize; t+= 0x1000)
@@ -103,7 +118,7 @@ void InitializeACPI(BootInfo *bootInfo)
         bootInfo->rsdp->length, bootInfo->rsdp->RSDTAddress,
         bootInfo->rsdp->XSDTAddress);
 
-    SDTHeader *xsdt = (SDTHeader *)bootInfo->rsdp->XSDTAddress;
+    SDTHeader *xsdt = (SDTHeader *)bootInfo->xsdt;
 
     printf("[ACPI] Got XSDT: %p\n", xsdt);
 

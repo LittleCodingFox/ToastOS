@@ -18,8 +18,6 @@ namespace PCI
         {
             return;
         }
-
-        DEBUG_OUT("%x %x", deviceHeader->vendorID, deviceHeader->deviceID);
     }
 
     void enumerateDevice(uint64_t busAddress, uint64_t device)

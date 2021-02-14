@@ -24,6 +24,7 @@ struct BootInfo
 	uint64_t mMapSize;
 	uint64_t mMapDescSize;
 	RSDP2 *rsdp;
+	SDTHeader *xsdt;
 };
 
 extern uint64_t _KernelStart;
