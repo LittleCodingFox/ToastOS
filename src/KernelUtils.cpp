@@ -114,13 +114,7 @@ void InitializeACPI(BootInfo *bootInfo)
 
     printf("[ACPI] RSDP Signature: %s\n[ACPI] OEMID: %s\n", signature, OEMID);
 
-    printf("[ACPI] Length: %u\n[ACPI] RSDT Address: %08x\n[ACPI] XSDT Address: %p\n",
-        bootInfo->rsdp->length, bootInfo->rsdp->RSDTAddress,
-        bootInfo->rsdp->XSDTAddress);
-
     SDTHeader *xsdt = (SDTHeader *)bootInfo->xsdt;
-
-    printf("[ACPI] Got XSDT: %p\n", xsdt);
 
     if(xsdt == NULL)
     {
@@ -130,8 +124,6 @@ void InitializeACPI(BootInfo *bootInfo)
     }
 
     MCFGHeader *mcfg = (MCFGHeader *)ACPI::findTable(xsdt, "MCFG");
-
-    printf("[ACPI] Got MCFG: %p\n", mcfg);
 
     if(mcfg == NULL)
     {
