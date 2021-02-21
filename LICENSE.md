@@ -28,7 +28,7 @@ Portions of this software use code from the PonchoOS tutorial series (https://gi
 
 --------------------------------------------
 
-Portions of this software are copyright (c) 2015-2020 Johan Manuel, et. al.
+Portions of this software are copyright (c) 2015-2020 Johan Manuel, et. al. (https://github.com/29jm/SnowflakeOS)
 
 MIT License
 
