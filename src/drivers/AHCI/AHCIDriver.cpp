@@ -76,7 +76,7 @@ namespace Drivers
 
         bool ATABusyWait(HBAPort *port)
         {
-            uint32_t spinTimeout = 0;
+            size_t spinTimeout = 0;
 
             while((port->taskFileData & (ATA_DEV_BUSY | ATA_DEV_DRQ)) && spinTimeout < 1000000)
             {
@@ -97,14 +97,12 @@ namespace Drivers
         {
             uint32_t slots = (port->sataControl | port->commandIssue);
 
-            for(int i = 0; i < 32; i++)
+            for(int i = 0; i < 32; i++, slots >>= 1)
             {
                 if((slots & 1) == 0)
                 {
                     return i;
                 }
-
-                slots >>= 1;
             }
 
             return -1;
@@ -178,7 +176,7 @@ namespace Drivers
             port->commandListBase = (uint64_t)newBase;
             port->commandListBaseUpper = ((uint64_t)newBase >> 32);
 
-            HBAFIS *fis = (HBAFIS *)globalAllocator.requestPage();
+            HBAFIS *fis = new HBAFIS();
 
             globalPageTableManager->identityMap(fis);
 
@@ -201,9 +199,19 @@ namespace Drivers
 
                 globalPageTableManager->identityMap(commandTableAddress);
 
-                commandHeader[i].commandTableBaseAddress = (uint32_t)(uint64_t)commandTableAddress;
-                commandHeader[i].commandTableBaseAddressUpper = (uint32_t)((uint64_t)commandTableAddress >> 32);
+                commandHeader[i].commandTableBaseAddress = (uint64_t)commandTableAddress;
+                commandHeader[i].commandTableBaseAddressUpper = ((uint64_t)commandTableAddress >> 32);
             }
+        }
+
+        void Port::StartCommand()
+        {
+            port->commandStatus &= ~HBA_PxCMD_ST;
+
+            while(port->commandStatus & HBA_PxCMD_CR) {}
+
+            port->commandStatus |= HBA_PxCMD_FRE;
+            port->commandStatus |= HBA_PxCMD_ST;
         }
 
         void Port::StopCommand()
@@ -223,16 +231,6 @@ namespace Drivers
             port->commandStatus &= ~HBA_PxCMD_FRE;
         }
 
-        void Port::StartCommand()
-        {
-            port->commandStatus &= ~HBA_PxCMD_ST;
-
-            while(port->commandStatus & HBA_PxCMD_CR) {}
-
-            port->commandStatus |= HBA_PxCMD_FRE;
-            port->commandStatus |= HBA_PxCMD_ST;
-        }
-
         bool Port::Read(uint64_t sector, uint32_t sectorCount, void *buffer)
         {
             port->interruptStatus = (uint32_t)-1;
@@ -244,16 +242,16 @@ namespace Drivers
                 return false;
             }
 
-            volatile HBACommandHeader *commandHeader = (HBACommandHeader *)port->commandListBase;
+            volatile HBACommandHeader *commandHeader = (HBACommandHeader *)((uint64_t)port->commandListBase);
             commandHeader += slot;
 
             InitializeCommandHeader(commandHeader, false);
 
-            volatile HBACommandTable *commandTable = (HBACommandTable *)commandHeader->commandTableBaseAddress;
+            volatile HBACommandTable *commandTable = (HBACommandTable *)((uint64_t)commandHeader->commandTableBaseAddress);
 
             InitializeCommandTable(commandTable, commandHeader, (uintptr_t)buffer, sectorCount);
 
-            volatile FISREGHost2Device *commandFIS = (FISREGHost2Device *)&commandTable->commandFIS;
+            volatile FISREGHost2Device *commandFIS = (FISREGHost2Device *)(commandTable->commandFIS);
 
             InitializeFISRegCommand(commandFIS, false, sector, sectorCount);
 
@@ -301,7 +299,7 @@ namespace Drivers
 
             ABAR = (HBAMemory *)((PCIHeader0 *)baseAddress)->BAR5;
 
-            globalPageTableManager->mapMemory(ABAR, ABAR);
+            globalPageTableManager->identityMap(ABAR);
 
             ProbePorts();
 
