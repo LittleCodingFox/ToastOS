@@ -19,6 +19,29 @@ struct PCIDeviceHeader
     uint8_t BIST;
 };
 
+struct PCIHeader0
+{
+    PCIDeviceHeader *header;
+    uint32_t BAR0;
+    uint32_t BAR1;
+    uint32_t BAR2;
+    uint32_t BAR3;
+    uint32_t BAR4;
+    uint32_t BAR5;
+    uint32_t cardbusCISPointer;
+    uint16_t subsystemVendorID;
+    uint16_t subsystemID;
+    uint32_t expansionROMBaseAddr;
+    uint8_t capabilitiesPtr;
+    uint8_t reserved0;
+    uint16_t reserved1;
+    uint32_t reserved2;
+    uint8_t interruptLine;
+    uint8_t interruptPin;
+    uint8_t minGrant;
+    uint8_t maxLatency;
+};
+
 namespace PCI
 {
     void enumeratePCI(MCFGHeader *mcfg);

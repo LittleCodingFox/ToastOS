@@ -122,22 +122,41 @@ typedef struct _stack
 } __attribute__((packed)) InterruptStack;
 
 typedef void (*InterruptHandler)(InterruptStack* stack);
+typedef void (*InterruptHandlerArg)(InterruptStack *stack, void *data);
 
 class Interrupts
 {
+public:
+    struct HandlerInfo
+    {
+        InterruptHandlerArg handler;
+        void *data;
+    };
 private:
     InterruptHandler handlers[256];
+    HandlerInfo argHandlers[256];
 public:
     void init();
     void enableInterrupts();
     void disableInterrupts();
     void registerHandler(uint64_t id, InterruptHandler handler);
+    void registerHandler(uint64_t id, InterruptHandlerArg handler, void *data);
     
     inline InterruptHandler getHandler(int index)
     {
         if(index >= 0 && index <= sizeof(handlers) / sizeof(handlers[0]))
         {
             return handlers[index];
+        }
+
+        return NULL;
+    }
+    
+    inline HandlerInfo *getHandlerArg(int index)
+    {
+        if(index >= 0 && index <= sizeof(argHandlers) / sizeof(argHandlers[0]))
+        {
+            return &argHandlers[index];
         }
 
         return NULL;

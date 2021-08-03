@@ -17,3 +17,5 @@ public:
 };
 
 extern Timer timer;
+
+void Sleep(uint64_t milliseconds);

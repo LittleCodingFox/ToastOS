@@ -65,3 +65,13 @@ float Timer::getTime()
 {
     return currentTick * (1.0f / TIMER_FREQUENCY);
 }
+
+void Sleep(uint64_t milliseconds)
+{
+    float time = timer.getTime();
+
+    while(timer.getTime() < time + milliseconds)
+    {
+        asm("hlt");
+    }
+}

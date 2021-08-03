@@ -2,6 +2,7 @@
 #include "debug.hpp"
 #include "cstring/cstring.hpp"
 #include "paging/PageTableManager.hpp"
+#include "../drivers/AHCI/AHCIDriver.hpp"
 
 namespace PCI
 {
@@ -305,6 +306,26 @@ namespace PCI
             deviceClasses[deviceHeader->objectClass],
             subclassName(deviceHeader->objectClass, deviceHeader->objectSubclass),
             progIFName(deviceHeader->objectClass, deviceHeader->objectSubclass, deviceHeader->progIF));
+
+        switch(deviceHeader->objectClass)
+        {
+            case 0x01: //Mass Storage Controller
+                switch(deviceHeader->objectSubclass)
+                {
+                    case 0x06: //SATA
+                        switch(deviceHeader->progIF)
+                        {
+                            case 0x01:
+                                new Drivers::AHCI::AHCIDriver(deviceHeader);
+
+                            break;
+                        }
+
+                        break;
+                }
+
+                break;
+        }
     }
 
     void enumerateDevice(uint64_t busAddress, uint64_t device)

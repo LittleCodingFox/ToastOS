@@ -158,6 +158,15 @@ void interruptIntHandler(InterruptStack stack)
 
         return;
     }
+    else
+    {
+        Interrupts::HandlerInfo *argHandler = interrupts.getHandlerArg(stack.id);
+
+        if(argHandler != NULL && argHandler->handler != NULL)
+        {
+            argHandler->handler(&stack, argHandler->data);
+        }
+    }
 
     Panic("received interrupt (see below)\n\n"
         "  %d - %s\n\n"
@@ -206,6 +215,15 @@ void interruptIRQHandler(InterruptStack stack)
     {
         handler(&stack);
     }
+    else
+    {
+        Interrupts::HandlerInfo *argHandler = interrupts.getHandlerArg(stack.id);
+
+        if(argHandler != NULL && argHandler->handler != NULL)
+        {
+            argHandler->handler(&stack, argHandler->data);
+        }
+    }
 
     if (stack.id >= 40)
     {
@@ -218,6 +236,15 @@ void interruptIRQHandler(InterruptStack stack)
 void Interrupts::registerHandler(uint64_t id, InterruptHandler handler)
 {
     handlers[id] = handler;
+}
+
+void Interrupts::registerHandler(uint64_t id, InterruptHandlerArg handler, void *data)
+{
+    HandlerInfo info;
+    info.handler = handler;
+    info.data = data;
+
+    argHandlers[id] = info;
 }
 
 void keyboardHandler(InterruptStack *stack)
