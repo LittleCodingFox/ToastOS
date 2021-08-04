@@ -39,8 +39,6 @@ LDFLAGS			= -T $(SRCDIR)/link.ld -static -Bsymbolic -nostdlib -Map=linker.map
 QEMU_FLAGS		=
 
 makedirs:
-	rm -Rf bin
-	rm -Rf tmp
 	mkdir -p bin
 	mkdir -p obj
 
@@ -83,16 +81,18 @@ debug-linux: CFLAGS += -DKERNEL_DEBUG=1 -g
 debug-linux: run-linux
 
 gnuefi:
-	(cd gnu-efi && make clean && make && make bootloader)
+	(cd gnu-efi && make && make bootloader)
 
 clean:
+	(cd gnu-efi && make clean)
 	rm -Rf $(BINDIR)/*.img
 	rm -Rf $(BINDIR)/*.iso
 	rm -Rf $(BINDIR)/*.cdr
 	rm -Rf $(BINDIR)/*.bin
 	rm -Rf $(BINDIR)/*.vdi
 	rm -f *.map
-	rm -f bin/*.elf bin/*.txt $(BINDIR)/*.img
+	rm -f $(BINDIR)/*.img
+	rm -Rf bin
 	rm -Rf tmp
 	rm -Rf boot
 	rm -Rf obj
