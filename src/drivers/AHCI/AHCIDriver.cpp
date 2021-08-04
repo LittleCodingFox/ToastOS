@@ -297,7 +297,7 @@ namespace Drivers
 
             this->PCIBaseAddress = baseAddress;
 
-            ABAR = (HBAMemory *)((PCIHeader0 *)baseAddress)->BAR5;
+            ABAR = (HBAMemory *)(((PCIHeader0 *)baseAddress)->BAR5 & 0xFFFFFFF0);
 
             globalPageTableManager->identityMap(ABAR);
 
