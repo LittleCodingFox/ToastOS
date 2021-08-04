@@ -20,29 +20,6 @@ struct PCIDeviceHeader
     uint8_t BIST;
 };
 
-struct PCIHeader0
-{
-    PCIDeviceHeader *header;
-    uint32_t BAR0;
-    uint32_t BAR1;
-    uint32_t BAR2;
-    uint32_t BAR3;
-    uint32_t BAR4;
-    uint32_t BAR5;
-    uint32_t cardbusCISPointer;
-    uint16_t subsystemVendorID;
-    uint16_t subsystemID;
-    uint32_t expansionROMBaseAddr;
-    uint8_t capabilitiesPtr;
-    uint8_t reserved0;
-    uint16_t reserved1;
-    uint32_t reserved2;
-    uint8_t interruptLine;
-    uint8_t interruptPin;
-    uint8_t minGrant;
-    uint8_t maxLatency;
-};
-
 namespace PCI
 {
     const char* deviceClasses[]
@@ -324,6 +301,56 @@ namespace PCI
         return to_hstring(progIF);
     }
 
+    Bar decodeBar(volatile uint8_t **ptr)
+    {
+        uint32_t bar = *(uint32_t *)*ptr;
+
+        *ptr += sizeof(uint32_t);
+
+        uint8_t layoutType = bar & 1;
+        uint64_t address;
+        uint8_t type = 0;
+        bool prefetchable = false;
+
+        if(layoutType == 0)
+        {
+            prefetchable = bar & 0b1000;
+            type = (bar & 0b110) >> 1;
+
+            switch(type)
+            {
+                case 0x0:
+
+                    address = bar & 0xFFFFFFF0;
+
+                    break;
+
+                case 0x02:
+
+                    uint32_t nextBar = *(uint32_t *)*ptr;
+
+                    *ptr += sizeof(uint32_t);
+
+                    address = (bar & 0xFFFFFFF0) + ((nextBar & 0xFFFFFFFF) << 32);
+
+                    break;
+            }
+        }
+        else
+        {
+            address = bar & 0xFFFFFFFC;
+        }
+
+        Bar outValue = Bar();
+
+        outValue.address = address;
+        outValue.layoutType = layoutType;
+        outValue.type = type;
+        outValue.prefetchable = prefetchable;
+
+        return outValue;
+    }
+
     void enumerateFunction(uint64_t deviceAddress, uint64_t function)
     {
         uint64_t offset = function << 12;
@@ -350,12 +377,14 @@ namespace PCI
         device->classCode = deviceHeader->objectClass;
         device->deviceID = deviceHeader->deviceID;
         device->vendorID = deviceHeader->vendorID;
-        device->bars[0].address = ((volatile PCIHeader0 *)deviceHeader)->BAR0 & 0xFFFFFFF0;
-        device->bars[1].address = ((volatile PCIHeader0 *)deviceHeader)->BAR1 & 0xFFFFFFF0;
-        device->bars[2].address = ((volatile PCIHeader0 *)deviceHeader)->BAR2 & 0xFFFFFFF0;
-        device->bars[3].address = ((volatile PCIHeader0 *)deviceHeader)->BAR3 & 0xFFFFFFF0;
-        device->bars[4].address = ((volatile PCIHeader0 *)deviceHeader)->BAR4 & 0xFFFFFFF0;
-        device->bars[5].address = ((volatile PCIHeader0 *)deviceHeader)->BAR5 & 0xFFFFFFF0;
+
+        volatile uint8_t *barPtr = (volatile uint8_t *)deviceHeader;
+        barPtr += 0x10; //BAR0 location
+
+        for(uint32_t i = 0; i < 6; i++)
+        {
+            device->bars[i] = decodeBar(&barPtr);
+        }
 
         switch(deviceHeader->objectClass)
         {

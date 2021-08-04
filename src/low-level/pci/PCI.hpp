@@ -9,6 +9,7 @@ namespace PCI
     {
         uint64_t address;
         uint8_t type;
+        uint8_t layoutType;
         bool prefetchable;
     };
 

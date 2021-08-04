@@ -314,17 +314,6 @@ namespace Drivers
                 port->buffer = (uint8_t *)globalAllocator.requestPage();
                 globalPageTableManager->identityMap(port->buffer);
                 memset(port->buffer, 0, 0x1000);
-
-                bool result = port->Read(0, 4, port->buffer);
-
-                printf("read result: %s\n", result ? "Y" : "N");
-
-                for(uint32_t i = 0; i < 1024; i++)
-                {
-                    printf("%c", port->buffer[i]);
-                }
-
-                printf("\n");
             }
         }
     }
