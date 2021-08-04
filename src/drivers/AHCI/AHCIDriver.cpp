@@ -74,7 +74,7 @@ namespace Drivers
             command->countHigh = (count >> 8) & 0xFF;
         }
 
-        bool ATABusyWait(HBAPort *port)
+        bool ATABusyWait(volatile HBAPort *port)
         {
             size_t spinTimeout = 0;
 
@@ -93,7 +93,7 @@ namespace Drivers
             return true;
         }
 
-        int32_t FindCommandSlot(HBAPort *port)
+        int32_t FindCommandSlot(volatile HBAPort *port)
         {
             uint32_t slots = (port->sataControl | port->commandIssue);
 
@@ -108,7 +108,7 @@ namespace Drivers
             return -1;
         }
 
-        PortType CheckPortType(HBAPort *port)
+        PortType CheckPortType(volatile HBAPort *port)
         {
             uint32_t sataStatus = port->sataStatus;
 
@@ -289,17 +289,17 @@ namespace Drivers
             return true;
         }
 
-        AHCIDriver::AHCIDriver(PCIDeviceHeader *baseAddress) : portCount(0)
+        AHCIDriver::AHCIDriver(PCI::Device *device) : portCount(0)
         {
             printf("Initializing AHCI device %s (vendor: %s)\n",
-                PCI::deviceName(baseAddress->vendorID, baseAddress->deviceID),
-                PCI::vendorName(baseAddress->vendorID));
+                PCI::deviceName(device->vendorID, device->deviceID),
+                PCI::vendorName(device->vendorID));
 
-            this->PCIBaseAddress = baseAddress;
+            this->device = device;
 
-            ABAR = (HBAMemory *)(((PCIHeader0 *)baseAddress)->BAR5 & 0xFFFFFFF0);
+            ABAR = (volatile HBAMemory *)(device->bars[5].address);
 
-            globalPageTableManager->identityMap(ABAR);
+            globalPageTableManager->identityMap((void *)ABAR);
 
             ProbePorts();
 

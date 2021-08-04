@@ -74,9 +74,9 @@ iso-linux:
 run-linux: gnuefi kernel iso-linux
 	qemu-system-x86_64 -drive file=$(BINDIR)/$(OS_NAME).img,format=raw,index=0,media=disk \
 	-bios /usr/share/qemu/OVMF.fd \
-	-m 256M -cpu qemu64 -machine type=q35 -serial file:./debug.log -net none -d int --no-reboot $(QEMU_FLAGS)
+	-m 256M -cpu qemu64 -machine type=q35 -serial file:./debug.log -net none -d int --no-reboot $(QEMU_FLAGS) 2>qemu.log
 
-debug-linux: CFLAGS += -DKERNEL_DEBUG=1 -g
+debug-linux: CFLAGS += -DKERNEL_DEBUG=1 -g -O0
 #debug: QEMU_FLAGS += -s -S
 debug-linux: run-linux
 
@@ -97,4 +97,4 @@ clean:
 	rm -Rf boot
 	rm -Rf obj
 
-.PHONY: all clean iso run makedirs debug
+.PHONY: all clean iso run-linux makedirs debug-linux

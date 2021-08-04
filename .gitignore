@@ -9,3 +9,4 @@ debug.log
 .vscode
 *.o
 gnu-efi/x86_64/
+qemu.log

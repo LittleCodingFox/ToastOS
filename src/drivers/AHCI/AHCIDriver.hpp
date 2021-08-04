@@ -236,7 +236,7 @@ namespace Drivers
         class Port
         {
         public:
-            HBAPort *port;
+            volatile HBAPort *port;
             PortType portType;
             uint8_t *buffer;
             uint8_t portNumber;
@@ -250,11 +250,11 @@ namespace Drivers
         class AHCIDriver
         {
         public:
-            AHCIDriver(PCIDeviceHeader *baseAddress);
+            AHCIDriver(PCI::Device *device);
             void ProbePorts();
 
-            PCIDeviceHeader *PCIBaseAddress;
-            HBAMemory *ABAR;
+            PCI::Device *device;
+            volatile HBAMemory *ABAR;
             Port *ports[32];
             uint8_t portCount;
         };

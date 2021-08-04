@@ -4,6 +4,45 @@
 #include "paging/PageTableManager.hpp"
 #include "../drivers/AHCI/AHCIDriver.hpp"
 
+struct PCIDeviceHeader
+{
+    uint16_t vendorID;
+    uint16_t deviceID;
+    uint16_t command;
+    uint16_t status;
+    uint8_t revisionID;
+    uint8_t progIF;
+    uint8_t objectSubclass;
+    uint8_t objectClass;
+    uint8_t cacheLineSize;
+    uint8_t latencyTimer;
+    uint8_t headerType;
+    uint8_t BIST;
+};
+
+struct PCIHeader0
+{
+    PCIDeviceHeader *header;
+    uint32_t BAR0;
+    uint32_t BAR1;
+    uint32_t BAR2;
+    uint32_t BAR3;
+    uint32_t BAR4;
+    uint32_t BAR5;
+    uint32_t cardbusCISPointer;
+    uint16_t subsystemVendorID;
+    uint16_t subsystemID;
+    uint32_t expansionROMBaseAddr;
+    uint8_t capabilitiesPtr;
+    uint8_t reserved0;
+    uint16_t reserved1;
+    uint32_t reserved2;
+    uint8_t interruptLine;
+    uint8_t interruptPin;
+    uint8_t minGrant;
+    uint8_t maxLatency;
+};
+
 namespace PCI
 {
     const char* deviceClasses[]
@@ -293,7 +332,7 @@ namespace PCI
 
         globalPageTableManager->identityMap((void *)functionAddress);
 
-        PCIDeviceHeader *deviceHeader = (PCIDeviceHeader *)functionAddress;
+        volatile PCIDeviceHeader *deviceHeader = (volatile PCIDeviceHeader *)functionAddress;
 
         if(deviceHeader->deviceID == 0 || deviceHeader->deviceID == 0xFFFF)
         {
@@ -307,6 +346,17 @@ namespace PCI
             subclassName(deviceHeader->objectClass, deviceHeader->objectSubclass),
             progIFName(deviceHeader->objectClass, deviceHeader->objectSubclass, deviceHeader->progIF));
 
+        Device *device = new Device();
+        device->classCode = deviceHeader->objectClass;
+        device->deviceID = deviceHeader->deviceID;
+        device->vendorID = deviceHeader->vendorID;
+        device->bars[0].address = ((volatile PCIHeader0 *)deviceHeader)->BAR0 & 0xFFFFFFF0;
+        device->bars[1].address = ((volatile PCIHeader0 *)deviceHeader)->BAR1 & 0xFFFFFFF0;
+        device->bars[2].address = ((volatile PCIHeader0 *)deviceHeader)->BAR2 & 0xFFFFFFF0;
+        device->bars[3].address = ((volatile PCIHeader0 *)deviceHeader)->BAR3 & 0xFFFFFFF0;
+        device->bars[4].address = ((volatile PCIHeader0 *)deviceHeader)->BAR4 & 0xFFFFFFF0;
+        device->bars[5].address = ((volatile PCIHeader0 *)deviceHeader)->BAR5 & 0xFFFFFFF0;
+
         switch(deviceHeader->objectClass)
         {
             case 0x01: //Mass Storage Controller
@@ -316,7 +366,7 @@ namespace PCI
                         switch(deviceHeader->progIF)
                         {
                             case 0x01:
-                                new Drivers::AHCI::AHCIDriver(deviceHeader);
+                                new Drivers::AHCI::AHCIDriver(device);
 
                             break;
                         }
@@ -336,7 +386,7 @@ namespace PCI
 
         globalPageTableManager->identityMap((void *)deviceAddress);
 
-        PCIDeviceHeader *deviceHeader = (PCIDeviceHeader *)deviceAddress;
+        volatile PCIDeviceHeader *deviceHeader = (volatile PCIDeviceHeader *)deviceAddress;
 
         if(deviceHeader->deviceID == 0 || deviceHeader->deviceID == 0xFFFF)
         {
@@ -357,7 +407,7 @@ namespace PCI
 
         globalPageTableManager->identityMap((void *)busAddress);
 
-        PCIDeviceHeader *deviceHeader = (PCIDeviceHeader *)busAddress;
+        volatile PCIDeviceHeader *deviceHeader = (volatile PCIDeviceHeader *)busAddress;
 
         if(deviceHeader->deviceID == 0 || deviceHeader->deviceID == 0xFFFF)
         {
@@ -370,7 +420,7 @@ namespace PCI
         }
     }
 
-    void enumeratePCI(MCFGHeader *mcfg)
+    void enumeratePCI(volatile MCFGHeader *mcfg)
     {
         printf("[PCI] Enumerating Devices\n");
 
@@ -378,7 +428,7 @@ namespace PCI
 
         for(uint32_t i = 0; i < entries; i++)
         {
-            ACPIDeviceConfig *deviceConfig = (ACPIDeviceConfig *)((uint64_t)mcfg + sizeof(MCFGHeader) + sizeof(ACPIDeviceConfig[i]));
+            volatile ACPIDeviceConfig *deviceConfig = (volatile ACPIDeviceConfig *)((uint64_t)mcfg + sizeof(MCFGHeader) + sizeof(ACPIDeviceConfig[i]));
 
             for(uint64_t bus = deviceConfig->startBus; bus < deviceConfig->endBus; bus++)
             {
