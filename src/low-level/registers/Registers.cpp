@@ -1,6 +1,6 @@
 #include "Registers.hpp"
 
-uint64_t Registers::readCR0()
+uint64_t Registers::ReadCR0()
 {
   uint64_t outValue = 0;
 
@@ -9,7 +9,7 @@ uint64_t Registers::readCR0()
   return outValue;
 }
 
-uint64_t Registers::readRSP()
+uint64_t Registers::ReadRSP()
 {
   uint64_t outValue = 0;
 
@@ -18,7 +18,7 @@ uint64_t Registers::readRSP()
   return outValue;
 }
 
-uint64_t Registers::readCR2()
+uint64_t Registers::ReadCR2()
 {
   uint64_t outValue = 0;
 
@@ -27,7 +27,7 @@ uint64_t Registers::readCR2()
   return outValue;
 }
 
-uint64_t Registers::readCR3()
+uint64_t Registers::ReadCR3()
 {
   uint64_t outValue = 0;
 
@@ -36,17 +36,17 @@ uint64_t Registers::readCR3()
   return outValue;
 }
 
-void Registers::writeCR0(uint64_t value)
+void Registers::WriteCR0(uint64_t value)
 {
   asm ("mov %0, %%cr0" : /* no output */ : "r"(value));
 }
 
-void Registers::writeCR3(uint64_t value)
+void Registers::WriteCR3(uint64_t value)
 {
   asm ("mov %0, %%cr3" : /* no output */ : "r"(value));
 }
 
-uint64_t Registers::readMSR(uint64_t msr)
+uint64_t Registers::ReadMSR(uint64_t msr)
 {
   uint32_t low = 0, high = 0;
 
@@ -55,7 +55,7 @@ uint64_t Registers::readMSR(uint64_t msr)
   return (low | ((uint64_t)high << 32));
 }
 
-void Registers::writeMSR(uint64_t msr, uint64_t value)
+void Registers::WriteMSR(uint64_t msr, uint64_t value)
 {
   uint32_t lo = (uint32_t)value;
   uint32_t hi = value >> 32;

@@ -2,7 +2,6 @@
 #include "AHCIDriver.hpp"
 #include "../../low-level/paging/PageFrameAllocator.hpp"
 #include "../../low-level/paging/PageTableManager.hpp"
-#include "../../low-level/interrupts/Interrupts.hpp"
 
 namespace Drivers
 {
@@ -24,6 +23,19 @@ namespace Drivers
         #define HBA_PxCMD_FRE           0x0010
         #define HBA_PxCMD_ST            0x0001
         #define HBA_PxCMD_FR            0x4000
+
+        class AHCIHolder
+        {
+        public:
+            AHCIHolder() : portCount(0) {}
+
+            void ProbePorts();
+
+            PCI::Device *device;
+            volatile HBAMemory *ABAR;
+            AHCIDriver *ports[32];
+            uint8_t portCount;
+        };
 
         void InitializeCommandHeader(volatile HBACommandHeader *commandHeader, bool write)
         {
@@ -138,7 +150,7 @@ namespace Drivers
             }
         }
 
-        void AHCIDriver::ProbePorts()
+        void AHCIHolder::ProbePorts()
         {
             uint32_t implementedPorts = ABAR->implementedPorts;
 
@@ -150,9 +162,10 @@ namespace Drivers
 
                     if(type == AHCI_PORT_TYPE_SATA || type == AHCI_PORT_TYPE_SATAPI)
                     {
-                        Port *port = new Port();
+                        AHCIDriver *port = new AHCIDriver();
                         ports[portCount] = port;
 
+                        port->device = device;
                         port->portType = type;
                         port->port = &ABAR->ports[i];
                         port->portNumber = portCount;
@@ -163,11 +176,11 @@ namespace Drivers
             }
         }
 
-        void Port::Configure()
+        void AHCIDriver::Configure()
         {
-            void *newBase = globalAllocator.requestPage();
+            void *newBase = globalAllocator.RequestPage();
 
-            globalPageTableManager->identityMap(newBase);
+            globalPageTableManager->IdentityMap(newBase);
 
             memset(newBase, 0, 0x1000);
 
@@ -176,7 +189,7 @@ namespace Drivers
 
             HBAFIS *fis = new HBAFIS();
 
-            globalPageTableManager->identityMap(fis);
+            globalPageTableManager->IdentityMap(fis);
 
             memset(fis, 0, sizeof(HBAFIS));
 
@@ -193,16 +206,16 @@ namespace Drivers
             {
                 commandHeader[i].prdtLength = 8;
 
-                void *commandTableAddress = globalAllocator.requestPage();
+                void *commandTableAddress = globalAllocator.RequestPage();
 
-                globalPageTableManager->identityMap(commandTableAddress);
+                globalPageTableManager->IdentityMap(commandTableAddress);
 
                 commandHeader[i].commandTableBaseAddress = (uint64_t)commandTableAddress;
                 commandHeader[i].commandTableBaseAddressUpper = ((uint64_t)commandTableAddress >> 32);
             }
         }
 
-        void Port::StartCommand()
+        void AHCIDriver::StartCommand()
         {
             port->commandStatus &= ~HBA_PxCMD_ST;
 
@@ -212,7 +225,7 @@ namespace Drivers
             port->commandStatus |= HBA_PxCMD_ST;
         }
 
-        void Port::StopCommand()
+        void AHCIDriver::StopCommand()
         {
             port->commandStatus &= ~HBA_PxCMD_ST;
 
@@ -229,7 +242,7 @@ namespace Drivers
             port->commandStatus &= ~HBA_PxCMD_FRE;
         }
 
-        bool Port::Read(uint64_t sector, uint32_t sectorCount, void *buffer)
+        bool AHCIDriver::Read(void *buffer, uint64_t sector, uint64_t sectorCount)
         {
             port->interruptStatus = (uint32_t)-1;
 
@@ -285,7 +298,7 @@ namespace Drivers
             return true;
         }
 
-        bool Port::Write(uint64_t sector, uint32_t sectorCount, void *buffer)
+        bool AHCIDriver::Write(void *buffer, uint64_t sector, uint64_t sectorCount)
         {
             port->interruptStatus = (uint32_t)-1;
 
@@ -340,31 +353,32 @@ namespace Drivers
             return true;
         }
 
-        AHCIDriver::AHCIDriver(PCI::Device *device) : portCount(0)
+        void HandleMassStorageDevice(PCI::Device *device)
         {
             printf("Initializing AHCI device %s (vendor: %s)\n",
-                PCI::deviceName(device->vendorID, device->deviceID),
-                PCI::vendorName(device->vendorID));
+                    PCI::DeviceName(device->vendorID, device->deviceID),
+                    PCI::VendorName(device->vendorID));
 
-            this->device = device;
+            AHCIHolder holder;
 
-            ABAR = (volatile HBAMemory *)(device->bars[5].address);
+            holder.device = device;
+            holder.ABAR = (volatile HBAMemory *)(device->bars[5].address);
 
-            globalPageTableManager->identityMap((void *)ABAR);
+            globalPageTableManager->IdentityMap((void *)holder.ABAR);
 
-            ProbePorts();
+            holder.ProbePorts();
 
-            printf("\tFound %u ports\n", portCount);
-
-            for(uint32_t i = 0; i < portCount; i++)
+            for(uint32_t i = 0; i < holder.portCount; i++)
             {
-                Port *port = ports[i];
+                AHCIDriver *port = holder.ports[i];
 
                 port->Configure();
 
-                port->buffer = (uint8_t *)globalAllocator.requestPage();
-                globalPageTableManager->identityMap(port->buffer);
+                port->buffer = (uint8_t *)globalAllocator.RequestPage();
+                globalPageTableManager->IdentityMap(port->buffer);
                 memset(port->buffer, 0, 0x1000);
+
+                Devices::globalDeviceManager.AddDevice(port);
             }
         }
     }

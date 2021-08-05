@@ -113,12 +113,12 @@ typedef struct _stack
   uint64_t rbx;
   uint64_t rax;
   uint64_t id;
-  uint64_t error_code;
-  uint64_t instruction_pointer;
-  uint64_t code_segment;
-  uint64_t cpu_flags;
-  uint64_t stack_pointer;
-  uint64_t stack_segment;
+  uint64_t errorCode;
+  uint64_t instructionPointer;
+  uint64_t codeSegment;
+  uint64_t cpuFlags;
+  uint64_t stackPointer;
+  uint64_t stackSegment;
 } __attribute__((packed)) InterruptStack;
 
 typedef void (*InterruptHandler)(InterruptStack* stack);
@@ -136,13 +136,13 @@ private:
     InterruptHandler handlers[256];
     HandlerInfo argHandlers[256];
 public:
-    void init();
-    void enableInterrupts();
-    void disableInterrupts();
-    void registerHandler(uint64_t id, InterruptHandler handler);
-    void registerHandler(uint64_t id, InterruptHandlerArg handler, void *data);
+    void Init();
+    void EnableInterrupts();
+    void DisableInterrupts();
+    void RegisterHandler(uint64_t id, InterruptHandler handler);
+    void RegisterHandler(uint64_t id, InterruptHandlerArg handler, void *data);
     
-    inline InterruptHandler getHandler(int index)
+    inline InterruptHandler GetHandler(int index)
     {
         if(index >= 0 && index <= sizeof(handlers) / sizeof(handlers[0]))
         {
@@ -152,7 +152,7 @@ public:
         return NULL;
     }
     
-    inline HandlerInfo *getHandlerArg(int index)
+    inline HandlerInfo *GetHandlerArg(int index)
     {
         if(index >= 0 && index <= sizeof(argHandlers) / sizeof(argHandlers[0]))
         {

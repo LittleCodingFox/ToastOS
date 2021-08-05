@@ -10,9 +10,9 @@
 
 Interrupts interrupts;
 
-void breakpointHandler(InterruptStack *stack);
-void pageFaultHandler(InterruptStack *stack);
-void keyboardHandler(InterruptStack *stack);
+void BreakpointHandler(InterruptStack *stack);
+void PageFaultHandler(InterruptStack *stack);
+void KeyboardHandler(InterruptStack *stack);
 
 static const char *exception_messages[] =
 {
@@ -53,11 +53,11 @@ static const char *exception_messages[] =
     "Reserved"
 };
 
-void Interrupts::init()
+void Interrupts::Init()
 {
     memset(handlers, 0, sizeof(handlers));
 
-    idt.init();
+    idt.Init();
 
     // start initialization
     outport8(PIC1, 0x11);
@@ -80,77 +80,77 @@ void Interrupts::init()
     outport8(PIC2_DATA, 0x00);
 
     // Exceptions
-    idt.registerInterrupt(0, (uint64_t)exc0);
-    idt.registerInterrupt(1, (uint64_t)exc1);
-    idt.registerInterrupt(2, (uint64_t)exc2);
-    idt.registerInterrupt(3, (uint64_t)exc3);
-    idt.registerInterrupt(4, (uint64_t)exc4);
-    idt.registerInterrupt(5, (uint64_t)exc5);
-    idt.registerInterrupt(6, (uint64_t)exc6);
-    idt.registerInterrupt(7, (uint64_t)exc7);
-    idt.registerInterrupt(8, (uint64_t)exc8);
-    idt.registerInterrupt(9, (uint64_t)exc9);
-    idt.registerInterrupt(10, (uint64_t)exc10);
-    idt.registerInterrupt(11, (uint64_t)exc11);
-    idt.registerInterrupt(12, (uint64_t)exc12);
-    idt.registerInterrupt(13, (uint64_t)exc13);
-    idt.registerInterrupt(14, (uint64_t)exc14);
-    idt.registerInterrupt(15, (uint64_t)exc15);
-    idt.registerInterrupt(16, (uint64_t)exc16);
-    idt.registerInterrupt(17, (uint64_t)exc17);
-    idt.registerInterrupt(18, (uint64_t)exc18);
-    idt.registerInterrupt(19, (uint64_t)exc19);
-    idt.registerInterrupt(20, (uint64_t)exc20);
-    idt.registerInterrupt(21, (uint64_t)exc21);
-    idt.registerInterrupt(22, (uint64_t)exc22);
-    idt.registerInterrupt(23, (uint64_t)exc23);
-    idt.registerInterrupt(24, (uint64_t)exc24);
-    idt.registerInterrupt(25, (uint64_t)exc25);
-    idt.registerInterrupt(26, (uint64_t)exc26);
-    idt.registerInterrupt(27, (uint64_t)exc27);
-    idt.registerInterrupt(28, (uint64_t)exc28);
-    idt.registerInterrupt(29, (uint64_t)exc29);
-    idt.registerInterrupt(30, (uint64_t)exc30);
-    idt.registerInterrupt(31, (uint64_t)exc31);
+    idt.RegisterInterrupt(0, (uint64_t)exc0);
+    idt.RegisterInterrupt(1, (uint64_t)exc1);
+    idt.RegisterInterrupt(2, (uint64_t)exc2);
+    idt.RegisterInterrupt(3, (uint64_t)exc3);
+    idt.RegisterInterrupt(4, (uint64_t)exc4);
+    idt.RegisterInterrupt(5, (uint64_t)exc5);
+    idt.RegisterInterrupt(6, (uint64_t)exc6);
+    idt.RegisterInterrupt(7, (uint64_t)exc7);
+    idt.RegisterInterrupt(8, (uint64_t)exc8);
+    idt.RegisterInterrupt(9, (uint64_t)exc9);
+    idt.RegisterInterrupt(10, (uint64_t)exc10);
+    idt.RegisterInterrupt(11, (uint64_t)exc11);
+    idt.RegisterInterrupt(12, (uint64_t)exc12);
+    idt.RegisterInterrupt(13, (uint64_t)exc13);
+    idt.RegisterInterrupt(14, (uint64_t)exc14);
+    idt.RegisterInterrupt(15, (uint64_t)exc15);
+    idt.RegisterInterrupt(16, (uint64_t)exc16);
+    idt.RegisterInterrupt(17, (uint64_t)exc17);
+    idt.RegisterInterrupt(18, (uint64_t)exc18);
+    idt.RegisterInterrupt(19, (uint64_t)exc19);
+    idt.RegisterInterrupt(20, (uint64_t)exc20);
+    idt.RegisterInterrupt(21, (uint64_t)exc21);
+    idt.RegisterInterrupt(22, (uint64_t)exc22);
+    idt.RegisterInterrupt(23, (uint64_t)exc23);
+    idt.RegisterInterrupt(24, (uint64_t)exc24);
+    idt.RegisterInterrupt(25, (uint64_t)exc25);
+    idt.RegisterInterrupt(26, (uint64_t)exc26);
+    idt.RegisterInterrupt(27, (uint64_t)exc27);
+    idt.RegisterInterrupt(28, (uint64_t)exc28);
+    idt.RegisterInterrupt(29, (uint64_t)exc29);
+    idt.RegisterInterrupt(30, (uint64_t)exc30);
+    idt.RegisterInterrupt(31, (uint64_t)exc31);
 
     // Hardware interrupts
-    idt.registerInterrupt(IRQ0, (uint64_t)irq0);
-    idt.registerInterrupt(IRQ1, (uint64_t)irq1);
-    idt.registerInterrupt(IRQ2, (uint64_t)irq2);
-    idt.registerInterrupt(IRQ3, (uint64_t)irq3);
-    idt.registerInterrupt(IRQ4, (uint64_t)irq4);
-    idt.registerInterrupt(IRQ5, (uint64_t)irq5);
-    idt.registerInterrupt(IRQ6, (uint64_t)irq6);
-    idt.registerInterrupt(IRQ7, (uint64_t)irq7);
-    idt.registerInterrupt(IRQ8, (uint64_t)irq8);
-    idt.registerInterrupt(IRQ9, (uint64_t)irq9);
-    idt.registerInterrupt(IRQ10, (uint64_t)irq10);
-    idt.registerInterrupt(IRQ11, (uint64_t)irq11);
-    idt.registerInterrupt(IRQ12, (uint64_t)irq12);
+    idt.RegisterInterrupt(IRQ0, (uint64_t)irq0);
+    idt.RegisterInterrupt(IRQ1, (uint64_t)irq1);
+    idt.RegisterInterrupt(IRQ2, (uint64_t)irq2);
+    idt.RegisterInterrupt(IRQ3, (uint64_t)irq3);
+    idt.RegisterInterrupt(IRQ4, (uint64_t)irq4);
+    idt.RegisterInterrupt(IRQ5, (uint64_t)irq5);
+    idt.RegisterInterrupt(IRQ6, (uint64_t)irq6);
+    idt.RegisterInterrupt(IRQ7, (uint64_t)irq7);
+    idt.RegisterInterrupt(IRQ8, (uint64_t)irq8);
+    idt.RegisterInterrupt(IRQ9, (uint64_t)irq9);
+    idt.RegisterInterrupt(IRQ10, (uint64_t)irq10);
+    idt.RegisterInterrupt(IRQ11, (uint64_t)irq11);
+    idt.RegisterInterrupt(IRQ12, (uint64_t)irq12);
 
     // Specific handlers for exceptions.
-    registerHandler(EXCEPTION_BP, breakpointHandler);
-    registerHandler(EXCEPTION_PF, pageFaultHandler);
-    registerHandler(IRQ1, keyboardHandler);
+    RegisterHandler(EXCEPTION_BP, BreakpointHandler);
+    RegisterHandler(EXCEPTION_PF, PageFaultHandler);
+    RegisterHandler(IRQ1, KeyboardHandler);
 
-    idt.load();
+    idt.Load();
 
-    enableInterrupts();
+    EnableInterrupts();
 }
 
-void Interrupts::enableInterrupts()
+void Interrupts::EnableInterrupts()
 {
     __asm__("sti");
 }
 
-void Interrupts::disableInterrupts()
+void Interrupts::DisableInterrupts()
 {
     __asm__("cli");
 }
 
 void interruptIntHandler(InterruptStack stack)
 {
-    InterruptHandler handler = interrupts.getHandler(stack.id);
+    InterruptHandler handler = interrupts.GetHandler(stack.id);
 
     if (handler != NULL)
     {
@@ -160,7 +160,7 @@ void interruptIntHandler(InterruptStack stack)
     }
     else
     {
-        Interrupts::HandlerInfo *argHandler = interrupts.getHandlerArg(stack.id);
+        Interrupts::HandlerInfo *argHandler = interrupts.GetHandlerArg(stack.id);
 
         if(argHandler != NULL && argHandler->handler != NULL)
         {
@@ -184,12 +184,12 @@ void interruptIntHandler(InterruptStack stack)
         "  r13 = 0x%08x    r14 = 0x%08x    r15 = 0x%08x",
         stack.id,
         exception_messages[stack.id],
-        stack.error_code,
-        stack.instruction_pointer,
-        stack.code_segment,
-        stack.cpu_flags,
-        stack.stack_pointer,
-        stack.stack_segment,
+        stack.errorCode,
+        stack.instructionPointer,
+        stack.codeSegment,
+        stack.cpuFlags,
+        stack.stackPointer,
+        stack.stackSegment,
         stack.rax,
         stack.rbx,
         stack.rcx,
@@ -209,7 +209,7 @@ void interruptIntHandler(InterruptStack stack)
 
 void interruptIRQHandler(InterruptStack stack)
 {
-    InterruptHandler handler = interrupts.getHandler(stack.id);
+    InterruptHandler handler = interrupts.GetHandler(stack.id);
 
     if (handler != NULL)
     {
@@ -217,7 +217,7 @@ void interruptIRQHandler(InterruptStack stack)
     }
     else
     {
-        Interrupts::HandlerInfo *argHandler = interrupts.getHandlerArg(stack.id);
+        Interrupts::HandlerInfo *argHandler = interrupts.GetHandlerArg(stack.id);
 
         if(argHandler != NULL && argHandler->handler != NULL)
         {
@@ -233,12 +233,12 @@ void interruptIRQHandler(InterruptStack stack)
     outport8(PIC1, PIC_EOI);
 }
 
-void Interrupts::registerHandler(uint64_t id, InterruptHandler handler)
+void Interrupts::RegisterHandler(uint64_t id, InterruptHandler handler)
 {
     handlers[id] = handler;
 }
 
-void Interrupts::registerHandler(uint64_t id, InterruptHandlerArg handler, void *data)
+void Interrupts::RegisterHandler(uint64_t id, InterruptHandlerArg handler, void *data)
 {
     HandlerInfo info;
     info.handler = handler;
@@ -247,7 +247,7 @@ void Interrupts::registerHandler(uint64_t id, InterruptHandlerArg handler, void 
     argHandlers[id] = info;
 }
 
-void keyboardHandler(InterruptStack *stack)
+void KeyboardHandler(InterruptStack *stack)
 {
     uint8_t scancode = inport8(0x60);
 
@@ -256,7 +256,7 @@ void keyboardHandler(InterruptStack *stack)
     outport8(PIC1, PIC_EOI);
 }
 
-void breakpointHandler(InterruptStack *stack)
+void BreakpointHandler(InterruptStack *stack)
 {
     printf("Exception: BREAKPOINT\n"
             "  instruction_pointer = %p\n"
@@ -264,16 +264,16 @@ void breakpointHandler(InterruptStack *stack)
             "  cpu_flags           = %#x\n"
             "  stack_pointer       = %p\n"
             "  stack_segment       = %x\n",
-            stack->instruction_pointer,
-            stack->code_segment,
-            stack->cpu_flags,
-            stack->stack_pointer,
-            stack->stack_segment);
+            stack->instructionPointer,
+            stack->codeSegment,
+            stack->cpuFlags,
+            stack->stackPointer,
+            stack->stackSegment);
 }
 
-void pageFaultHandler(InterruptStack* stack)
+void PageFaultHandler(InterruptStack* stack)
 {
-    uint64_t error_code = stack->error_code;
+    uint64_t error_code = stack->errorCode;
     uint8_t is_present = (error_code >> 0) & 1;
     uint8_t is_write = (error_code >> 1) & 1;
     uint8_t is_user = (error_code >> 2) & 1;
@@ -300,18 +300,18 @@ void pageFaultHandler(InterruptStack* stack)
             "  rbp = 0x%08x    r8  = 0x%08x    r9  = 0x%08x\n"
             "  r10 = 0x%08x    r11 = 0x%08x    r12 = 0x%08x\n"
             "  r13 = 0x%08x    r14 = 0x%08x    r15 = 0x%08x",
-            Registers::readCR2(),
+            Registers::ReadCR2(),
             error_code,
             is_present != 0 ? 'Y' : 'N',
             is_write != 0 ? 'Y' : 'N',
             is_user != 0 ? 'Y' : 'N',
             is_reserved_write != 0 ? 'Y' : 'N',
             is_instruction_fetch != 0 ? 'Y' : 'N',
-            stack->instruction_pointer,
-            stack->code_segment,
-            stack->cpu_flags,
-            stack->stack_pointer,
-            stack->stack_segment,
+            stack->instructionPointer,
+            stack->codeSegment,
+            stack->cpuFlags,
+            stack->stackPointer,
+            stack->stackSegment,
             stack->rax,
             stack->rbx,
             stack->rcx,

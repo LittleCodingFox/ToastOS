@@ -16,12 +16,12 @@ public:
     /// System Call Flag Mask
     static const uint64_t IA32_SFMASK = 0xC0000084;
 
-    static uint64_t readCR0();
-    static uint64_t readCR2();
-    static uint64_t readCR3();
-    static void writeCR0(uint64_t value);
-    static void writeCR3(uint64_t value);
-    static uint64_t readMSR(uint64_t msr);
-    static void writeMSR(uint64_t msr, uint64_t value);
-    static uint64_t readRSP();
+    static uint64_t ReadCR0();
+    static uint64_t ReadCR2();
+    static uint64_t ReadCR3();
+    static void WriteCR0(uint64_t value);
+    static void WriteCR3(uint64_t value);
+    static uint64_t ReadMSR(uint64_t msr);
+    static void WriteMSR(uint64_t msr, uint64_t value);
+    static uint64_t ReadRSP();
 };

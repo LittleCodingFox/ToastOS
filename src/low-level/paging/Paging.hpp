@@ -55,8 +55,8 @@ struct PageDirectoryEntry
         };
     };
 
-    void setAddress(uint64_t address);
-    uint64_t getAddress();
+    void SetAddress(uint64_t address);
+    uint64_t GetAddress();
 };
 
 struct PageTable

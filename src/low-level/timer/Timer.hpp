@@ -8,12 +8,12 @@ class Timer
 private:
     DynamicArray<void *> *handlers;
 public:
-    void initialize();
-    uint32_t getTicks();
-    float getTime();
-    void registerHandler(void (*callback)());
-    void unregisterHandler(void (*callback)());
-    void runHandlers();
+    void Initialize();
+    uint32_t GetTicks();
+    float GetTime();
+    void RegisterHandler(void (*callback)());
+    void UnregisterHandler(void (*callback)());
+    void RunHandlers();
 };
 
 extern Timer timer;

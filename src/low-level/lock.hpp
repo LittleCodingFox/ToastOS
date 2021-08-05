@@ -12,7 +12,7 @@ namespace Threading
     public:
         Lock() : locked(false) {};
 
-        bool isLocked() const
+        bool IsLocked() const
         {
             bool result = false;
 
@@ -21,7 +21,7 @@ namespace Threading
             return result;
         }
 
-        void lock()
+        void Lock()
         {
             while(!__sync_bool_compare_and_swap(&locked, false, true))
             {
@@ -31,14 +31,14 @@ namespace Threading
             __sync_synchronize();
         }
 
-        void forceLock()
+        void ForceLock()
         {
             locked = true;
 
             __sync_synchronize();
         }
 
-        void unlock()
+        void Unlock()
         {
             __sync_synchronize();
             __atomic_store_n(&locked, false, __ATOMIC_SEQ_CST);
@@ -54,12 +54,12 @@ namespace Threading
     public:
         ScopedLock(Lock &value) : lock(value)
         {
-            lock.lock();
+            lock.Lock();
         }
 
         ~ScopedLock()
         {
-            lock.unlock();
+            lock.Unlock();
         }
     };
 }

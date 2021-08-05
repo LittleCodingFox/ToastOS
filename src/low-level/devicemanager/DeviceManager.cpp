@@ -1,4 +1,5 @@
 #include "DeviceManager.hpp"
+#include "debug.hpp"
 
 namespace Devices
 {
@@ -24,6 +25,8 @@ namespace Devices
         {
             device->ID = deviceCount;
             devices[deviceCount++] = device;
+
+            printf("Added device 0x%p (name: %s, type: 0x%x) with ID %u\n", device, device->name(), device->type(), device->ID);
         }
     }
 

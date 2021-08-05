@@ -11,12 +11,12 @@ struct __attribute__((packed)) IDTR
 
 IDT idt;
 
-void IDT::init()
+void IDT::Init()
 {
     memset(idt, 0, sizeof(idt));
 }
 
-void IDT::load()
+void IDT::Load()
 {
     IDTR idtRegister = {
         .limit = (uint16_t)(sizeof(idt) - 1),
@@ -26,7 +26,7 @@ void IDT::load()
     asm ("lidt %0" : : "m"(idtRegister));
 }
 
-void IDT::registerGate(uint16_t n, uint64_t handler, uint8_t type, uint8_t dpl)
+void IDT::RegisterGate(uint16_t n, uint64_t handler, uint8_t type, uint8_t dpl)
 {
     idt[n].ptrLow = (uint16_t)handler;
     idt[n].ptrMid = (uint16_t)(handler >> 16);
@@ -39,7 +39,7 @@ void IDT::registerGate(uint16_t n, uint64_t handler, uint8_t type, uint8_t dpl)
     idt[n].present = 1;
 }
 
-void IDT::registerInterrupt(uint16_t n, uint64_t handler)
+void IDT::RegisterInterrupt(uint16_t n, uint64_t handler)
 {
-    registerGate(n, handler, IDT_INTERRUPT_GATE, 0);
+    RegisterGate(n, handler, IDT_INTERRUPT_GATE, 0);
 }

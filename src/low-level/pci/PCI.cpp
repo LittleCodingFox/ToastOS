@@ -1,9 +1,9 @@
 #include "PCI.hpp"
-#include "debug.hpp"
 #include "cstring/cstring.hpp"
 #include "paging/PageTableManager.hpp"
 #include "../drivers/AHCI/AHCIDriver.hpp"
 #include "devicemanager/DeviceManager.hpp"
+#include "printf/printf.h"
 
 struct PCIDeviceHeader
 {
@@ -23,7 +23,7 @@ struct PCIDeviceHeader
 
 namespace PCI
 {
-    const char* deviceClasses[]
+    const char* DeviceClasses[]
     {
         "Unclassified",
         "Mass Storage Controller",
@@ -47,7 +47,7 @@ namespace PCI
         "Non Essential Instrumentation"
     };
 
-    const char* vendorName(uint16_t vendorID)
+    const char* VendorName(uint16_t vendorID)
     {
         switch (vendorID)
         {
@@ -64,7 +64,7 @@ namespace PCI
         return to_hstring(vendorID);
     }
 
-    const char* deviceName(uint16_t vendorID, uint16_t deviceID)
+    const char* DeviceName(uint16_t vendorID, uint16_t deviceID)
     {
         switch (vendorID)
         {
@@ -90,7 +90,7 @@ namespace PCI
         return to_hstring(deviceID);
     }
 
-    const char* massStorageControllerSubclassName(uint8_t subclassCode)
+    const char* MassStorageControllerSubclassName(uint8_t subclassCode)
     {
         switch (subclassCode)
         {
@@ -128,7 +128,7 @@ namespace PCI
         return to_hstring(subclassCode);
     }
 
-    const char* serialBusControllerSubclassName(uint8_t subclassCode)
+    const char* SerialBusControllerSubclassName(uint8_t subclassCode)
     {
         switch (subclassCode)
         {
@@ -169,7 +169,7 @@ namespace PCI
         return to_hstring(subclassCode);
     }
 
-    const char* bridgeDeviceSubclassName(uint8_t subclassCode)
+    const char* BridgeDeviceSubclassName(uint8_t subclassCode)
     {
         switch (subclassCode)
         {
@@ -213,12 +213,12 @@ namespace PCI
         return to_hstring(subclassCode);
     }
 
-    const char* subclassName(uint8_t classCode, uint8_t subclassCode)
+    const char* SubclassName(uint8_t classCode, uint8_t subclassCode)
     {
         switch (classCode)
         {
             case 0x01:
-                return massStorageControllerSubclassName(subclassCode);
+                return MassStorageControllerSubclassName(subclassCode);
 
             case 0x03:
                 switch (subclassCode)
@@ -228,15 +228,16 @@ namespace PCI
                 }
 
             case 0x06:
-                return bridgeDeviceSubclassName(subclassCode);
+                return BridgeDeviceSubclassName(subclassCode);
 
             case 0x0C:
-                return serialBusControllerSubclassName(subclassCode);
+                return SerialBusControllerSubclassName(subclassCode);
         }
+
         return to_hstring(subclassCode);
     }
 
-    const char* progIFName(uint8_t classCode, uint8_t subclassCode, uint8_t progIF)
+    const char* ProgIFName(uint8_t classCode, uint8_t subclassCode, uint8_t progIF)
     {
         switch (classCode)
         {
@@ -302,7 +303,7 @@ namespace PCI
         return to_hstring(progIF);
     }
 
-    Bar decodeBar(volatile uint8_t **ptr)
+    Bar DecodeBar(volatile uint8_t **ptr)
     {
         uint32_t bar = *(uint32_t *)*ptr;
 
@@ -352,13 +353,13 @@ namespace PCI
         return outValue;
     }
 
-    void enumerateFunction(uint64_t deviceAddress, uint64_t function)
+    void EnumerateFunction(uint64_t deviceAddress, uint64_t function)
     {
         uint64_t offset = function << 12;
 
         uint64_t functionAddress = deviceAddress + offset;
 
-        globalPageTableManager->identityMap((void *)functionAddress);
+        globalPageTableManager->IdentityMap((void *)functionAddress);
 
         volatile PCIDeviceHeader *deviceHeader = (volatile PCIDeviceHeader *)functionAddress;
 
@@ -368,11 +369,11 @@ namespace PCI
         }
 
         printf("[PCI DEVICE]\n\tVendor: %s\n\tDevice Name: %s\n\tDevice Class: %s\n\tSubclass Name: %s\n\tProgIf Name: %s\n",
-            vendorName(deviceHeader->vendorID),
-            deviceName(deviceHeader->vendorID, deviceHeader->deviceID),
-            deviceClasses[deviceHeader->objectClass],
-            subclassName(deviceHeader->objectClass, deviceHeader->objectSubclass),
-            progIFName(deviceHeader->objectClass, deviceHeader->objectSubclass, deviceHeader->progIF));
+                VendorName(deviceHeader->vendorID),
+                DeviceName(deviceHeader->vendorID, deviceHeader->deviceID),
+                DeviceClasses[deviceHeader->objectClass],
+                SubclassName(deviceHeader->objectClass, deviceHeader->objectSubclass),
+                ProgIFName(deviceHeader->objectClass, deviceHeader->objectSubclass, deviceHeader->progIF));
 
         Device *device = new Device();
         device->classCode = deviceHeader->objectClass;
@@ -384,7 +385,7 @@ namespace PCI
 
         for(uint32_t i = 0; i < 6; i++)
         {
-            device->bars[i] = decodeBar(&barPtr);
+            device->bars[i] = DecodeBar(&barPtr);
         }
 
         switch(deviceHeader->objectClass)
@@ -396,7 +397,7 @@ namespace PCI
                         switch(deviceHeader->progIF)
                         {
                             case 0x01:
-                                Devices::globalDeviceManager.AddDevice(new Drivers::AHCI::AHCIDriver(device));
+                                Drivers::AHCI::HandleMassStorageDevice(device);
 
                             break;
                         }
@@ -408,13 +409,13 @@ namespace PCI
         }
     }
 
-    void enumerateDevice(uint64_t busAddress, uint64_t device)
+    void EnumerateDevice(uint64_t busAddress, uint64_t device)
     {
         uint64_t offset = device << 15;
 
         uint64_t deviceAddress = busAddress + offset;
 
-        globalPageTableManager->identityMap((void *)deviceAddress);
+        globalPageTableManager->IdentityMap((void *)deviceAddress);
 
         volatile PCIDeviceHeader *deviceHeader = (volatile PCIDeviceHeader *)deviceAddress;
 
@@ -425,17 +426,17 @@ namespace PCI
 
         for(uint64_t i = 0; i < 8; i++)
         {
-            enumerateFunction(deviceAddress, i);
+            EnumerateFunction(deviceAddress, i);
         }
     }
 
-    void enumerateBus(uint64_t baseAddress, uint64_t bus)
+    void EnumerateBus(uint64_t baseAddress, uint64_t bus)
     {
         uint64_t offset = bus << 20;
 
         uint64_t busAddress = baseAddress + offset;
 
-        globalPageTableManager->identityMap((void *)busAddress);
+        globalPageTableManager->IdentityMap((void *)busAddress);
 
         volatile PCIDeviceHeader *deviceHeader = (volatile PCIDeviceHeader *)busAddress;
 
@@ -446,13 +447,13 @@ namespace PCI
 
         for(uint64_t i = 0; i < 32; i++)
         {
-            enumerateDevice(busAddress, i);
+            EnumerateDevice(busAddress, i);
         }
     }
 
-    void enumeratePCI(volatile MCFGHeader *mcfg)
+    void EnumeratePCI(volatile MCFGHeader *mcfg)
     {
-        printf("[PCI] Enumerating Devices\n");
+        printf("%s", "[PCI] Enumerating Devices\n");
 
         uint32_t entries = (mcfg->header.length - sizeof(MCFGHeader)) / sizeof(ACPIDeviceConfig);
 
@@ -462,7 +463,7 @@ namespace PCI
 
             for(uint64_t bus = deviceConfig->startBus; bus < deviceConfig->endBus; bus++)
             {
-                enumerateBus(deviceConfig->baseAddress, bus);
+                EnumerateBus(deviceConfig->baseAddress, bus);
             }
         }
     }

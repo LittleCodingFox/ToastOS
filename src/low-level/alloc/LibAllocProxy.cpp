@@ -17,7 +17,7 @@ int liballoc_unlock()
 
 void* liballoc_alloc(size_t pages)
 {
-    void *ptr = globalAllocator.requestPages(pages);
+    void *ptr = globalAllocator.RequestPages(pages);
 
     if(ptr == NULL)
     {
@@ -38,7 +38,7 @@ void* liballoc_alloc(size_t pages)
 
 int liballoc_free(void* ptr, size_t pages)
 {
-    globalAllocator.freePages(ptr, pages);
+    globalAllocator.FreePages(ptr, pages);
 
     DEBUG_OUT("liballoc_free: freed %i pages at address %p", pages, ptr);
 

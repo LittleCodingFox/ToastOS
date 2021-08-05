@@ -23,15 +23,15 @@ private:
     uint16_t speed;
     bool initialized = false;
 
-    void initialize();
+    void Initialize();
 
 public:
 
     Serial(uint16_t port, uint16_t speed);
 
-    void print(const char *string);
-    void printLine(const char *string);
-    void write(char c);
+    void Print(const char *string);
+    void PrintLine(const char *string);
+    void Write(char c);
 
 };
 

@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include "../low-level/pci/PCI.hpp"
-#include "../low-level/devicemanager/DeviceManager.hpp"
+#include "../low-level/devicemanager/GenericIODevice.hpp"
 
 namespace Drivers
 {
@@ -234,10 +234,11 @@ namespace Drivers
             uint8_t reserved[96];
         };
 
-        class Port
+        class AHCIDriver : public Devices::GenericIODevice
         {
         public:
             volatile HBAPort *port;
+            PCI::Device *device;
             PortType portType;
             uint8_t *buffer;
             uint8_t portNumber;
@@ -245,24 +246,12 @@ namespace Drivers
             void Configure();
             void StartCommand();
             void StopCommand();
-            bool Read(uint64_t sector, uint32_t sectorCount, void *buffer);
-            bool Write(uint64_t sector, uint32_t sectorCount, void *buffer);
-        };
-
-        class AHCIDriver : public Devices::GenericDevice
-        {
-        public:
-            AHCIDriver(PCI::Device *device);
-            void ProbePorts();
-
-            PCI::Device *device;
-            volatile HBAMemory *ABAR;
-            Port *ports[32];
-            uint8_t portCount;
+            bool Read(void *data, uint64_t sector, uint64_t count) override;
+            bool Write(void *data, uint64_t sector, uint64_t count) override;
 
             inline const char *name() const override 
             {
-                return PCI::deviceName(device->vendorID, device->deviceID);
+                return PCI::DeviceName(device->vendorID, device->deviceID);
             }
 
             inline Devices::DeviceType type() const override
@@ -270,5 +259,7 @@ namespace Drivers
                 return Devices::DEVICE_TYPE_DISK;
             }
         };
+
+        void HandleMassStorageDevice(PCI::Device *device);
     };
 };

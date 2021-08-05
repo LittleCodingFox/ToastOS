@@ -22,7 +22,7 @@ Serial::Serial(uint16_t port, uint16_t speed)
     this->speed = speed;
 }
 
-void Serial::initialize()
+void Serial::Initialize()
 {
     if(initialized)
     {
@@ -40,34 +40,34 @@ void Serial::initialize()
     outport8(SERIAL_PORT_MODEM_COMMAND_PORT(port), 0x08);
 }
 
-void Serial::write(char c)
+void Serial::Write(char c)
 {
-    initialize();
+    Initialize();
 
     while(serialPortIsTransmitFIFOEmpty(port) == false);
 
     outport8(port, c);
 }
 
-void Serial::print(const char *string)
+void Serial::Print(const char *string)
 {
-    initialize();
+    Initialize();
 
     while(*string)
     {
-        write(*string);
+        Write(*string);
 
         string++;
     }
 }
 
-void Serial::printLine(const char *string)
+void Serial::PrintLine(const char *string)
 {
-    print(string);
-    print("\n");
+    Print(string);
+    Print("\n");
 }
 
 void SerialPortOutStreamCOM1(char character, void *arg)
 {
-    SerialCOM1.write(character);
+    SerialCOM1.Write(character);
 }

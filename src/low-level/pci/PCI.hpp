@@ -21,12 +21,12 @@ namespace PCI
         Bar bars[6];
     };
 
-    void enumeratePCI(volatile MCFGHeader *mcfg);
+    void EnumeratePCI(volatile MCFGHeader *mcfg);
 
-    extern const char *deviceClasses[];
+    extern const char *DeviceClasses[];
 
-    const char *vendorName(uint16_t vendorID);
-    const char *deviceName(uint16_t vendorID, uint16_t deviceID);
-    const char *subclassName(uint8_t classCode, uint8_t subclassCode);
-    const char *progIFName(uint8_t classCode, uint8_t subclassCode, uint8_t progIF);
+    const char *VendorName(uint16_t vendorID);
+    const char *DeviceName(uint16_t vendorID, uint16_t deviceID);
+    const char *SubclassName(uint8_t classCode, uint8_t subclassCode);
+    const char *ProgIFName(uint8_t classCode, uint8_t subclassCode, uint8_t progIF);
 }

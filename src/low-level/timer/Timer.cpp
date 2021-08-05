@@ -20,14 +20,14 @@ void timerCallback(InterruptStack *stack)
 {
     currentTick++;
 
-    timer.runHandlers();
+    timer.RunHandlers();
 }
 
-void Timer::initialize()
+void Timer::Initialize()
 {
     handlers = (DynamicArray<void *> *)malloc(sizeof(DynamicArray<void *>));
 
-    interrupts.registerHandler(IRQ0, timerCallback);
+    interrupts.RegisterHandler(IRQ0, timerCallback);
 
     uint32_t divisor = TIMER_QUOTIENT / TIMER_FREQUENCY;
 
@@ -36,7 +36,7 @@ void Timer::initialize()
     outport8(PIT_0, (divisor >> 8) & 0xFF);
 }
 
-void Timer::runHandlers()
+void Timer::RunHandlers()
 {
     for(uint32_t i = 0; i < handlers->length(); i++)
     {
@@ -46,31 +46,31 @@ void Timer::runHandlers()
     }
 }
 
-void Timer::registerHandler(void (*callback)())
+void Timer::RegisterHandler(void (*callback)())
 {
     handlers->add((void *)callback);
 }
 
-void Timer::unregisterHandler(void (*callback)())
+void Timer::UnregisterHandler(void (*callback)())
 {
     handlers->remove((void *)callback);
 }
 
-uint32_t Timer::getTicks()
+uint32_t Timer::GetTicks()
 {
     return currentTick;
 }
 
-float Timer::getTime()
+float Timer::GetTime()
 {
     return currentTick * (1.0f / TIMER_FREQUENCY);
 }
 
 void Sleep(uint64_t milliseconds)
 {
-    float time = timer.getTime();
+    float time = timer.GetTime();
 
-    while(timer.getTime() < time + milliseconds)
+    while(timer.GetTime() < time + milliseconds)
     {
         asm("hlt");
     }

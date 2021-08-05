@@ -18,7 +18,7 @@ const char* EFI_MEMORY_TYPE_STRINGS[] {
     "EfiPalCode",
 };
 
-uint64_t getMemorySize(EFI_MEMORY_DESCRIPTOR* mMap, uint64_t mMapEntries, uint64_t mMapDescSize)
+uint64_t GetMemorySize(volatile EFI_MEMORY_DESCRIPTOR *mMap, uint64_t mMapEntries, uint64_t mMapDescSize)
 {
     static uint64_t memorySizeBytes = 0;
 
@@ -26,7 +26,7 @@ uint64_t getMemorySize(EFI_MEMORY_DESCRIPTOR* mMap, uint64_t mMapEntries, uint64
 
     for (int i = 0; i < mMapEntries; i++)
     {
-        EFI_MEMORY_DESCRIPTOR* desc = (EFI_MEMORY_DESCRIPTOR*)((uint64_t)mMap + (i * mMapDescSize));
+        volatile EFI_MEMORY_DESCRIPTOR* desc = (volatile EFI_MEMORY_DESCRIPTOR *)((uint64_t)mMap + (i * mMapDescSize));
 
         memorySizeBytes += desc->numPages * 4096;
     }

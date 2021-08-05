@@ -18,16 +18,16 @@ void InitializeMemory(BootInfo* bootInfo)
     uint64_t mMapEntries = bootInfo->mMapSize / bootInfo->mMapDescSize;
 
     globalAllocator = PageFrameAllocator();
-    globalAllocator.readEFIMemoryMap(bootInfo->mMap, bootInfo->mMapSize, bootInfo->mMapDescSize);
+    globalAllocator.ReadEFIMemoryMap(bootInfo->mMap, bootInfo->mMapSize, bootInfo->mMapDescSize);
 
     uint64_t kernelSize = (uint64_t)&_KernelEnd - (uint64_t)&_KernelStart;
     uint64_t kernelPages = (uint64_t)kernelSize / 4096 + 1;
 
     DEBUG_OUT("%s", "Locking kernel pages");
 
-    globalAllocator.lockPages(&_KernelStart, kernelPages);
+    globalAllocator.LockPages(&_KernelStart, kernelPages);
 
-    PageTable* PML4 = (PageTable*)globalAllocator.requestPage();
+    PageTable* PML4 = (PageTable*)globalAllocator.RequestPage();
     memset(PML4, 0, 0x1000);
 
     DEBUG_OUT("%s", "Initializing page table manager");
@@ -35,16 +35,16 @@ void InitializeMemory(BootInfo* bootInfo)
     pageTableManager = PageTableManager(PML4);
 
     //Enable write protection
-    Registers::writeCR0(Registers::readCR0() | (1 << 16));
+    Registers::WriteCR0(Registers::ReadCR0() | (1 << 16));
 
     //Enable NXE bit
-    uint64_t efer = Registers::readMSR(Registers::IA32_EFER);
-    Registers::writeMSR(Registers::IA32_EFER, efer | (1 << 11));
+    uint64_t efer = Registers::ReadMSR(Registers::IA32_EFER);
+    Registers::WriteMSR(Registers::IA32_EFER, efer | (1 << 11));
 
     //Enables memory-wide identity mapping. probably not a good thing.
-    for (uint64_t t = 0; t < getMemorySize(bootInfo->mMap, mMapEntries, bootInfo->mMapDescSize); t+= 0x1000)
+    for (uint64_t t = 0; t < GetMemorySize(bootInfo->mMap, mMapEntries, bootInfo->mMapDescSize); t+= 0x1000)
     {
-        pageTableManager.identityMap((void*)t);
+        pageTableManager.IdentityMap((void*)t);
     }
 
     for (int i = 0; i < mMapEntries; i++)
@@ -57,32 +57,24 @@ void InitializeMemory(BootInfo* bootInfo)
 
             for(uint64_t index = 0, startIndex = desc->physAddr / 4096; index < desc->numPages; index++, startIndex += 4096)
             {
-                pageTableManager.identityMap((void *)startIndex);
+                pageTableManager.IdentityMap((void *)startIndex);
             }
         }
     }
-
-    //TODO: Make it map only specific memory
-    /*
-    for (uint64_t t = _KernelStart; t < _KernelStart + kernelSize; t+= 0x1000)
-    {
-        pageTableManager.identityMap((void*)t);
-    }
-    */
 
     DEBUG_OUT("%s", "Preparing framebuffer pages");
 
     uint64_t fbBase = (uint64_t)bootInfo->framebuffer->baseAddress;
     uint64_t fbSize = (uint64_t)bootInfo->framebuffer->bufferSize + 0x1000;
 
-    globalAllocator.lockPages((void*)fbBase, fbSize / 0x1000 + 1);
+    globalAllocator.LockPages((void*)fbBase, fbSize / 0x1000 + 1);
 
     for (uint64_t t = fbBase; t < fbBase + fbSize; t += 4096)
     {
-        pageTableManager.identityMap((void*)t);
+        pageTableManager.IdentityMap((void*)t);
     }
 
-    Registers::writeCR3((uint64_t)PML4);
+    Registers::WriteCR3((uint64_t)PML4);
 
     globalPageTableManager = kernelInfo.pageTableManager = &pageTableManager;
 }
@@ -91,7 +83,7 @@ void InitializeInterrupts()
 {
     printf("Initializing Interrupts\n");
 
-    interrupts.init();
+    interrupts.Init();
 }
 
 void InitializeACPI(BootInfo *bootInfo)
@@ -114,7 +106,7 @@ void InitializeACPI(BootInfo *bootInfo)
 
     printf("[ACPI] RSDP Signature: %s\n[ACPI] OEMID: %s\n", signature, OEMID);
 
-    SDTHeader *xsdt = (SDTHeader *)bootInfo->xsdt;
+    volatile SDTHeader *xsdt = (volatile SDTHeader *)bootInfo->xsdt;
 
     if(xsdt == NULL)
     {
@@ -123,7 +115,7 @@ void InitializeACPI(BootInfo *bootInfo)
         return;
     }
 
-    MCFGHeader *mcfg = (MCFGHeader *)ACPI::findTable(xsdt, "MCFG");
+    volatile MCFGHeader *mcfg = (volatile MCFGHeader *)ACPI::findTable(xsdt, "MCFG");
 
     if(mcfg == NULL)
     {
@@ -132,7 +124,7 @@ void InitializeACPI(BootInfo *bootInfo)
         return;
     }
 
-    PCI::enumeratePCI(mcfg);
+    PCI::EnumeratePCI(mcfg);
 }
 
 FramebufferRenderer r = FramebufferRenderer(NULL, NULL);
@@ -178,9 +170,9 @@ KernelInfo InitializeKernel(BootInfo* bootInfo)
 
     InitializeInterrupts();
 
-    timer.initialize();
+    timer.Initialize();
 
-    timer.registerHandler(RefreshFramebuffer);
+    timer.RegisterHandler(RefreshFramebuffer);
 
     InitializeACPI(bootInfo);
 
