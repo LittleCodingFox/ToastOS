@@ -3,6 +3,7 @@
 #include "cstring/cstring.hpp"
 #include "paging/PageTableManager.hpp"
 #include "../drivers/AHCI/AHCIDriver.hpp"
+#include "devicemanager/DeviceManager.hpp"
 
 struct PCIDeviceHeader
 {
@@ -395,7 +396,7 @@ namespace PCI
                         switch(deviceHeader->progIF)
                         {
                             case 0x01:
-                                new Drivers::AHCI::AHCIDriver(device);
+                                Devices::globalDeviceManager.AddDevice(new Drivers::AHCI::AHCIDriver(device));
 
                             break;
                         }

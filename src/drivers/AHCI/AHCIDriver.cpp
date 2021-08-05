@@ -85,8 +85,6 @@ namespace Drivers
 
             if(spinTimeout == 1000000)
             {
-                printf("ATA Device timed out\n");
-
                 return false;
             }
 
@@ -273,14 +271,67 @@ namespace Drivers
 
                 if(port->interruptStatus & HBA_PxIS_TFES)
                 {
-                    printf("ATA Device task file error 1\n");
                     return false;
                 }
             }
 
             if(port->interruptStatus & HBA_PxIS_TFES)
             {
-                printf("ATA Device task file error 2\n");
+                return false;
+            }
+
+            StopCommand();
+
+            return true;
+        }
+
+        bool Port::Write(uint64_t sector, uint32_t sectorCount, void *buffer)
+        {
+            port->interruptStatus = (uint32_t)-1;
+
+            int32_t slot = FindCommandSlot(port);
+
+            if(slot == -1)
+            {
+                return false;
+            }
+
+            volatile HBACommandHeader *commandHeader = (volatile HBACommandHeader *)(uint64_t)port->commandListBase;
+            commandHeader += slot;
+
+            InitializeCommandHeader(commandHeader, true);
+
+            volatile HBACommandTable *commandTable = (volatile HBACommandTable *)(uint64_t)commandHeader->commandTableBaseAddress;
+
+            InitializeCommandTable(commandTable, commandHeader, (uintptr_t)buffer, sectorCount);
+
+            volatile FISREGHost2Device *command = (volatile FISREGHost2Device *)commandTable->commandFIS;
+
+            InitializeFISRegCommand(command, true, sector, sectorCount);
+
+            if(!ATABusyWait(port))
+            {
+                return false;
+            }
+
+            StartCommand();
+            port->commandIssue = 1 << slot;
+
+            for(;;)
+            {
+                if((port->commandIssue & (1 << slot)) == 0)
+                {
+                    break;
+                }
+
+                if(port->interruptStatus & HBA_PxIS_TFES)
+                {
+                    return false;
+                }
+            }
+
+            if(port->interruptStatus & HBA_PxIS_TFES)
+            {
                 return false;
             }
 

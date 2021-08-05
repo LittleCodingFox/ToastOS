@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include "../low-level/pci/PCI.hpp"
+#include "../low-level/devicemanager/DeviceManager.hpp"
 
 namespace Drivers
 {
@@ -245,9 +246,10 @@ namespace Drivers
             void StartCommand();
             void StopCommand();
             bool Read(uint64_t sector, uint32_t sectorCount, void *buffer);
+            bool Write(uint64_t sector, uint32_t sectorCount, void *buffer);
         };
 
-        class AHCIDriver
+        class AHCIDriver : public Devices::GenericDevice
         {
         public:
             AHCIDriver(PCI::Device *device);
@@ -257,6 +259,16 @@ namespace Drivers
             volatile HBAMemory *ABAR;
             Port *ports[32];
             uint8_t portCount;
+
+            inline const char *name() const override 
+            {
+                return PCI::deviceName(device->vendorID, device->deviceID);
+            }
+
+            inline Devices::DeviceType type() const override
+            {
+                return Devices::DEVICE_TYPE_DISK;
+            }
         };
     };
 };
