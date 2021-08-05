@@ -11,6 +11,7 @@ namespace Drivers
         #define ATA_DEV_DRQ             0x08
         #define ATA_CMD_READ_DMA_EX     0x25
         #define ATA_CMD_WRITE_DMA_EX    0x35
+        #define ATA_CMD_IDENTIFY        0xEC
         #define HBA_PxIS_TFES           (1 << 30)
         #define HBA_PORT_DEV_PRESENT    0x3
         #define HBA_PORT_IPM_ACTIVE     0x1
@@ -176,6 +177,45 @@ namespace Drivers
             }
         }
 
+        void FISIdentify::ReadModel(char *buffer) const
+        {
+            memcpy(buffer, model, sizeof(model));
+
+            buffer[40] = 0;
+
+            for(uint32_t i = 0; i < 40; i+=2)
+            {
+                char c = buffer[i + 1];
+                buffer[i + 1] = buffer[i];
+                buffer[i] = c;
+            }
+
+            char before = '\0';
+
+            for(uint32_t i = 0; i < 40; i++)
+            {
+                if(buffer[i] == ' ')
+                {
+                    if(before == ' ')
+                    {
+                        buffer[i] = '\0';
+
+                        break;
+                    }
+                    else
+                    {
+                        before = buffer[i];
+                    }
+                }
+            }
+        }
+
+        AHCIDriver::AHCIDriver()
+        {
+            memset(&identify, 0, sizeof(identify));
+            memset(model, 0, sizeof(model));
+        }
+
         void AHCIDriver::Configure()
         {
             void *newBase = globalAllocator.RequestPage();
@@ -213,6 +253,73 @@ namespace Drivers
                 commandHeader[i].commandTableBaseAddress = (uint64_t)commandTableAddress;
                 commandHeader[i].commandTableBaseAddressUpper = ((uint64_t)commandTableAddress >> 32);
             }
+
+            if(!Identify())
+            {
+                memset(&identify, 0, sizeof(identify));
+
+                printf("Failed to identify\n");
+            }
+        }
+
+        bool AHCIDriver::Identify()
+        {
+            port->interruptStatus = (uint32_t)-1;
+
+            int32_t slot = FindCommandSlot(port);
+
+            if(slot == -1)
+            {
+                return false;
+            }
+
+            volatile HBACommandHeader *commandHeader = (HBACommandHeader *)((uint64_t)port->commandListBase);
+            commandHeader += slot;
+
+            InitializeCommandHeader(commandHeader, false);
+
+            volatile HBACommandTable *commandTable = (HBACommandTable *)((uint64_t)commandHeader->commandTableBaseAddress);
+
+            InitializeCommandTable(commandTable, commandHeader, (uintptr_t)&identify, 0);
+
+            volatile FISREGHost2Device *commandFIS = (FISREGHost2Device *)(commandTable->commandFIS);
+
+            InitializeFISRegCommand(commandFIS, false, 0, 0);
+
+            commandFIS->command = ATA_CMD_IDENTIFY;
+
+            if(!ATABusyWait(port))
+            {
+                return false;
+            }
+
+            StartCommand();
+
+            port->commandIssue = 1 << slot;
+
+            for(;;)
+            {
+                if((port->commandIssue & (1 << slot)) == 0)
+                {
+                    break;
+                }
+
+                if(port->interruptStatus & HBA_PxIS_TFES)
+                {
+                    return false;
+                }
+            }
+
+            if(port->interruptStatus & HBA_PxIS_TFES)
+            {
+                return false;
+            }
+
+            StopCommand();
+
+            identify.ReadModel(model);
+
+            return true;
         }
 
         void AHCIDriver::StartCommand()
@@ -373,10 +480,6 @@ namespace Drivers
                 AHCIDriver *port = holder.ports[i];
 
                 port->Configure();
-
-                port->buffer = (uint8_t *)globalAllocator.RequestPage();
-                globalPageTableManager->IdentityMap(port->buffer);
-                memset(port->buffer, 0, 0x1000);
 
                 Devices::globalDeviceManager.AddDevice(port);
             }

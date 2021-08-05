@@ -234,24 +234,46 @@ namespace Drivers
             uint8_t reserved[96];
         };
 
+        struct __attribute__((packed)) FISIdentify
+        {
+            uint16_t reserved0[27];
+            uint16_t model[20];
+            uint16_t reserved1[36];
+            uint16_t capabilities;
+            uint16_t reserved2[16];
+            uint64_t maxLBA48;
+            uint16_t reserved3[2];
+            uint16_t sectorSizeInfo;
+            uint16_t reserved4[9];
+            uint16_t logicalSectorSize;
+            uint16_t reserved5[139];
+
+            void ReadModel(char *buffer) const;
+        };
+
+        static_assert(sizeof(FISIdentify) == 512);
+
         class AHCIDriver : public Devices::GenericIODevice
         {
         public:
             volatile HBAPort *port;
             PCI::Device *device;
             PortType portType;
-            uint8_t *buffer;
             uint8_t portNumber;
+            FISIdentify identify;
+            char model[41];
 
+            AHCIDriver();
             void Configure();
             void StartCommand();
             void StopCommand();
             bool Read(void *data, uint64_t sector, uint64_t count) override;
             bool Write(void *data, uint64_t sector, uint64_t count) override;
+            bool Identify();
 
             inline const char *name() const override 
             {
-                return PCI::DeviceName(device->vendorID, device->deviceID);
+                return model;
             }
 
             inline Devices::DeviceType type() const override

@@ -9,6 +9,7 @@
 #include "timer/Timer.hpp"
 #include "pci/PCI.hpp"
 #include "vtconsole/vtconsole.h"
+#include "partitionmanager/PartitionManager.hpp"
 
 KernelInfo kernelInfo; 
 PageTableManager pageTableManager = NULL;
@@ -125,6 +126,8 @@ void InitializeACPI(BootInfo *bootInfo)
     }
 
     PCI::EnumeratePCI(mcfg);
+
+    FileSystem::globalPartitionManager.Initialize();
 }
 
 FramebufferRenderer r = FramebufferRenderer(NULL, NULL);

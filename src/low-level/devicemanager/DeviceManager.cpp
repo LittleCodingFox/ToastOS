@@ -49,6 +49,8 @@ namespace Devices
     {
         DynamicArray<GenericDevice *> outValue;
 
+        printf("Getting devices with type %x from %u devices\n", type, deviceCount);
+
         for(uint32_t i = 0; i < deviceCount; i++)
         {
             if(devices[i] != NULL && devices[i]->type() == type)

@@ -11,28 +11,40 @@ private:
     T *ptr;
     uint32_t size;
 public:
-    void initialize(uint32_t size)
+    DynamicArray() : size(0), ptr(NULL) {}
+    DynamicArray(const DynamicArray<T> &other) : size(other.size)
+    {
+        ptr = new T[size];
+
+        for(uint32_t i = 0; i < size; i++)
+        {
+            ptr[i] = other.ptr[i];
+        }
+    }
+
+    DynamicArray(uint32_t size) : size(size)
     {
         if(size > 0)
         {
-            ptr = (T *)malloc(sizeof(T) * size);
+            ptr = new T[size];
         }
-
-        this->size = size;
     }
 
     void add(T element)
     {
-        T *newPtr = (T *)malloc(sizeof(T) * (size + 1));
+        T *newPtr = new T[size + 1];
 
         if(ptr != NULL)
         {
-            memcpy(newPtr, ptr, sizeof(T) * size);
+            for(uint32_t i = 0; i < size; i++)
+            {
+                newPtr[i] = ptr[i];
+            }
         }
 
         newPtr[size] = element;
 
-        free(ptr);
+        delete [] ptr;
         ptr = newPtr;
         size++;
     }
@@ -46,12 +58,12 @@ public:
 
         if(size == 1)
         {
-            free(ptr);
+            delete[] ptr;
             ptr = NULL;
             size = 0;
         }
 
-        T *newPtr = (T *)malloc(sizeof(T) * (size - 1));
+        T *newPtr = new T[size - 1];
 
         T *dst = newPtr;
 
@@ -65,7 +77,7 @@ public:
             *dst++ = ptr[i];
         }
 
-        free(ptr);
+        delete [] ptr;
 
         ptr = newPtr;
         size--;
@@ -82,6 +94,11 @@ public:
                 return;
             }
         }
+    }
+
+    const T &operator[](int index) const
+    {
+        return ptr[index];
     }
 
     T &operator[](int index)
