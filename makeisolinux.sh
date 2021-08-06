@@ -14,6 +14,11 @@ echo 2048
 echo +8M
 echo t
 echo 1
+echo n
+echo 2
+echo 18432
+echo 1023966
+echo p
 echo w) | fdisk -u -C500 -S63 -H16 $BINDIR/$OS_NAME.img
 
 sudo mkdir -p /mnt/osdev
@@ -27,6 +32,18 @@ sudo mkfs.vfat -F16 -n "EFI System" /dev/loop0
 sudo mount -tvfat /dev/loop0 /mnt/osdev
 
 sudo cp -R boot/* /mnt/osdev
+
+sudo umount /dev/loop0
+
+sudo losetup -d /dev/loop0
+
+sudo losetup -o9437184 /dev/loop0 $BINDIR/$OS_NAME.img
+
+sudo mke2fs -b1024 /dev/loop0
+
+sudo mount -text2 /dev/loop0 /mnt/osdev
+
+sudo cp -R dist/* /mnt/osdev
 
 sudo umount /dev/loop0
 
