@@ -9,7 +9,7 @@ namespace Devices
 
         for(uint32_t i = 0; i < maxBlocks; i++)
         {
-            bool result = Read(buffer + (i * 512), 1, i + sector / 512);
+            bool result = Read(buffer + (i * 512), i + sector / 512, 1);
 
             if(!result)
             {
@@ -25,7 +25,7 @@ namespace Devices
         return true;
     }
 
-    bool GenericIODevice::WriteUnaligned(void *data, uint64_t sector, uint64_t count)
+    bool GenericIODevice::WriteUnaligned(const void *data, uint64_t sector, uint64_t count)
     {
         uint64_t maxBlocks = ((sector % 512) + count) / 512 + 1;
         uint64_t currentSector = ((sector / 512)) * 512;
@@ -36,7 +36,7 @@ namespace Devices
 
         for(uint32_t i = 0; i < maxBlocks; i++)
         {
-            bool result = Write(buffer + (i * 512), 1, i + (currentSector / 512));
+            bool result = Write(buffer + (i * 512), i + (currentSector / 512), 1);
 
             if(!result)
             {

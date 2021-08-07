@@ -268,7 +268,7 @@ namespace Drivers
             void StartCommand();
             void StopCommand();
             bool Read(void *data, uint64_t sector, uint64_t count) override;
-            bool Write(void *data, uint64_t sector, uint64_t count) override;
+            bool Write(const void *data, uint64_t sector, uint64_t count) override;
             bool Identify();
 
             inline const char *name() const override 

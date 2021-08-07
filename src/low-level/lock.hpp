@@ -5,12 +5,12 @@
 
 namespace Threading
 {
-    class Lock
+    class AtomicLock
     {
     private:
         bool locked;
     public:
-        Lock() : locked(false) {};
+        AtomicLock() : locked(false) {};
 
         bool IsLocked() const
         {
@@ -50,9 +50,9 @@ namespace Threading
     class ScopedLock
     {
     private:
-        Lock &lock;
+        AtomicLock &lock;
     public:
-        ScopedLock(Lock &value) : lock(value)
+        ScopedLock(AtomicLock &value) : lock(value)
         {
             lock.Lock();
         }

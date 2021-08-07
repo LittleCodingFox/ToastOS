@@ -405,7 +405,7 @@ namespace Drivers
             return true;
         }
 
-        bool AHCIDriver::Write(void *buffer, uint64_t sector, uint64_t sectorCount)
+        bool AHCIDriver::Write(const void *buffer, uint64_t sector, uint64_t sectorCount)
         {
             port->interruptStatus = (uint32_t)-1;
 

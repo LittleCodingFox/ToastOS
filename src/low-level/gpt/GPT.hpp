@@ -103,8 +103,8 @@ namespace GPT
         uint64_t GetSectorCount() const;
         const char *SizeString() const;
 
-        bool Read(void *data, uint64_t cursor, uint64_t count);
-        bool Write(void *data, uint64_t cursor, uint64_t count);
+        virtual bool Read(void *data, uint64_t cursor, uint64_t count) override;
+        virtual bool Write(const void *data, uint64_t cursor, uint64_t count) override;
 
     private:
         PartitionTable &table;

@@ -129,7 +129,7 @@ namespace GPT
         return table.GetDevice()->Read(data, startLBA + sector, count);
     }
 
-    bool Partition::Write(void *data, uint64_t sector, uint64_t count)
+    bool Partition::Write(const void *data, uint64_t sector, uint64_t count)
     {
         if(sector + count > sectorCount)
         {

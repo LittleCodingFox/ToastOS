@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gpt/GPT.hpp"
+#include "filesystems/FileSystem.hpp"
 
 namespace FileSystem
 {
@@ -11,6 +12,9 @@ namespace FileSystem
         {
             Devices::GenericIODevice *device;
             GPT::PartitionTable *table;
+            FileSystem *fileSystem;
+
+            DiskInfo() : device(NULL), table(NULL), fileSystem(NULL) {}
         };
 
         DynamicArray<DiskInfo> disks;    

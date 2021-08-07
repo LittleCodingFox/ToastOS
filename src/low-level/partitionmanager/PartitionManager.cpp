@@ -1,4 +1,5 @@
 #include "PartitionManager.hpp"
+#include "filesystems/ext2/ext2.hpp"
 #include <stdio.h>
 
 namespace FileSystem
@@ -52,6 +53,12 @@ namespace FileSystem
                 GPT::Partition &partition = disk.table->GetPartition(j);
 
                 printf("\t%s with size: %s, type: %s)\n", partition.GetID().ToString(), partition.SizeString(), partition.GetType().ToString());
+
+                if(ext2::Ext2FileSystem::IsValidEntry(&partition))
+                {
+                    printf("\tFound ext2 partition!\n");
+                    disk.fileSystem = new ext2::Ext2FileSystem(&partition);
+                }
             }
         }
     }
