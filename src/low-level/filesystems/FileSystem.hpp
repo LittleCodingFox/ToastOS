@@ -29,6 +29,8 @@ namespace FileSystem
 
         virtual void Initialize(uint64_t sector, uint64_t sectorCount) = 0;
 
+        virtual const char *VolumeName() = 0;
+
         virtual uint64_t FileLength(const char *path) = 0;
 
         virtual uint64_t ReadFile(const char *path, void *buffer, uint64_t cursor, uint64_t size) = 0;
