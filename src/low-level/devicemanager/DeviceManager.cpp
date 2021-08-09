@@ -39,7 +39,7 @@ namespace Devices
     {
         if(ID < MAX_DEVICES)
         {
-            return devices[MAX_DEVICES];
+            return devices[ID];
         }
 
         return NULL;

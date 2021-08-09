@@ -173,7 +173,7 @@ namespace FileSystem
             size_t ID;
             size_t lastFreeGID;
 
-            Inode() : lastFreeGID(0), ID(0)
+            Inode() : ID(0), lastFreeGID(0)
             {
                 inode = { 0 };
             }

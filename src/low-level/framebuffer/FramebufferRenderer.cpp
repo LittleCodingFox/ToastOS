@@ -12,8 +12,8 @@ void RefreshFramebuffer()
     globalRenderer->swapBuffers();
 }
 
-FramebufferRenderer::FramebufferRenderer(Framebuffer* targetFramebuffer, psf2_font_t* font) : initialized(false), doubleBuffer(NULL),
-    doubleBufferSize(0), lockedCount(0), backgroundColor(0)
+FramebufferRenderer::FramebufferRenderer(Framebuffer* targetFramebuffer, psf2_font_t* font) : lockedCount(0),
+    doubleBuffer(NULL), initialized(false), doubleBufferSize(0), backgroundColor(0)
 {
     this->targetFramebuffer = targetFramebuffer;
     this->font = font;

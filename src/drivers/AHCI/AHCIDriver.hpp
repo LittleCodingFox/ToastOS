@@ -251,7 +251,7 @@ namespace Drivers
             void ReadModel(char *buffer) const;
         };
 
-        static_assert(sizeof(FISIdentify) == 512);
+        static_assert(sizeof(FISIdentify) == 512, "struct has invalid size");
 
         class AHCIDriver : public Devices::GenericIODevice
         {

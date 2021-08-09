@@ -162,17 +162,17 @@ namespace FileSystem
                 return 0;
             }
 
-            uint64_t r = 0;
+            uint64_t outValue = 0;
             uint64_t entriesPerBlock = blockSize / sizeof(uint64_t);
 
             if(blockID < 12)
             {
-                r = inode.inode.blockPointer[blockID];
+                outValue = inode.inode.blockPointer[blockID];
             }
             else if(blockID - 12 < entriesPerBlock)
             {
                 uint32_t nid = blockID - 12;
-                partition->ReadUnaligned(&r,
+                partition->ReadUnaligned(&outValue,
                     offset + inode.inode.singleIndirectBlockPointer * blockSize + nid * sizeof(uint32_t),
                     sizeof(uint32_t));
             }
@@ -186,13 +186,17 @@ namespace FileSystem
                 partition->ReadUnaligned(&indirectBlockID,
                     offset + inode.inode.doubleIndirectBlockPointer * blockSize + blockIndex * sizeof(uint32_t),
                     sizeof(uint32_t));
+
+                partition->ReadUnaligned(&outValue,
+                    offset + indirectBlockID * blockSize + subEntry * sizeof(uint32_t),
+                    sizeof(uint32_t));
             }
             else //TODO: Triple indirection support
             {
                 return 0;
             }
 
-            return r;
+            return outValue;
         }
 
         void Ext2FileSystem::AddInodeBlockMap(Inode &inode, uint32_t blockAddress)
@@ -703,8 +707,6 @@ namespace FileSystem
                 }
 
                 printf("%x %s (%s)\n", v, directory.name, directory.type < 8 ? Ext2DirectoryTypeNames[directory.type] : "(invalid)");
-
-                Inode targetInode = GetInode(directory.inode);
 
                 if(directory.type == EXT2_DIRECTORY_TYPE_DIRECTORY && v >= 3)
                 {

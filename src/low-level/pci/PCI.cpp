@@ -333,7 +333,7 @@ namespace PCI
 
                     *ptr += sizeof(uint32_t);
 
-                    address = (bar & 0xFFFFFFF0) + ((nextBar & 0xFFFFFFFF) << 32);
+                    address = ((uint64_t)bar & 0xFFFFFFF0) + (((uint64_t)nextBar & 0xFFFFFFFF) << 32);
 
                     break;
             }

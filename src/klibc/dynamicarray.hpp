@@ -8,8 +8,8 @@ template<typename T>
 class DynamicArray
 {
 private:
-    T *ptr;
     uint32_t size;
+    T *ptr;
 public:
     DynamicArray() : size(0), ptr(NULL) {}
     DynamicArray(const DynamicArray<T> &other) : size(other.size)

@@ -4,7 +4,7 @@
 
 namespace ACPI
 {
-    void *findTable(volatile SDTHeader *header, char *signature)
+    void *findTable(volatile SDTHeader *header, const char *signature)
     {
         uint32_t entries = (header->length - sizeof(SDTHeader)) / sizeof(uint64_t);
         uint64_t *entryPtr = (uint64_t *)(header + 1);
