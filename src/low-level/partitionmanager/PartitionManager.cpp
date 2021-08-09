@@ -58,6 +58,8 @@ namespace FileSystem
                 {
                     printf("\tFound ext2 partition!\n");
                     disk.fileSystem = new ext2::Ext2FileSystem(&partition);
+
+                    //disk.fileSystem->DebugListDirectories();
                 }
             }
         }

@@ -5,7 +5,7 @@ namespace FileSystem
 {
     namespace ext2
     {
-        char *Ext2DirectoryTypeNames[8] =
+        const char *Ext2DirectoryTypeNames[8] =
         {
             "Unknown",
             "Regular File",
@@ -703,6 +703,8 @@ namespace FileSystem
                 }
 
                 printf("%x %s (%s)\n", v, directory.name, directory.type < 8 ? Ext2DirectoryTypeNames[directory.type] : "(invalid)");
+
+                Inode targetInode = GetInode(directory.inode);
 
                 if(directory.type == EXT2_DIRECTORY_TYPE_DIRECTORY && v >= 3)
                 {

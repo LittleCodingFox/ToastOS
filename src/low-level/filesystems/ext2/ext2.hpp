@@ -140,7 +140,7 @@ namespace FileSystem
             EXT2_DIRECTORY_TYPE_LINK
         };
 
-        extern char *Ext2DirectoryTypeNames[8];
+        extern const char *Ext2DirectoryTypeNames[8];
 
         struct __attribute__((packed)) Directory
         {
@@ -190,6 +190,21 @@ namespace FileSystem
             {
                 return ID != 0;
             }
+
+            inline bool IsSymlink() const
+            {
+                return (inode.mode & EXT2_S_IFMT) == EXT2_S_IFLNK;
+            }
+
+            inline bool IsFile() const
+            {
+                return (inode.mode & EXT2_S_IFMT) == EXT2_S_IFREG;
+            }
+
+            inline bool IsDirectory() const
+            {
+                return (inode.mode & EXT2_S_IFMT) == EXT2_S_IFDIR;
+            }
         };
 
         class Ext2FileSystem : public FileSystem
@@ -222,9 +237,7 @@ namespace FileSystem
             uint8_t *ExtReadFile(const char *path);
             Inode GetFile(const char *path);
             Inode FindSubdir(const Inode &inode, const char *name);
-            void PrintExt2Features();
             uint64_t GetInodeBlockMap(const Inode &inode, uint64_t blockID);
-            void ListSubDirectory(const Inode &inode, int32_t offset);
             void ResizeFile(Inode &inode, uint64_t newSize);
             uint64_t AllocBlockForInode(Inode &inode);
             void AddInodeBlockMap(Inode &inode, uint32_t blockAddress);
