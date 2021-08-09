@@ -255,15 +255,7 @@ namespace FileSystem
             virtual uint64_t WriteFile(const char *path, const void *buffer, uint64_t cursor, uint64_t size) override;
             virtual void DebugListDirectories() override;
 
-            virtual const char *VolumeName() override
-            {
-                char *buffer = (char *)malloc(sizeof(superBlock.volumeName) + 1);
-                buffer[sizeof(superBlock.volumeName)] = '\0';
-
-                memcpy(buffer, superBlock.volumeName, sizeof(superBlock.volumeName));
-
-                return buffer;
-            }
+            virtual const char *VolumeName() override;
 
             static bool IsValidEntry(GPT::Partition *partition);
         };

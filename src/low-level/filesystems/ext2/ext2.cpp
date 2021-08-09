@@ -501,6 +501,16 @@ namespace FileSystem
             return size;
         }
 
+        const char *Ext2FileSystem::VolumeName()
+        {
+            char *buffer = (char *)malloc(sizeof(superBlock.volumeName) + 1);
+            buffer[sizeof(superBlock.volumeName)] = '\0';
+
+            memcpy(buffer, superBlock.volumeName, sizeof(superBlock.volumeName));
+
+            return buffer;
+        }
+
         void Ext2FileSystem::Initialize(uint64_t startSector, uint64_t sectorCount)
         {
             offset = startSector * 512;
