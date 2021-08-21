@@ -8,7 +8,7 @@ namespace Threading
     class AtomicLock
     {
     private:
-        bool locked;
+        volatile bool locked;
     public:
         AtomicLock() : locked(false) {};
 

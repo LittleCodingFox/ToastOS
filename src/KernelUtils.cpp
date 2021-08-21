@@ -11,6 +11,8 @@
 #include "vtconsole/vtconsole.h"
 #include "partitionmanager/PartitionManager.hpp"
 #include "tss/tss.hpp"
+#include "syscall/syscall.hpp"
+#include "../klibc/sys/syscall.h"
 
 KernelInfo kernelInfo; 
 PageTableManager pageTableManager = NULL;
@@ -187,7 +189,17 @@ KernelInfo InitializeKernel(BootInfo* bootInfo)
     DEBUG_OUT("Memory Stats: Free: %.2lfMB; Used: %.2lfMB; Reserved: %.2lfMB", globalAllocator.GetFreeRAM() / MBSize,
         globalAllocator.GetUsedRAM() / MBSize, globalAllocator.GetReservedRAM() / MBSize);
 
-    InitTSS();
+    InitializeTSS();
+
+    InitializeSyscalls();
+
+    printf("Testing syscalls\n");
+
+    int64_t result = syscall(0);
+
+    printf("Syscall OK\n");
+
+    printf("Syscall for NoImplement should return -1: %u\n", result);
 
     return kernelInfo;
 }

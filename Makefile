@@ -76,7 +76,7 @@ run-linux: gnuefi kernel iso-linux
 	-bios /usr/share/qemu/OVMF.fd \
 	-m 256M -cpu qemu64 -machine type=q35 -serial file:./debug.log -net none -d int --no-reboot $(QEMU_FLAGS) 2>qemu.log
 
-debug-linux: CFLAGS += -DKERNEL_DEBUG=1 -g -O0
+debug-linux: CFLAGS += -DKERNEL_DEBUG=1 #-g -O0
 #debug: QEMU_FLAGS += -s -S
 debug-linux: run-linux
 

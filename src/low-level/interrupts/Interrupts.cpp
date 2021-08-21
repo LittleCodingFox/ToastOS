@@ -7,11 +7,13 @@
 #include "printf/printf.h"
 #include "registers/Registers.hpp"
 #include "keyboard/Keyboard.hpp"
+#include "debug.hpp"
 
 Interrupts interrupts;
 
 void BreakpointHandler(InterruptStack *stack);
 void PageFaultHandler(InterruptStack *stack);
+void DoubleFaultHandler(InterruptStack *stack);
 void KeyboardHandler(InterruptStack *stack);
 
 static const char *exception_messages[] =
@@ -131,6 +133,7 @@ void Interrupts::Init()
     // Specific handlers for exceptions.
     RegisterHandler(EXCEPTION_BP, BreakpointHandler);
     RegisterHandler(EXCEPTION_PF, PageFaultHandler);
+    RegisterHandler(EXCEPTION_DF, DoubleFaultHandler);
     RegisterHandler(IRQ1, KeyboardHandler);
 
     idt.Load();
@@ -167,6 +170,44 @@ void interruptIntHandler(InterruptStack stack)
             argHandler->handler(&stack, argHandler->data);
         }
     }
+
+    DEBUG_OUT("received interrupt (see below)\n\n"
+        "  %d - %s\n\n"
+        "  error_code          = %#x\n"
+        "  instruction_pointer = %p\n"
+        "  code_segment        = %#x\n"
+        "  cpu_flags           = %#x\n"
+        "  stack_pointer       = %p\n"
+        "  stack_segment       = %#x\n"
+        "\n"
+        "  rax = 0x%08x    rbx = 0x%08x    rcx = 0x%08x\n"
+        "  rdx = 0x%08x    rsi = 0x%08x    rdi = 0x%08x\n"
+        "  rbp = 0x%08x    r8  = 0x%08x    r9  = 0x%08x\n"
+        "  r10 = 0x%08x    r11 = 0x%08x    r12 = 0x%08x\n"
+        "  r13 = 0x%08x    r14 = 0x%08x    r15 = 0x%08x",
+        stack.id,
+        exception_messages[stack.id],
+        stack.errorCode,
+        stack.instructionPointer,
+        stack.codeSegment,
+        stack.cpuFlags,
+        stack.stackPointer,
+        stack.stackSegment,
+        stack.rax,
+        stack.rbx,
+        stack.rcx,
+        stack.rdx,
+        stack.rsi,
+        stack.rdi,
+        stack.rbp,
+        stack.r8,
+        stack.r9,
+        stack.r10,
+        stack.r11,
+        stack.r12,
+        stack.r13,
+        stack.r14,
+        stack.r15);
 
     Panic("received interrupt (see below)\n\n"
         "  %d - %s\n\n"
@@ -258,13 +299,26 @@ void KeyboardHandler(InterruptStack *stack)
 
 void BreakpointHandler(InterruptStack *stack)
 {
-    printf("Exception: BREAKPOINT\n"
+    Panic("Exception: BREAKPOINT\n"
             "  instruction_pointer = %p\n"
             "  code_segment        = %x\n"
             "  cpu_flags           = %#x\n"
             "  stack_pointer       = %p\n"
             "  stack_segment       = %x\n",
             stack->instructionPointer,
+            stack->codeSegment,
+            stack->cpuFlags,
+            stack->stackPointer,
+            stack->stackSegment);
+}
+
+void DoubleFaultHandler(InterruptStack *stack)
+{
+    Panic("Exception: DOUBLE FAULT\n"
+            "  code_segment        = %x\n"
+            "  cpu_flags           = %#x\n"
+            "  stack_pointer       = %p\n"
+            "  stack_segment       = %x\n",
             stack->codeSegment,
             stack->cpuFlags,
             stack->stackPointer,

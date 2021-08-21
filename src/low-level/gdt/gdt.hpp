@@ -14,6 +14,9 @@ namespace GDTAccessFlag
         Present = (1 << 7)
     };
 }
+#define GDTKernelBaseSelector   0x08
+#define GDTUserBaseSelector     0x18
+#define GDTTSSSegment           0x30
 
 #define GDTAccessKernelCode (GDTAccessFlag::ReadWrite | GDTAccessFlag::Execute | GDTAccessFlag::Segments | GDTAccessFlag::Present)
 #define GDTAccessKernelData (GDTAccessFlag::ReadWrite | GDTAccessFlag::Segments | GDTAccessFlag::Present)

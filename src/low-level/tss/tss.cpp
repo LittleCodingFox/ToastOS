@@ -3,7 +3,7 @@
 
 TSS tss = { 0 };
 
-void InitTSS()
+void InitializeTSS()
 {
     uint64_t tssBase = ((uint64_t)&tss);
 
