@@ -57,7 +57,10 @@ namespace FileSystem
                 if(ext2::Ext2FileSystem::IsValidEntry(&partition))
                 {
                     disk.fileSystem = new ext2::Ext2FileSystem(&partition);
+                }
 
+                if(disk.fileSystem != NULL)
+                {
                     printf("Found volume %s\n", disk.fileSystem->VolumeName());
 
                     //disk.fileSystem->DebugListDirectories();

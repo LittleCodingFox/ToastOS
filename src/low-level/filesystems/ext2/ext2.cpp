@@ -27,6 +27,32 @@ namespace FileSystem
             memcpy(&this->inode, &other.inode, sizeof(DiskInode));
         }
 
+        bool Ext2FileSystem::GetBlockForInode(uint64_t inode, uint64_t &blockID, uint64_t &offset)
+        {
+            if(inode != EXT2_ROOT_INO && inode < superBlock.firstInode)
+            {
+                return false;
+            }
+
+            if(inode > superBlock.inodeCount)
+            {
+                return false;
+            }
+
+            DiskGroupDescription groupDescriptor = ReadGroupFromGroupID(GroupFromInode(inode));
+
+            uint64_t fullOffset = ((inode - 1) % inodePerGroup) * superBlock.inodeSize;
+            blockID = groupDescriptor.inodeTable + (fullOffset >> superBlock.logBlockSize);
+            offset = fullOffset & (blockSize - 1);
+
+            return true;
+        }
+
+        bool Ext2FileSystem::FlushSuperblock()
+        {
+            return partition->WriteUnaligned(&superBlock, 1024, sizeof(superBlock));
+        }
+
         void Ext2FileSystem::ReadBlock(uint64_t blockID, void *buffer)
         {
             partition->Read(buffer, (offset + (blockID * blockSize)) / 512, blockSize / 512);
@@ -450,53 +476,48 @@ namespace FileSystem
 
         uint8_t *Ext2FileSystem::ExtReadFile(const char *path)
         {
-            extLock.Lock();
+            Threading::ScopedLock Lock(lock);
 
             Inode inode = GetFile(path);
 
             if(!inode.IsValid())
             {
-                extLock.Unlock();
-
                 return NULL;
             }
 
             uint8_t *data = (uint8_t *)malloc(sizeof(uint8_t[inode.inode.size]));
 
-            InodeRead(data, 0, inode.inode.size, inode);
+            if(!InodeRead(data, 0, inode.inode.size, inode))
+            {
+                free(data);
 
-            extLock.Unlock();
+                return NULL;
+            }
 
             return data;
         }
 
         bool Ext2FileSystem::Exists(const char *path)
         {
-            extLock.Lock();
+            Threading::ScopedLock Lock(lock);
 
             Inode inode = GetFile(path);
-
-            extLock.Unlock();
 
             return inode.IsValid();
         }
 
         uint64_t Ext2FileSystem::FileLength(const char *path)
         {
-            extLock.Lock();
+            Threading::ScopedLock Lock(lock);
 
             Inode inode = GetFile(path);
 
             if(!inode.IsValid())
             {
-                extLock.Unlock();
-
                 return (uint64_t)-1;
             }
 
             uint64_t size = inode.inode.size;
-
-            extLock.Unlock();
 
             return size;
         }
@@ -528,21 +549,17 @@ namespace FileSystem
 
         uint64_t Ext2FileSystem::ReadFile(const char *path, void *buffer, uint64_t cursor, uint64_t size)
         {
-            extLock.Lock();
+            Threading::ScopedLock Lock(lock);
 
             Inode inode = GetFile(path);
 
             if(!inode.IsValid())
             {
-                extLock.Unlock();
-
                 return 0;
             }
 
             if(inode.inode.size < cursor)
             {
-                extLock.Unlock();
-
                 return 0;
             }
 
@@ -557,27 +574,23 @@ namespace FileSystem
 
             if(!InodeRead(temp, cursor, readBytes, inode))
             {
-                extLock.Unlock();
-
                 return 0;
             }
 
             memcpy(buffer, temp, readBytes < size ? readBytes : size);
-
-            extLock.Unlock();
 
             return readBytes;
         }
 
         uint64_t Ext2FileSystem::WriteFile(const char *path, const void *buffer, uint64_t cursor, uint64_t size)
         {
-            extLock.Lock();
+            Threading::ScopedLock Lock(lock);
 
             Inode inode = GetFile(path);
 
             if(!inode.IsValid())
             {
-                extLock.Unlock();
+                lock.Unlock();
 
                 return 0;
             }
@@ -586,8 +599,6 @@ namespace FileSystem
 
             if(inode.inode.blocks * blockSize < writeBytes)
             {
-                extLock.Unlock();
-
                 return 0;
             }
             else if(inode.inode.size < writeBytes)
@@ -598,8 +609,6 @@ namespace FileSystem
             WriteInode(inode);
 
             InodeWrite(buffer, cursor, size, inode);
-
-            extLock.Unlock();
 
             return size;
         }

@@ -210,7 +210,6 @@ namespace FileSystem
         class Ext2FileSystem : public FileSystem
         {
         private:
-            Threading::AtomicLock extLock;
             uint64_t inodePerGroup;
             uint64_t GroupFromInode(uint64_t inode);
             uint64_t LocalGroupInodeFromInode(uint64_t inode);
@@ -227,21 +226,27 @@ namespace FileSystem
             void ClearBlock(size_t blockAddress);
             bool InodeRead(void *buffer, uint64_t cursor, uint64_t count, const Inode &parent);
             bool InodeWrite(const void *buffer, uint64_t cursor, uint64_t count, const Inode &parent);
+            bool GetBlockForInode(uint64_t inode, uint64_t &blockID, uint64_t &offset);
+
             void ReadBlock(uint64_t blockID, void *buffer);
             void ReadBlocks(uint64_t blockID, uint64_t length, void *buffer);
-            uint64_t GetFolder(uint64_t folderID);
-            uint64_t GetSimpleFile(const char *name, uint64_t forceParent = -1);
-            uint32_t *CreateInodeBlockMap(const Inode &inode);
-            Inode GetInode(uint64_t inode);
-            bool WriteInode(const Inode &inode);
-            uint8_t *ExtReadFile(const char *path);
-            Inode GetFile(const char *path);
-            Inode FindSubdir(const Inode &inode, const char *name);
-            uint64_t GetInodeBlockMap(const Inode &inode, uint64_t blockID);
-            void ResizeFile(Inode &inode, uint64_t newSize);
+
             uint64_t AllocBlockForInode(Inode &inode);
             void AddInodeBlockMap(Inode &inode, uint32_t blockAddress);
+            uint32_t *CreateInodeBlockMap(const Inode &inode);
+            uint64_t GetInodeBlockMap(const Inode &inode, uint64_t blockID);
+
+            Inode GetInode(uint64_t inode);
+            bool WriteInode(const Inode &inode);
+
+            uint8_t *ExtReadFile(const char *path);
+
+            Inode GetFile(const char *path);
+            void ResizeFile(Inode &inode, uint64_t newSize);
+
+            Inode FindSubdir(const Inode &inode, const char *name);
             void DebugListSubdirectory(const Inode &inode, uint32_t offset);
+            bool FlushSuperblock();
         public:
             Ext2FileSystem(GPT::Partition *partition) : FileSystem(partition)
             {
