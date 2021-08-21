@@ -10,6 +10,7 @@
 #include "pci/PCI.hpp"
 #include "vtconsole/vtconsole.h"
 #include "partitionmanager/PartitionManager.hpp"
+#include "tss/tss.hpp"
 
 KernelInfo kernelInfo; 
 PageTableManager pageTableManager = NULL;
@@ -183,8 +184,10 @@ KernelInfo InitializeKernel(BootInfo* bootInfo)
 
     double MBSize = 1024 * 1024;
 
-    DEBUG_OUT("Memory Stats: Free: %.2lfMB; Used: %.2lfMB; Reserved: %.2lfMB", globalAllocator.getFreeRAM() / MBSize,
-        globalAllocator.getUsedRAM() / MBSize, globalAllocator.getReservedRAM() / MBSize);
+    DEBUG_OUT("Memory Stats: Free: %.2lfMB; Used: %.2lfMB; Reserved: %.2lfMB", globalAllocator.GetFreeRAM() / MBSize,
+        globalAllocator.GetUsedRAM() / MBSize, globalAllocator.GetReservedRAM() / MBSize);
+
+    InitTSS();
 
     return kernelInfo;
 }

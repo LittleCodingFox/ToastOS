@@ -19,6 +19,7 @@ namespace GDTAccessFlag
 #define GDTAccessKernelData (GDTAccessFlag::ReadWrite | GDTAccessFlag::Segments | GDTAccessFlag::Present)
 #define GDTAccessUserCode (GDTAccessFlag::ReadWrite | GDTAccessFlag::Execute | GDTAccessFlag::Segments | GDTAccessDPL(3) | GDTAccessFlag::Present)
 #define GDTAccessUserData (GDTAccessFlag::ReadWrite | GDTAccessFlag::Segments | GDTAccessDPL(3) | GDTAccessFlag::Present)
+#define GDTAccessTSS 0x89
 
 struct GDTDescriptor {
     uint16_t size;
@@ -38,9 +39,11 @@ struct GDT {
     GDTEntry null; //0x00
     GDTEntry kernelCode; //0x08
     GDTEntry kernelData; //0x10
-    GDTEntry userNull;
-    GDTEntry userCode;
-    GDTEntry userData;
+    GDTEntry userNull; //0x18
+    GDTEntry userData; //0x20
+    GDTEntry userCode; //0x28
+    GDTEntry tssLow; //0x30
+    GDTEntry tssHigh;
 } __attribute__((packed)) 
 __attribute((aligned(0x1000)));
 

@@ -15,7 +15,7 @@ GDT DefaultGDT = {
         .baseLow = 0,
         .baseMiddle = 0,
         .accessFlag = GDTAccessKernelCode,
-        .limitFlags = 0xa0, 
+        .limitFlags = 0xA0, 
         .baseHigh = 0
     }, // kernel code segment
     {
@@ -23,7 +23,7 @@ GDT DefaultGDT = {
         .baseLow = 0,
         .baseMiddle = 0,
         .accessFlag = GDTAccessKernelData,
-        .limitFlags = 0xa0,
+        .limitFlags = 0x80,
         .baseHigh = 0
     }, // kernel data segment
     {
@@ -38,16 +38,32 @@ GDT DefaultGDT = {
         .limitLow = 0,
         .baseLow = 0,
         .baseMiddle = 0,
+        .accessFlag = GDTAccessUserData,
+        .limitFlags = 0x80,
+        .baseHigh = 0
+    }, // user data segment
+    {
+        .limitLow = 0,
+        .baseLow = 0,
+        .baseMiddle = 0,
         .accessFlag = GDTAccessUserCode,
-        .limitFlags = 0xa0,
+        .limitFlags = 0xA0,
         .baseHigh = 0
     }, // user code segment
     {
         .limitLow = 0,
         .baseLow = 0,
         .baseMiddle = 0,
-        .accessFlag = GDTAccessUserData,
-        .limitFlags = 0xa0,
-        .baseHigh = 0
-    }, // user data segment
+        .accessFlag = GDTAccessTSS,
+        .limitFlags = 0xA0,
+        .baseHigh = 0,
+    }, //TSSLow
+    {
+        .limitLow = 0,
+        .baseLow = 0,
+        .baseMiddle = 0,
+        .accessFlag = 0,
+        .limitFlags = 0,
+        .baseHigh = 0,
+    } //TSSHigh
 };
