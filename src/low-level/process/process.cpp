@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include "paging/PageTableManager.hpp"
 #include "process.hpp"
 
 ProcessManager globalProcessManager;
@@ -18,8 +19,14 @@ ProcessInfo *ProcessManager::Execute(const char *name, const char **argv)
 {
     if(currentProcess == NULL)
     {
-       currentProcess = new ProcessInfo();
-       currentProcess->ID = 0;
+        currentProcess = new ProcessInfo();
+        currentProcess->ID = 0;
+
+        for(uint64_t i = 0; i < sizeof(currentProcess->stack); i += 0x1000)
+        {
+            globalPageTableManager->MapMemory(&currentProcess->stack + i * 0x1000, &currentProcess->stack,
+                (PagingFlag::PagingFlag)(PagingFlag::Present | PagingFlag::ReadWrite | PagingFlag::UserAccessible));
+        }
     }
     else
     {
@@ -72,9 +79,13 @@ ProcessInfo *ProcessManager::Execute(const char *name, const char **argv)
 
     void *stack = (void *)&currentProcess->stack[PROCESS_STACK_SIZE - 1];
 
+    /*
     PushToStack(stack, env);
     PushToStack(stack, _argv);
     PushToStack(stack, argc);
+    */
+
+    currentProcess->rsp = (uint64_t)stack;
 
     return currentProcess;
 }

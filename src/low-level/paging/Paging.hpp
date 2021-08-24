@@ -5,17 +5,14 @@ namespace PagingFlag
 {
     enum PagingFlag
     {
-        Present = 0,
-        ReadWrite = 1,
-        UserSuper = 2,
-        WriteThrough = 3,
-        CacheDisabled = 4,
-        Accessed = 5,
-        LargerPages = 7,
-        Custom0 = 9,
-        Custom1 = 10,
-        Custom2 = 11,
-        NX = 63 // only if supported
+        Present = (1 << 0),
+        ReadWrite = (1 << 1),
+        UserAccessible = (1 << 2),
+        WriteThrough = (1 << 3),
+        CacheDisabled = (1 << 4),
+        Accessed = (1 << 5),
+        LargerPages = (1 << 6),
+        NoExecute = (1 << 7),
     };
 }
 

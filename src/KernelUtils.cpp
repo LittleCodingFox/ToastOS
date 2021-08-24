@@ -13,6 +13,7 @@
 #include "tss/tss.hpp"
 #include "syscall/syscall.hpp"
 #include "../klibc/sys/syscall.h"
+#include "process/process.hpp"
 
 KernelInfo kernelInfo; 
 PageTableManager pageTableManager = NULL;
@@ -192,14 +193,6 @@ KernelInfo InitializeKernel(BootInfo* bootInfo)
     InitializeTSS();
 
     InitializeSyscalls();
-
-    printf("Testing syscalls\n");
-
-    int64_t result = syscall(0);
-
-    printf("Syscall OK\n");
-
-    printf("Syscall for NoImplement should return -1: %u\n", result);
 
     return kernelInfo;
 }

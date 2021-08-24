@@ -1,7 +1,7 @@
 #pragma once
 
 #include "interrupts/Interrupts.hpp"
-#include "klibc/dynamicarray.hpp"
+#include "dynamicarray.hpp"
 
 class Timer
 {

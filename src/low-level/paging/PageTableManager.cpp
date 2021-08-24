@@ -14,10 +14,10 @@ PageTableManager::PageTableManager(PageTable *PML4Address)
 
 void PageTableManager::IdentityMap(void *physicalMemory)
 {
-    MapMemory(physicalMemory, physicalMemory);
+    MapMemory(physicalMemory, physicalMemory, (PagingFlag::PagingFlag)(PagingFlag::Present | PagingFlag::ReadWrite));
 }
 
-void PageTableManager::MapMemory(void *virtualMemory, void *physicalMemory)
+void PageTableManager::MapMemory(void *virtualMemory, void *physicalMemory, PagingFlag::PagingFlag flags)
 {
     PageMapIndexer indexer = PageMapIndexer((uint64_t)virtualMemory);
     PageDirectoryEntry PDE;
@@ -75,8 +75,14 @@ void PageTableManager::MapMemory(void *virtualMemory, void *physicalMemory)
 
     PDE = PT->entries[indexer.P_i];
     PDE.SetAddress((uint64_t)physicalMemory >> 12);
-    PDE.present = true;
-    PDE.writable = true;
+
+    PDE.present = (flags & PagingFlag::Present) == PagingFlag::Present;
+    PDE.writable = (flags & PagingFlag::ReadWrite) == PagingFlag::ReadWrite;
+    PDE.accessed = (flags & PagingFlag::Accessed) == PagingFlag::Accessed;
+    PDE.disableCache = (flags & PagingFlag::CacheDisabled) == PagingFlag::CacheDisabled;
+    PDE.noExecute = (flags & PagingFlag::NoExecute) == PagingFlag::NoExecute;
+    PDE.userAccessible = (flags & PagingFlag::UserAccessible) == PagingFlag::UserAccessible;
+    PDE.writeThruCache = (flags & PagingFlag::WriteThrough) == PagingFlag::WriteThrough;
     PT->entries[indexer.P_i] = PDE;
 }
 
@@ -139,6 +145,6 @@ void PageTableManager::UnmapMemory(void *virtualMemory)
     PDE = PT->entries[indexer.P_i];
     PDE.SetAddress((uint64_t)virtualMemory >> 12);
     PDE.present = false;
-    PDE.writable = true;
+    PDE.writable = false;
     PT->entries[indexer.P_i] = PDE;
 }
