@@ -21,17 +21,29 @@ echo 1023966
 echo p
 echo w) | fdisk -u -C500 -S63 -H16 $BINDIR/$OS_NAME.img
 
+git clone https://github.com/limine-bootloader/limine.git --branch=v2.0-branch-binary --depth=1
+
+make -C limine
+
+./limine/limine-install $BINDIR/$OS_NAME.img
+
 sudo mkdir -p /mnt/osdev
 
 sudo umount /dev/loop0
 
 sudo losetup -o1048576 /dev/loop0 $BINDIR/$OS_NAME.img
 
-sudo mkfs.vfat -F16 -n "EFI System" /dev/loop0
+sudo mkfs.vfat -F32 -n "EFI System" /dev/loop0
 
 sudo mount -tvfat /dev/loop0 /mnt/osdev
 
 sudo cp -R boot/* /mnt/osdev
+
+sudo cp limine.cfg limine/limine.sys /mnt/osdev
+
+sudo cp limine/BOOTX64.EFI /mnt/osdev/EFI/BOOT/
+
+sync
 
 sudo umount /dev/loop0
 

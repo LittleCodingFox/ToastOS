@@ -1,5 +1,5 @@
 #pragma once
-#include "efimemory/EFIMemory.hpp"
+#include <stivale2.h>
 #include <stdint.h>
 #include "Bitmap.hpp"
 
@@ -8,7 +8,7 @@ class PageFrameAllocator
 public:
     Bitmap PageBitmap;
 
-    void ReadEFIMemoryMap(EFI_MEMORY_DESCRIPTOR* mMap, size_t mMapSize, size_t mMapDescSize);
+    void ReadMemoryMap(stivale2_struct_tag_memmap *memmap);
     void FreePage(void* address);
     void FreePages(void* address, uint64_t pageCount);
     void LockPage(void* address);

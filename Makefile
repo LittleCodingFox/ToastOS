@@ -3,10 +3,8 @@ LD				= ld
 AR				= x86_64-elf-ar
 STRIP			= x86_64-elf-strip
 READELF			= x86_64-elf-readelf
-GNUEFI			= gnu-efi
 OVMFDIR			= OVMFbin
 ASMC			= nasm
-BOOTEFI 		:= $(GNUEFI)/x86_64/bootloader/main.efi
 
 KERNEL_NAME		= kernel
 
@@ -43,8 +41,8 @@ LIBKCOBJECTS	= $(LIBCSRC:$(LIBCSRCDIR)/%.c=$(LIBKOBJDIR)/%.o)
 INCLUDEDIRS		= -Isrc -Iklibc -Isrc/include -Isrc/low-level -Iext-libs -Iext-libs/liballoc/
 ASMFLAGS		=
 CFLAGS			= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -nostdlib -mno-red-zone -Wall -fpic -O3 -fno-omit-frame-pointer \
-	-fstack-protector-all -fno-rtti -fno-exceptions
-LDFLAGS			= -T $(SRCDIR)/link.ld -static -Bsymbolic -nostdlib -Map=linker.map
+	-fno-stack-protector -fno-rtti -fno-exceptions
+LDFLAGS			= -T $(SRCDIR)/link.ld -static -Bsymbolic -nostdlib -Map=linker.map -zmax-page-size=0x1000
 
 QEMU_FLAGS		=
 
@@ -87,7 +85,7 @@ $(LIBKCOBJECTS): $(LIBKOBJDIR)/%.o : $(LIBCSRCDIR)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 kernel: makedirs $(OBJECTS) $(COBJECTS) $(LIBKCOBJECTS) $(EXTOBJECTS) $(EXTCOBJECTS) $(ASMOBJECTS)
-	$(LD) $(LDFLAGS) $(OBJECTS) $(COBJECTS) $(LIBKCOBJECTS) $(EXTOBJECTS) $(EXTCOBJECTS) $(ASMOBJECTS) -o $(BINDIR)/kernel.elf
+	$(LD) $(LDFLAGS) $(OBJECTS) $(COBJECTS) $(LIBKCOBJECTS) $(EXTOBJECTS) $(EXTCOBJECTS) $(ASMOBJECTS) -o $(BINDIR)/kernel
 	awk '$$1 ~ /0x[0-9a-f]{16}/ {print substr($$1, 3), $$2}' linker.map > symbols.map
 	rm linker.map
 
@@ -103,7 +101,7 @@ userland: libc
 		$(MAKE) -C $$path; \
 	done
 
-run-linux: gnuefi kernel userland iso-linux
+run-linux: kernel userland iso-linux
 	qemu-system-x86_64 -drive file=$(BINDIR)/$(OS_NAME).img,format=raw,index=0,media=disk \
 	-bios /usr/share/qemu/OVMF.fd \
 	-m 256M -cpu qemu64 -machine type=q35 -serial file:./debug.log -net none -d int --no-reboot $(QEMU_FLAGS) 2>qemu.log
@@ -112,11 +110,7 @@ debug-linux: CFLAGS += -DKERNEL_DEBUG=1 #-g -O0
 #debug: QEMU_FLAGS += -s -S
 debug-linux: run-linux
 
-gnuefi:
-	(cd gnu-efi && make && make bootloader)
-
 clean:
-	(cd gnu-efi && make clean)
 	rm -Rf $(BINDIR)/*.img
 	rm -Rf $(BINDIR)/*.iso
 	rm -Rf $(BINDIR)/*.cdr
@@ -129,4 +123,4 @@ clean:
 	rm -Rf boot
 	rm -Rf obj
 
-.PHONY: all clean iso run-linux makedirs debug-linux
+.PHONY: all clean run-linux makedirs debug-linux userland

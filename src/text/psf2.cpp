@@ -1,7 +1,40 @@
 #include <stdint.h>
 #include <framebuffer/FramebufferRenderer.hpp>
+#include <stdlib.h>
+#include <string.h>
 #include "debug.hpp"
 #include "psf2.hpp"
+
+#define PSF2_MAGIC 0x864ab572
+
+psf2_font_t *psf2Load(void *buffer)
+{
+	psf2_header_t *header = (psf2_header_t *)buffer;
+
+	if(header->magic != PSF2_MAGIC)
+	{
+		DEBUG_OUT("%s", "PSF2 Load invalid magic");
+
+		return NULL;
+	}
+
+	uint64_t glyphBufferSize = header->numGlyph * header->bytesPerGlyph;
+
+	DEBUG_OUT("Allocating %llu glyph buffer", glyphBufferSize);
+
+	void *glyphBuffer = malloc(glyphBufferSize);
+
+	DEBUG_OUT("%s", "Copying glyph buffer data");
+
+	memcpy(glyphBuffer, (uint8_t *)buffer + header->headerSize, glyphBufferSize);
+
+	psf2_font_t *outValue = (psf2_font_t *)malloc(sizeof(psf2_font_t));
+
+	outValue->glyph_buffer = glyphBuffer;
+	outValue->header = header;
+
+	return outValue;
+}
 
 psf2_size_t psf2MeasureText(const char *text, psf2_font_t *font)
 {

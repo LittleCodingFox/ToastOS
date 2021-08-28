@@ -1,8 +1,9 @@
 CC = clang
 
-BINDIR = ../../dist/bin
-SRCDIR = src
-OBJDIR = ../obj/userland/test
+PROGRAM_NAME	= test
+BINDIR 			= ../../dist/bin
+SRCDIR			= src
+OBJDIR			= ../obj/userland/test
 
 rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
 
@@ -24,7 +25,7 @@ makedirs:
 
 test: makedirs $(COBJECTS)
 	mkdir -p $(BINDIR)
-	$(LD) $(LDFLAGS) $(COBJECTS) -o $(BINDIR)/test.elf
+	$(LD) $(LDFLAGS) $(COBJECTS) -o $(BINDIR)/$(PROGRAM_NAME)
 
 $(COBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
 	mkdir -p $(shell dirname $@)

@@ -15,22 +15,29 @@
 #include "../klibc/sys/syscall.h"
 #include "process/process.hpp"
 
-KernelInfo kernelInfo; 
+KernelInfo kernelInfo;
 PageTableManager pageTableManager = NULL;
 
-void InitializeMemory(BootInfo* bootInfo)
+uint64_t GetMemorySize(stivale2_struct_tag_memmap *memmap)
 {
-    uint64_t mMapEntries = bootInfo->mMapSize / bootInfo->mMapDescSize;
+    static uint64_t memorySize = 0;
 
-    globalAllocator = PageFrameAllocator();
-    globalAllocator.ReadEFIMemoryMap(bootInfo->mMap, bootInfo->mMapSize, bootInfo->mMapDescSize);
+    if(memorySize > 0)
+    {
+        return memorySize;
+    }
 
-    uint64_t kernelSize = (uint64_t)&_KernelEnd - (uint64_t)&_KernelStart;
-    uint64_t kernelPages = (uint64_t)kernelSize / 4096 + 1;
+    for(uint64_t i = 0; i < memmap->entries; i++)
+    {
+        memorySize += memmap->memmap[i].length;
+    }
 
-    DEBUG_OUT("%s", "Locking kernel pages");
+    return memorySize;
+}
 
-    globalAllocator.LockPages(&_KernelStart, kernelPages);
+void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_framebuffer *framebuffer)
+{
+    globalAllocator.ReadMemoryMap(memmap);
 
     PageTable* PML4 = (PageTable*)globalAllocator.RequestPage();
     memset(PML4, 0, 0x1000);
@@ -47,20 +54,20 @@ void InitializeMemory(BootInfo* bootInfo)
     Registers::WriteMSR(Registers::IA32_EFER, efer | (1 << 11));
 
     //Enables memory-wide identity mapping. probably not a good thing.
-    for (uint64_t t = 0; t < GetMemorySize(bootInfo->mMap, mMapEntries, bootInfo->mMapDescSize); t+= 0x1000)
+    for (uint64_t t = 0; t < GetMemorySize(memmap); t+= 0x1000)
     {
         pageTableManager.IdentityMap((void*)t);
     }
 
-    for (int i = 0; i < mMapEntries; i++)
+    for (int i = 0; i < memmap->entries; i++)
     {
-        EFI_MEMORY_DESCRIPTOR* desc = (EFI_MEMORY_DESCRIPTOR*)((uint64_t)bootInfo->mMap + (i * bootInfo->mMapDescSize));
+        stivale2_mmap_entry* desc = (stivale2_mmap_entry*)&memmap->memmap[i];
 
-        if (desc->type != 7)
+        if (desc->type != STIVALE2_MMAP_USABLE)
         {
-            DEBUG_OUT("Identity Mapping %s (%p-%p)", EFI_MEMORY_TYPE_STRINGS[desc->type], desc->physAddr, desc->physAddr + desc->numPages * 4096);
+            DEBUG_OUT("Identity Mapping %i (%p-%p)", desc->type, desc->base, desc->base + desc->length);
 
-            for(uint64_t index = 0, startIndex = desc->physAddr / 4096; index < desc->numPages; index++, startIndex += 4096)
+            for(uint64_t index = 0, startIndex = desc->base / 0x1000; index < desc->length / 0x1000; index++, startIndex += 0x1000)
             {
                 pageTableManager.IdentityMap((void *)startIndex);
             }
@@ -69,8 +76,8 @@ void InitializeMemory(BootInfo* bootInfo)
 
     DEBUG_OUT("%s", "Preparing framebuffer pages");
 
-    uint64_t fbBase = (uint64_t)bootInfo->framebuffer->baseAddress;
-    uint64_t fbSize = (uint64_t)bootInfo->framebuffer->bufferSize + 0x1000;
+    uint64_t fbBase = (uint64_t)framebuffer->framebuffer_addr;
+    uint64_t fbSize = (uint64_t)framebuffer->framebuffer_height * framebuffer->framebuffer_pitch + 0x1000;
 
     globalAllocator.LockPages((void*)fbBase, fbSize / 0x1000 + 1);
 
@@ -91,27 +98,29 @@ void InitializeInterrupts()
     interrupts.Init();
 }
 
-void InitializeACPI(BootInfo *bootInfo)
+void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
 {
     printf("Initializing ACPI\n");
 
-    if(bootInfo->rsdp == NULL)
+    if(rsdp == NULL)
     {
         printf("[ACPI] Missing RSDP!\n");
 
         return;
     }
 
+    RSDP2 *rsdpStruct = (RSDP2 *)rsdp->rsdp;
+
     char signature[9] = { 0 };
 
     char OEMID[7] = { 0 };
 
-    memcpy(signature, bootInfo->rsdp->signature, 8);
-    memcpy(OEMID, bootInfo->rsdp->OEMID, 6);
+    memcpy(signature, rsdpStruct->signature, 8);
+    memcpy(OEMID, rsdpStruct->OEMID, 6);
 
     printf("[ACPI] RSDP Signature: %s\n[ACPI] OEMID: %s\n", signature, OEMID);
 
-    volatile SDTHeader *xsdt = (volatile SDTHeader *)bootInfo->xsdt;
+    volatile SDTHeader *xsdt = (volatile SDTHeader *)rsdpStruct->XSDTAddress;
 
     if(xsdt == NULL)
     {
@@ -149,13 +158,50 @@ void CursorHandler (struct vtconsole* vtc, vtcursor_t* cur)
 
 void RefreshFramebuffer();
 
-KernelInfo InitializeKernel(BootInfo* bootInfo)
+void *Stivale2GetTag(stivale2_struct *stivale2Struct, uint64_t ID)
 {
-    kernelInitStacktrace(bootInfo->symbols, bootInfo->symbolsSize);
+    stivale2_tag *current = (stivale2_tag *)stivale2Struct->tags;
 
-    r = FramebufferRenderer(bootInfo->framebuffer, bootInfo->font);
+    for(;;)
+    {
+        if(current == NULL)
+        {
+            return NULL;
+        }
 
-    globalRenderer = &r;
+        if(current->identifier == ID)
+        {
+            return current;
+        }
+
+        current = (stivale2_tag *)current->next;
+    }
+}
+
+stivale2_module *Stivale2GetModule(stivale2_struct_tag_modules *modules, const char *name)
+{
+    for(uint64_t i = 0; i < modules->module_count; i++)
+    {
+        stivale2_module *module = &modules->modules[i];
+
+        if(strncmp(name, module->string, 128) == 0)
+        {
+            return module;
+        }
+    }
+
+    return NULL;
+}
+
+KernelInfo InitializeKernel(stivale2_struct *stivale2Struct)
+{
+    stivale2_struct_tag_framebuffer *framebuffer = (stivale2_struct_tag_framebuffer *)Stivale2GetTag(stivale2Struct, STIVALE2_HEADER_TAG_FRAMEBUFFER_ID);
+    stivale2_struct_tag_memmap *memmap = (stivale2_struct_tag_memmap *)Stivale2GetTag(stivale2Struct, STIVALE2_STRUCT_TAG_MEMMAP_ID);
+    stivale2_struct_tag_modules *modules = (stivale2_struct_tag_modules *)Stivale2GetTag(stivale2Struct, STIVALE2_STRUCT_TAG_MODULES_ID);
+    stivale2_struct_tag_rsdp *rsdp = (stivale2_struct_tag_rsdp *)Stivale2GetTag(stivale2Struct, STIVALE2_STRUCT_TAG_RSDP_ID);
+
+    stivale2_module *symbols = Stivale2GetModule(modules, "symbols.map");
+    stivale2_module *font = Stivale2GetModule(modules, "font.psf");
 
     GDTDescriptor gdtDescriptor;
 
@@ -164,7 +210,34 @@ KernelInfo InitializeKernel(BootInfo* bootInfo)
 
     LoadGDT(&gdtDescriptor);
 
-    InitializeMemory(bootInfo);
+    InitializeMemory(memmap, framebuffer);
+
+    if(symbols != NULL)
+    {
+        DEBUG_OUT("Initializing kernel symbols from size %llu", symbols->end - symbols->begin);
+        kernelInitStacktrace((char *)symbols->begin, symbols->end - symbols->begin);
+    }
+
+    psf2_font_t *psf2Font;
+
+    if(font != NULL)
+    {
+        psf2Font = psf2Load((void *)font->begin);
+
+        DEBUG_OUT("Font: %p", psf2Font);
+    }
+
+    Framebuffer *framebufferStruct = (Framebuffer *)malloc(sizeof(Framebuffer));
+
+    framebufferStruct->baseAddress = (void *)framebuffer->framebuffer_addr;
+    framebufferStruct->bufferSize = framebuffer->framebuffer_pitch * framebuffer->framebuffer_height;
+    framebufferStruct->height = framebuffer->framebuffer_height;
+    framebufferStruct->width = framebuffer->framebuffer_width;
+    framebufferStruct->pixelsPerScanLine = framebuffer->framebuffer_pitch;
+
+    r = FramebufferRenderer(framebufferStruct, psf2Font);
+
+    globalRenderer = &r;
 
     globalRenderer->initialize();
 
@@ -181,7 +254,7 @@ KernelInfo InitializeKernel(BootInfo* bootInfo)
 
     timer.RegisterHandler(RefreshFramebuffer);
 
-    InitializeACPI(bootInfo);
+    InitializeACPI(rsdp);
 
     DEBUG_OUT("%s", "Finished initializing the kernel");
 

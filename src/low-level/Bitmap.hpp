@@ -5,8 +5,7 @@
 
 class Bitmap
 {
-    public:
-
+public:
     size_t size;
     uint8_t* buffer;
 
