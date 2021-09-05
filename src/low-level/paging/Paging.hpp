@@ -1,62 +1,48 @@
 #pragma once
 #include <stdint.h>
 
-namespace PagingFlag
+#define HIGHER_HALF_MEMORY_OFFSET           0xFFFF800000000000
+#define HIGHER_HALF_KERNEL_MEMORY_OFFSET    0xFFFFFFFF80000000
+
+#define PAGE_FLAG_MASK                      (0xFFF | (1ull << 63))
+#define PAGE_ADDRESS_MASK                   (~(PAGE_FLAG_MASK))
+
+inline uint64_t TranslateToHighHalfMemoryAddress(uint64_t physicalAddress)
 {
-    enum PagingFlag
-    {
-        Present = (1 << 0),
-        ReadWrite = (1 << 1),
-        UserAccessible = (1 << 2),
-        WriteThrough = (1 << 3),
-        CacheDisabled = (1 << 4),
-        Accessed = (1 << 5),
-        LargerPages = (1 << 6),
-        NoExecute = (1 << 7),
-    };
+    return physicalAddress + HIGHER_HALF_MEMORY_OFFSET;
 }
 
-struct PageDirectoryEntry
+inline uint64_t TranslateToPhysicalMemoryAddress(uint64_t virtualAddress)
 {
-    union
-    {
-        uint64_t packed;
-        
-        struct
-        {
-            uint8_t present : 1;
-            uint8_t writable : 1;
-            uint8_t userAccessible : 1;
-            uint8_t writeThruCache : 1;
-            uint8_t disableCache : 1;
-            uint8_t accessed : 1;
-            uint8_t dirty : 1;
-            uint8_t hugePage : 1;
-            uint8_t global : 1;
-            uint8_t OS1 : 1;
-            uint8_t OS2 : 1;
-            uint8_t OS3 : 1;
-            uint64_t address : 40;
-            uint8_t OS4 : 1;
-            uint8_t OS5 : 1;
-            uint8_t OS6 : 1;
-            uint8_t OS7 : 1;
-            uint8_t OS8 : 1;
-            uint8_t OS9 : 1;
-            uint8_t OSA : 1;
-            uint8_t OSB : 1;
-            uint8_t OSC : 1;
-            uint8_t OSD : 1;
-            uint8_t OSE : 1;
-            uint8_t noExecute : 1;
-        };
-    };
+    return virtualAddress - HIGHER_HALF_MEMORY_OFFSET;
+}
 
-    void SetAddress(uint64_t address);
-    uint64_t GetAddress();
+inline uint64_t TranslateToKernelPhysicalMemoryAddress(uint64_t virtualAddress)
+{
+    return virtualAddress - HIGHER_HALF_KERNEL_MEMORY_OFFSET;
+}
+
+enum PagingFlag
+{
+    PAGING_FLAG_PRESENT = (1ull << 0),
+    PAGING_FLAG_WRITABLE = (1ull << 1),
+    PAGING_FLAG_USER_ACCESSIBLE = (1ull << 2),
+    PAGING_FLAG_LARGER_PAGES = (1ull << 7),
+    PAGING_FLAG_NO_EXECUTE = (1ull << 63),
+};
+
+struct PageTableOffset
+{
+    uint64_t p4Offset;
+    uint64_t pdpOffset;
+    uint64_t pdOffset;
+    uint64_t ptOffset;
 };
 
 struct PageTable
 {
-    PageDirectoryEntry entries[512];
+    uint64_t entries[512];
 }__attribute__((aligned(0x1000)));
+
+PageTableOffset VirtualAddressToOffsets(void *address);
+void *OffsetToVirtualAddress(PageTableOffset offset);

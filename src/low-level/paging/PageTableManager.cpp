@@ -7,144 +7,87 @@
 
 PageTableManager *globalPageTableManager = NULL;
 
-PageTableManager::PageTableManager(PageTable *PML4Address)
+static inline PageTable *GetOrAllocEntry(PageTable *table, uint64_t offset, uint64_t flags)
 {
-    this->PML4 = PML4Address;
+    uint64_t address = table->entries[offset];
+
+    if(!(address & PAGING_FLAG_PRESENT))
+    {
+        address = table->entries[offset] = (uint64_t)globalAllocator.RequestPage();
+
+        if(!address)
+        {
+            return NULL;
+        }
+
+        table->entries[offset] |= flags | PAGING_FLAG_PRESENT;
+
+        memset((void *)TranslateToHighHalfMemoryAddress(address), 0, 0x1000);
+    }
+
+    return (PageTable *)TranslateToHighHalfMemoryAddress(address & PAGE_ADDRESS_MASK);
 }
 
-void PageTableManager::IdentityMap(void *physicalMemory)
+static inline PageTable *GetOrNullifyEntry(PageTable *table, uint64_t offset)
 {
-    MapMemory(physicalMemory, physicalMemory, (PagingFlag::PagingFlag)(PagingFlag::Present | PagingFlag::ReadWrite));
+    uint64_t address = table->entries[offset];
+
+    if(!(address & PAGING_FLAG_PRESENT))
+    {
+        return NULL;
+    }
+
+    return (PageTable *)TranslateToHighHalfMemoryAddress(address & PAGE_ADDRESS_MASK);
 }
 
-void PageTableManager::MapMemory(void *virtualMemory, void *physicalMemory, PagingFlag::PagingFlag flags)
+PageTableManager::PageTableManager() : p4(NULL)
 {
-    PageMapIndexer indexer = PageMapIndexer((uint64_t)virtualMemory);
-    PageDirectoryEntry PDE;
+}
 
-    PDE = PML4->entries[indexer.PDP_i];
-    PageTable* PDP;
+void PageTableManager::IdentityMap(void *physicalMemory, uint64_t flags)
+{
+    MapMemory(physicalMemory, physicalMemory, flags);
+}
 
-    if (!PDE.present)
-    {
-        PDP = (PageTable*)globalAllocator.RequestPage();
-        memset(PDP, 0, 0x1000);
-        PDE.SetAddress((uint64_t)PDP >> 12);
-        PDE.present = true;
-        PDE.writable = true;
-        PML4->entries[indexer.PDP_i] = PDE;
-    }
-    else
-    {
-        PDP = (PageTable*)((uint64_t)PDE.GetAddress() << 12);
-    }
-    
-    PDE = PDP->entries[indexer.PD_i];
-    PageTable* PD;
+void PageTableManager::MapMemory(void *virtualMemory, void *physicalMemory, uint64_t flags)
+{
+    uint64_t higherPermissions = PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE;
 
-    if (!PDE.present)
-    {
-        PD = (PageTable*)globalAllocator.RequestPage();
-        memset(PD, 0, 0x1000);
-        PDE.SetAddress((uint64_t)PD >> 12);
-        PDE.present = true;
-        PDE.writable = true;
-        PDP->entries[indexer.PD_i] = PDE;
-    }
-    else
-    {
-        PD = (PageTable*)((uint64_t)PDE.GetAddress() << 12);
-    }
+    PageTableOffset offset = VirtualAddressToOffsets(virtualMemory);
 
-    PDE = PD->entries[indexer.PT_i];
-    PageTable* PT;
+    PageTable *p4Virtual = (PageTable *)TranslateToHighHalfMemoryAddress((uint64_t)p4);
+    PageTable *pdp = GetOrAllocEntry(p4Virtual, offset.p4Offset, higherPermissions);
+    PageTable *pd = GetOrAllocEntry(pdp, offset.pdpOffset, higherPermissions);
+    PageTable *pt = GetOrAllocEntry(pd, offset.pdOffset, higherPermissions);
 
-    if (!PDE.present)
-    {
-        PT = (PageTable*)globalAllocator.RequestPage();
-        memset(PT, 0, 0x1000);
-        PDE.SetAddress((uint64_t)PT >> 12);
-        PDE.present = true;
-        PDE.writable = true;
-        PD->entries[indexer.PT_i] = PDE;
-    }
-    else
-    {
-        PT = (PageTable*)((uint64_t)PDE.GetAddress() << 12);
-    }
-
-    PDE = PT->entries[indexer.P_i];
-    PDE.SetAddress((uint64_t)physicalMemory >> 12);
-
-    PDE.present = (flags & PagingFlag::Present) == PagingFlag::Present;
-    PDE.writable = (flags & PagingFlag::ReadWrite) == PagingFlag::ReadWrite;
-    PDE.accessed = (flags & PagingFlag::Accessed) == PagingFlag::Accessed;
-    PDE.disableCache = (flags & PagingFlag::CacheDisabled) == PagingFlag::CacheDisabled;
-    PDE.noExecute = (flags & PagingFlag::NoExecute) == PagingFlag::NoExecute;
-    PDE.userAccessible = (flags & PagingFlag::UserAccessible) == PagingFlag::UserAccessible;
-    PDE.writeThruCache = (flags & PagingFlag::WriteThrough) == PagingFlag::WriteThrough;
-    PT->entries[indexer.P_i] = PDE;
+    pt->entries[offset.ptOffset] = (uint64_t)physicalMemory | flags | PAGING_FLAG_PRESENT;
 }
 
 void PageTableManager::UnmapMemory(void *virtualMemory)
 {
-    PageMapIndexer indexer = PageMapIndexer((uint64_t)virtualMemory);
-    PageDirectoryEntry PDE;
+    PageTableOffset offset = VirtualAddressToOffsets(virtualMemory);
 
-    PDE = PML4->entries[indexer.PDP_i];
-    PageTable* PDP;
+    PageTable *p4Virtual = (PageTable *)TranslateToHighHalfMemoryAddress((uint64_t)p4);
+    PageTable *pdp = GetOrNullifyEntry(p4Virtual, offset.p4Offset);
 
-    if (!PDE.present)
+    if(pdp == NULL)
     {
-        PDP = (PageTable*)globalAllocator.RequestPage();
-        memset(PDP, 0, 0x1000);
-        PDE.SetAddress((uint64_t)PDP >> 12);
-        PDE.present = true;
-        PDE.writable = true;
-        PML4->entries[indexer.PDP_i] = PDE;
-    }
-    else
-    {
-        PDP = (PageTable*)((uint64_t)PDE.GetAddress() << 12);
-    }
-    
-    PDE = PDP->entries[indexer.PD_i];
-    PageTable* PD;
-
-    if (!PDE.present)
-    {
-        PD = (PageTable*)globalAllocator.RequestPage();
-        memset(PD, 0, 0x1000);
-        PDE.SetAddress((uint64_t)PD >> 12);
-        PDE.present = true;
-        PDE.writable = true;
-        PDP->entries[indexer.PD_i] = PDE;
-    }
-    else
-    {
-        PD = (PageTable*)((uint64_t)PDE.GetAddress() << 12);
+        return;
     }
 
-    PDE = PD->entries[indexer.PT_i];
-    PageTable* PT;
+    PageTable *pd = GetOrNullifyEntry(pdp, offset.pdpOffset);
 
-    if (!PDE.present)
+    if(pd == NULL)
     {
-        PT = (PageTable*)globalAllocator.RequestPage();
-        memset(PT, 0, 0x1000);
-        PDE.SetAddress((uint64_t)PT >> 12);
-        PDE.present = true;
-        PDE.writable = true;
-        PD->entries[indexer.PT_i] = PDE;
-    }
-    else
-    {
-        PT = (PageTable*)((uint64_t)PDE.GetAddress() << 12);
+        return;
     }
 
-    PDE = PT->entries[indexer.P_i];
-    PDE.SetAddress((uint64_t)virtualMemory >> 12);
-    PDE.present = false;
-    PDE.writable = false;
-    PT->entries[indexer.P_i] = PDE;
+    PageTable *pt = GetOrNullifyEntry(pd, offset.pdOffset);
+
+    if(pt == NULL)
+    {
+        return;
+    }
+
+    pt->entries[offset.ptOffset] = 0;
 }

@@ -25,15 +25,12 @@ static struct stivale2_header stivaleHeader = {
     .entry_point = 0,
     .stack = (uintptr_t)stack + sizeof(stack),
     .flags = (1 << 1) | (1 << 2),
-    .tags = (uintptr_t)&framebufferTag,
+    .tags = (uint64_t)&framebufferTag,
 };
 
 extern "C" void _start(stivale2_struct *stivale2Struct)
 {
-    DEBUG_OUT("%s", "START!");
-
-    KernelInfo kernelInfo = InitializeKernel(stivale2Struct);
-    PageTableManager* pageTableManager = kernelInfo.pageTableManager;
+    InitializeKernel(stivale2Struct);
 
     for(;;);
 }

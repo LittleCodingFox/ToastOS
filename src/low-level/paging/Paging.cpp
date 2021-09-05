@@ -1,13 +1,28 @@
 #include "Paging.hpp"
 
-uint64_t PageDirectoryEntry::GetAddress()
+PageTableOffset VirtualAddressToOffsets(void *virtualAddress)
 {
-    return (packed & 0x000ffffffffff000) >> 12;
+    uint64_t address = (uint64_t)virtualAddress;
+
+    PageTableOffset offset = {
+
+        .p4Offset = (address & ((uint64_t)0x1FF << 39)) >> 39,
+        .pdpOffset = (address & ((uint64_t)0x1FF << 30)) >> 30,
+        .pdOffset = (address & ((uint64_t)0x1FF << 21)) >> 21,
+        .ptOffset = (address & ((uint64_t)0x1FF << 12)) >> 12,
+    };
+
+    return offset;
 }
 
-void PageDirectoryEntry::SetAddress(uint64_t address)
+void *OffsetToVirtualAddress(PageTableOffset offset)
 {
-    address &= 0x000000ffffffffff;
-    packed &= 0xfff0000000000fff;
-    packed |= (address << 12);
+    uint64_t address = 0;
+
+    address |= offset.p4Offset << 39;
+    address |= offset.pdpOffset << 30;
+    address |= offset.pdOffset << 21;
+    address |= offset.ptOffset << 12;
+
+    return (void*)address;
 }

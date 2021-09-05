@@ -1,5 +1,6 @@
 #include "ACPI.hpp"
 #include "debug.hpp"
+#include "paging/Paging.hpp"
 #include <string.h>
 
 namespace ACPI
@@ -11,7 +12,7 @@ namespace ACPI
 
         for(uint32_t i = 0; i < entries; i++, entryPtr++)
         {
-            SDTHeader *outHeader = (SDTHeader *)(*entryPtr);
+            SDTHeader *outHeader = (SDTHeader *)TranslateToHighHalfMemoryAddress(*entryPtr);
 
             if(memcmp(outHeader->signature, signature, sizeof(char[4])) == 0)
             {

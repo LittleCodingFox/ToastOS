@@ -67,7 +67,7 @@ void Serial::PrintLine(const char *string)
     Print("\n");
 }
 
-void SerialPortOutStreamCOM1(char character, void *arg)
+extern "C" void SerialPortOutStreamCOM1(char character, void *arg)
 {
     SerialCOM1.Write(character);
 }

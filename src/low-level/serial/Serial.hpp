@@ -37,6 +37,6 @@ public:
 
 extern Serial SerialCOM1;
 
-void SerialPortOutStreamCOM1(char character, void *arg);
+extern "C" void SerialPortOutStreamCOM1(char character, void *arg);
 
 #endif

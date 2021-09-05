@@ -15,8 +15,7 @@
 #include "../klibc/sys/syscall.h"
 #include "process/process.hpp"
 
-KernelInfo kernelInfo;
-PageTableManager pageTableManager = NULL;
+PageTableManager pageTableManager;
 
 uint64_t GetMemorySize(stivale2_struct_tag_memmap *memmap)
 {
@@ -39,12 +38,12 @@ void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_fr
 {
     globalAllocator.ReadMemoryMap(memmap);
 
-    PageTable* PML4 = (PageTable*)globalAllocator.RequestPage();
-    memset(PML4, 0, 0x1000);
-
     DEBUG_OUT("%s", "Initializing page table manager");
 
-    pageTableManager = PageTableManager(PML4);
+    pageTableManager.p4 = (PageTable *)globalAllocator.RequestPage();
+
+    pageTableManager.IdentityMap((void *)(uint64_t)pageTableManager.p4,
+        PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
 
     //Enable write protection
     Registers::WriteCR0(Registers::ReadCR0() | (1 << 16));
@@ -53,42 +52,72 @@ void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_fr
     uint64_t efer = Registers::ReadMSR(Registers::IA32_EFER);
     Registers::WriteMSR(Registers::IA32_EFER, efer | (1 << 11));
 
-    //Enables memory-wide identity mapping. probably not a good thing.
-    for (uint64_t t = 0; t < GetMemorySize(memmap); t+= 0x1000)
+    DEBUG_OUT("%s", "Identity mapping the whole memory");
+
+    for(uint64_t index = 0; index < GetMemorySize(memmap); index += 0x1000)
     {
-        pageTableManager.IdentityMap((void*)t);
+        pageTableManager.MapMemory((void *)TranslateToHighHalfMemoryAddress(index), (void *)(index),
+            PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
     }
+
+    DEBUG_OUT("%s", "Mapping memmap");
 
     for (int i = 0; i < memmap->entries; i++)
     {
         stivale2_mmap_entry* desc = (stivale2_mmap_entry*)&memmap->memmap[i];
 
-        if (desc->type != STIVALE2_MMAP_USABLE)
+        if(desc->type == STIVALE2_MMAP_KERNEL_AND_MODULES)
         {
-            DEBUG_OUT("Identity Mapping %i (%p-%p)", desc->type, desc->base, desc->base + desc->length);
-
-            for(uint64_t index = 0, startIndex = desc->base / 0x1000; index < desc->length / 0x1000; index++, startIndex += 0x1000)
+            for(uint64_t index = 0; index < desc->length / 0x1000 + 1; index++)
             {
-                pageTableManager.IdentityMap((void *)startIndex);
+                pageTableManager.MapMemory((void *)(HIGHER_HALF_KERNEL_MEMORY_OFFSET + desc->base + index * 0x1000), (void *)(desc->base + index * 0x1000),
+                    PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+            }
+        }
+        else if(desc->type != STIVALE2_MMAP_USABLE)
+        {
+            for(uint64_t index = 0; index < desc->length / 0x1000 + 1; index++)
+            {
+                pageTableManager.MapMemory((void *)TranslateToHighHalfMemoryAddress(desc->base + index * 0x1000), (void *)(desc->base + index * 0x1000),
+                    PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
             }
         }
     }
 
     DEBUG_OUT("%s", "Preparing framebuffer pages");
 
-    uint64_t fbBase = (uint64_t)framebuffer->framebuffer_addr;
+    uint64_t fbBase = framebuffer->framebuffer_addr;
     uint64_t fbSize = (uint64_t)framebuffer->framebuffer_height * framebuffer->framebuffer_pitch + 0x1000;
 
-    globalAllocator.LockPages((void*)fbBase, fbSize / 0x1000 + 1);
+    DEBUG_OUT("Framebuffer width: %u; height: %u; bpp: %u; pitch: %u",
+        framebuffer->framebuffer_width, framebuffer->framebuffer_height,
+        framebuffer->framebuffer_bpp, framebuffer->framebuffer_pitch);
 
-    for (uint64_t t = fbBase; t < fbBase + fbSize; t += 4096)
+    DEBUG_OUT("Locking pages at %p (%llu)", fbBase, fbSize);
+
+    pageTableManager.MapMemory((void *)TranslateToHighHalfMemoryAddress((uint64_t)globalAllocator.PageBitmap.buffer), (void *)globalAllocator.PageBitmap.buffer,
+        PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+
+    globalAllocator.PageBitmap.buffer = (uint8_t *)TranslateToHighHalfMemoryAddress((uint64_t)globalAllocator.PageBitmap.buffer);
+
+    globalAllocator.LockPages((void*)TranslateToPhysicalMemoryAddress(fbBase), fbSize / 0x1000 + 1);
+
+    for (uint64_t t = fbBase; t < fbBase + fbSize; t += 0x1000)
     {
-        pageTableManager.IdentityMap((void*)t);
+        pageTableManager.MapMemory((void *)TranslateToHighHalfMemoryAddress(t), (void*)t, PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
     }
 
-    Registers::WriteCR3((uint64_t)PML4);
+    framebuffer->framebuffer_addr = TranslateToHighHalfMemoryAddress(fbBase);
 
-    globalPageTableManager = kernelInfo.pageTableManager = &pageTableManager;
+    DEBUG_OUT("%s", "Initialized Framebuffer");
+
+    Registers::WriteCR3((uint64_t)pageTableManager.p4);
+
+    DEBUG_OUT("%s", "Wrote CR3");
+
+    globalPageTableManager = &pageTableManager;
+
+    DEBUG_OUT("%s", "Initialized memory");
 }
 
 void InitializeInterrupts()
@@ -118,11 +147,13 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
     memcpy(signature, rsdpStruct->signature, 8);
     memcpy(OEMID, rsdpStruct->OEMID, 6);
 
-    printf("[ACPI] RSDP Signature: %s\n[ACPI] OEMID: %s\n", signature, OEMID);
+    printf("[ACPI] RSDP Signature: %s\n[ACPI] OEMID: %s\n",
+        signature,
+        OEMID);
 
-    volatile SDTHeader *xsdt = (volatile SDTHeader *)rsdpStruct->XSDTAddress;
+    volatile SDTHeader *xsdt = (volatile SDTHeader *)TranslateToHighHalfMemoryAddress(rsdpStruct->XSDTAddress);
 
-    if(xsdt == NULL)
+    if(rsdpStruct->XSDTAddress == NULL)
     {
         printf("[ACPI] Failed to get XSDT!\n");
 
@@ -193,9 +224,9 @@ stivale2_module *Stivale2GetModule(stivale2_struct_tag_modules *modules, const c
     return NULL;
 }
 
-KernelInfo InitializeKernel(stivale2_struct *stivale2Struct)
+void InitializeKernel(stivale2_struct *stivale2Struct)
 {
-    stivale2_struct_tag_framebuffer *framebuffer = (stivale2_struct_tag_framebuffer *)Stivale2GetTag(stivale2Struct, STIVALE2_HEADER_TAG_FRAMEBUFFER_ID);
+    stivale2_struct_tag_framebuffer *framebuffer = (stivale2_struct_tag_framebuffer *)Stivale2GetTag(stivale2Struct, STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID);
     stivale2_struct_tag_memmap *memmap = (stivale2_struct_tag_memmap *)Stivale2GetTag(stivale2Struct, STIVALE2_STRUCT_TAG_MEMMAP_ID);
     stivale2_struct_tag_modules *modules = (stivale2_struct_tag_modules *)Stivale2GetTag(stivale2Struct, STIVALE2_STRUCT_TAG_MODULES_ID);
     stivale2_struct_tag_rsdp *rsdp = (stivale2_struct_tag_rsdp *)Stivale2GetTag(stivale2Struct, STIVALE2_STRUCT_TAG_RSDP_ID);
@@ -209,6 +240,8 @@ KernelInfo InitializeKernel(stivale2_struct *stivale2Struct)
     gdtDescriptor.offset = (uint64_t)&DefaultGDT;
 
     LoadGDT(&gdtDescriptor);
+
+    InitializeInterrupts();
 
     InitializeMemory(memmap, framebuffer);
 
@@ -248,8 +281,6 @@ KernelInfo InitializeKernel(stivale2_struct *stivale2Struct)
 
     console = vtconsole(consoleWidth, consoleHeight, PaintHandler, CursorHandler);
 
-    InitializeInterrupts();
-
     timer.Initialize();
 
     timer.RegisterHandler(RefreshFramebuffer);
@@ -258,16 +289,14 @@ KernelInfo InitializeKernel(stivale2_struct *stivale2Struct)
 
     DEBUG_OUT("%s", "Finished initializing the kernel");
 
-    double MBSize = 1024 * 1024;
+    uint64_t MBSize = 1024 * 1024;
 
-    DEBUG_OUT("Memory Stats: Free: %.2lfMB; Used: %.2lfMB; Reserved: %.2lfMB", globalAllocator.GetFreeRAM() / MBSize,
+    DEBUG_OUT("Memory Stats: Free: %lluMB; Used: %lluMB; Reserved: %lluMB", globalAllocator.GetFreeRAM() / MBSize,
         globalAllocator.GetUsedRAM() / MBSize, globalAllocator.GetReservedRAM() / MBSize);
 
     InitializeTSS();
 
-    InitializeSyscalls();
-
-    return kernelInfo;
+    //InitializeSyscalls();
 }
 
 void _putchar(char character)

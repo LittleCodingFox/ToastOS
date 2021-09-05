@@ -164,6 +164,7 @@ namespace Drivers
                     if(type == AHCI_PORT_TYPE_SATA || type == AHCI_PORT_TYPE_SATAPI)
                     {
                         AHCIDriver *port = new AHCIDriver();
+
                         ports[portCount] = port;
 
                         port->device = device;
@@ -220,7 +221,10 @@ namespace Drivers
         {
             void *newBase = globalAllocator.RequestPage();
 
-            globalPageTableManager->IdentityMap(newBase);
+            globalPageTableManager->MapMemory((void *)TranslateToHighHalfMemoryAddress((uint64_t)newBase), newBase,
+                PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+
+            newBase = (void *)TranslateToHighHalfMemoryAddress((uint64_t)newBase);
 
             memset(newBase, 0, 0x1000);
 
@@ -228,8 +232,6 @@ namespace Drivers
             port->commandListBaseUpper = ((uint64_t)newBase >> 32);
 
             HBAFIS *fis = new HBAFIS();
-
-            globalPageTableManager->IdentityMap(fis);
 
             memset(fis, 0, sizeof(HBAFIS));
 
@@ -248,7 +250,10 @@ namespace Drivers
 
                 void *commandTableAddress = globalAllocator.RequestPage();
 
-                globalPageTableManager->IdentityMap(commandTableAddress);
+                globalPageTableManager->MapMemory((void *)TranslateToHighHalfMemoryAddress((uint64_t)commandTableAddress), commandTableAddress,
+                    PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+
+                commandTableAddress = (void *)TranslateToHighHalfMemoryAddress((uint64_t)commandTableAddress);
 
                 commandHeader[i].commandTableBaseAddress = (uint64_t)commandTableAddress;
                 commandHeader[i].commandTableBaseAddressUpper = ((uint64_t)commandTableAddress >> 32);
@@ -273,16 +278,17 @@ namespace Drivers
                 return false;
             }
 
-            volatile HBACommandHeader *commandHeader = (HBACommandHeader *)((uint64_t)port->commandListBase);
+            volatile HBACommandHeader *commandHeader = (HBACommandHeader *)((uint64_t)port->commandListBase | ((uint64_t)port->commandListBaseUpper << 32));
             commandHeader += slot;
 
             InitializeCommandHeader(commandHeader, false);
 
-            volatile HBACommandTable *commandTable = (HBACommandTable *)((uint64_t)commandHeader->commandTableBaseAddress);
+            volatile HBACommandTable *commandTable = (HBACommandTable *)(uint64_t)((uint64_t)commandHeader->commandTableBaseAddress |
+                ((uint64_t)commandHeader->commandTableBaseAddressUpper << 32));
 
             InitializeCommandTable(commandTable, commandHeader, (uintptr_t)&identify, 0);
 
-            volatile FISREGHost2Device *commandFIS = (FISREGHost2Device *)(commandTable->commandFIS);
+            volatile FISREGHost2Device *commandFIS = (FISREGHost2Device *)((uint64_t)commandTable->commandFIS);
 
             InitializeFISRegCommand(commandFIS, false, 0, 0);
 
@@ -324,12 +330,17 @@ namespace Drivers
 
         void AHCIDriver::StartCommand()
         {
+            DEBUG_OUT("START_COMMAND %p", port);
+
             port->commandStatus &= ~HBA_PxCMD_ST;
 
             while(port->commandStatus & HBA_PxCMD_CR) {}
 
+            DEBUG_OUT("START_COMMAND %p PART 2", port);
             port->commandStatus |= HBA_PxCMD_FRE;
+            DEBUG_OUT("START_COMMAND %p PART 2", port);
             port->commandStatus |= HBA_PxCMD_ST;
+            DEBUG_OUT("START_COMMAND %p PART 2", port);
         }
 
         void AHCIDriver::StopCommand()
@@ -360,12 +371,14 @@ namespace Drivers
                 return false;
             }
 
-            volatile HBACommandHeader *commandHeader = (HBACommandHeader *)((uint64_t)port->commandListBase);
+            volatile HBACommandHeader *commandHeader = (HBACommandHeader *)((uint64_t)port->commandListBase |
+               ((uint64_t)port->commandListBaseUpper << 32));
             commandHeader += slot;
 
             InitializeCommandHeader(commandHeader, false);
 
-            volatile HBACommandTable *commandTable = (HBACommandTable *)((uint64_t)commandHeader->commandTableBaseAddress);
+            volatile HBACommandTable *commandTable = (HBACommandTable *)(((uint64_t)commandHeader->commandTableBaseAddress |
+            ((uint64_t)commandHeader->commandTableBaseAddressUpper << 32)));
 
             InitializeCommandTable(commandTable, commandHeader, (uintptr_t)buffer, sectorCount);
 
@@ -416,7 +429,8 @@ namespace Drivers
                 return false;
             }
 
-            volatile HBACommandHeader *commandHeader = (volatile HBACommandHeader *)(uint64_t)port->commandListBase;
+            volatile HBACommandHeader *commandHeader = (volatile HBACommandHeader *)(uint64_t)(port->commandListBase |
+                (port->commandListBaseUpper << 32));
             commandHeader += slot;
 
             InitializeCommandHeader(commandHeader, true);
@@ -471,7 +485,7 @@ namespace Drivers
             holder.device = device;
             holder.ABAR = (volatile HBAMemory *)(device->bars[5].address);
 
-            globalPageTableManager->IdentityMap((void *)holder.ABAR);
+            DEBUG_OUT("ABAR: %p", holder.ABAR);
 
             holder.ProbePorts();
 

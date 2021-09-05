@@ -4,6 +4,7 @@
 #include "../drivers/AHCI/AHCIDriver.hpp"
 #include "devicemanager/DeviceManager.hpp"
 #include "printf/printf.h"
+#include "debug.hpp"
 
 struct PCIDeviceHeader
 {
@@ -345,10 +346,21 @@ namespace PCI
 
         Bar outValue = Bar();
 
-        outValue.address = address;
         outValue.layoutType = layoutType;
         outValue.type = type;
         outValue.prefetchable = prefetchable;
+
+        if(address != NULL)
+        {
+            outValue.address = TranslateToHighHalfMemoryAddress(address);
+
+            globalPageTableManager->MapMemory((void *)outValue.address, (void *)address,
+                PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+        }
+        else
+        {
+            outValue.address = NULL;
+        }
 
         return outValue;
     }
@@ -359,9 +371,7 @@ namespace PCI
 
         uint64_t functionAddress = deviceAddress + offset;
 
-        globalPageTableManager->IdentityMap((void *)functionAddress);
-
-        volatile PCIDeviceHeader *deviceHeader = (volatile PCIDeviceHeader *)functionAddress;
+        volatile PCIDeviceHeader *deviceHeader = (volatile PCIDeviceHeader *)TranslateToHighHalfMemoryAddress(functionAddress);
 
         if(deviceHeader->deviceID == 0 || deviceHeader->deviceID == 0xFFFF)
         {
@@ -383,6 +393,8 @@ namespace PCI
         volatile uint8_t *barPtr = (volatile uint8_t *)deviceHeader;
         barPtr += 0x10; //BAR0 location
 
+        globalPageTableManager->MapMemory((void *)barPtr, (void *)(functionAddress + 0x10), PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+
         for(uint32_t i = 0; i < 6; i++)
         {
             device->bars[i] = DecodeBar(&barPtr);
@@ -397,7 +409,7 @@ namespace PCI
                         switch(deviceHeader->progIF)
                         {
                             case 0x01:
-                                Drivers::AHCI::HandleMassStorageDevice(device);
+                                //Drivers::AHCI::HandleMassStorageDevice(device);
 
                             break;
                         }
@@ -415,9 +427,7 @@ namespace PCI
 
         uint64_t deviceAddress = busAddress + offset;
 
-        globalPageTableManager->IdentityMap((void *)deviceAddress);
-
-        volatile PCIDeviceHeader *deviceHeader = (volatile PCIDeviceHeader *)deviceAddress;
+        volatile PCIDeviceHeader *deviceHeader = (volatile PCIDeviceHeader *)TranslateToHighHalfMemoryAddress(deviceAddress);
 
         if(deviceHeader->deviceID == 0 || deviceHeader->deviceID == 0xFFFF)
         {
@@ -436,9 +446,7 @@ namespace PCI
 
         uint64_t busAddress = baseAddress + offset;
 
-        globalPageTableManager->IdentityMap((void *)busAddress);
-
-        volatile PCIDeviceHeader *deviceHeader = (volatile PCIDeviceHeader *)busAddress;
+        volatile PCIDeviceHeader *deviceHeader = (volatile PCIDeviceHeader *)TranslateToHighHalfMemoryAddress(busAddress);
 
         if(deviceHeader->deviceID == 0 || deviceHeader->deviceID == 0xFFFF)
         {

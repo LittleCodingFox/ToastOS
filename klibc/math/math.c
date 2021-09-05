@@ -1,5 +1,6 @@
 #include <math.h>
 
+/*
 double fmax(double a, double b) {
     return a > b ? a : b;
 }
@@ -15,6 +16,7 @@ double fmin(double a, double b) {
 float fminf(float a, float b) {
     return a < b ? a : b;
 }
+*/
 
 int min(int a, int b) {
     return a < b ? a : b;
@@ -24,6 +26,7 @@ int max(int a, int b) {
     return a > b ? a : b;
 }
 
+/*
 double fabs(double x) {
     if (x < 0) {
         return -x;
@@ -88,6 +91,7 @@ double ceil(double x) {
 double pow(double x, double y) {
     return exp(x*log(y));
 }
+*/
 
 int powi(int x, int y) {
     unsigned int n = 1;
@@ -99,8 +103,22 @@ int powi(int x, int y) {
     return n;
 }
 
+long long powl(long long x, long long y)
+{
+    unsigned long long n = 1;
+
+    while(y--)
+    {
+        n *= x;
+    }
+
+    return n;
+}
+
 /* Note: not in the official <math.h>
  */
+/*
 float clamp(float val, float min, float max) {
     return fminf(fmaxf(val, min), max);
 }
+*/

@@ -60,18 +60,3 @@ uint32_t Timer::GetTicks()
 {
     return currentTick;
 }
-
-float Timer::GetTime()
-{
-    return currentTick * (1.0f / TIMER_FREQUENCY);
-}
-
-void Sleep(uint64_t milliseconds)
-{
-    float time = timer.GetTime();
-
-    while(timer.GetTime() < time + milliseconds)
-    {
-        asm("hlt");
-    }
-}

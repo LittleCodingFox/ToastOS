@@ -41,7 +41,7 @@ LIBKCOBJECTS	= $(LIBCSRC:$(LIBCSRCDIR)/%.c=$(LIBKOBJDIR)/%.o)
 INCLUDEDIRS		= -Isrc -Iklibc -Isrc/include -Isrc/low-level -Iext-libs -Iext-libs/liballoc/
 ASMFLAGS		=
 CFLAGS			= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -nostdlib -mno-red-zone -Wall -fpic -O3 -fno-omit-frame-pointer \
-	-fno-stack-protector -fno-rtti -fno-exceptions
+	-fno-stack-protector -fno-rtti -fno-exceptions -mno-3dnow -mno-mmx -mno-sse -mno-sse2 -mno-avx
 LDFLAGS			= -T $(SRCDIR)/link.ld -static -Bsymbolic -nostdlib -Map=linker.map -zmax-page-size=0x1000
 
 QEMU_FLAGS		=

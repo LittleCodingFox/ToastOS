@@ -24,30 +24,30 @@ void* liballoc_alloc(size_t pages)
         return NULL;
     }
 
-    DEBUG_OUT("liballoc_alloc: allocated %i pages at address %p", pages, ptr);
-
-    /*
     for(uint32_t i = 0; i < pages; i++)
     {
-        globalPageTableManager->mapMemory((void*)((uint64_t)ptr + i * 4096), (void*)((uint64_t)ptr + i * 4096));
+        globalPageTableManager->MapMemory((void*)TranslateToHighHalfMemoryAddress((uint64_t)ptr + i * 0x1000), (void*)((uint64_t)ptr + i * 0x1000),
+            PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
     }
-    */
 
-    return ptr;
+    void *realPtr = (void *)TranslateToHighHalfMemoryAddress((uint64_t)ptr);
+
+    DEBUG_OUT("liballoc_alloc: allocated %i pages at address %p", pages, realPtr);
+
+    return realPtr;
 }
 
 int liballoc_free(void* ptr, size_t pages)
 {
-    globalAllocator.FreePages(ptr, pages);
+    void *realPtr = (void *)TranslateToPhysicalMemoryAddress((uint64_t)ptr);
+    globalAllocator.FreePages(realPtr, pages);
 
-    DEBUG_OUT("liballoc_free: freed %i pages at address %p", pages, ptr);
+    DEBUG_OUT("liballoc_free: freed %i pages at address %p", pages, realPtr);
 
-    /*
     for(uint32_t i = 0; i < pages; i++)
     {
-        globalPageTableManager->unmapMemory((void*)((uint64_t)ptr + i * 4096));
+        globalPageTableManager->UnmapMemory((void*)((uint64_t)ptr + i * 0x1000));
     }
-    */
 
     return 0;
 }

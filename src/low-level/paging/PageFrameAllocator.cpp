@@ -5,9 +5,9 @@
 #include <string.h>
 #include "stacktrace/stacktrace.hpp"
 
-uint64_t freeMemory;
-uint64_t reservedMemory;
-uint64_t usedMemory;
+uint64_t freeMemory = 0;
+uint64_t reservedMemory = 0;
+uint64_t usedMemory = 0;
 bool Initialized = false;
 PageFrameAllocator globalAllocator;
 
@@ -115,8 +115,6 @@ void PageFrameAllocator::InitBitmap(size_t bitmapSize, void* bufferAddress)
     DEBUG_OUT("Initing bitmap with size %d at address %p", bitmapSize, bufferAddress);
 
     memset(PageBitmap.buffer, 0, bitmapSize);
-
-    DEBUG_OUT("%s", "AFTER MEMSET");
 
     //Set everything as locked due to gaps between memory, also takes care of reserved memory at the same time
     for(uint64_t i = 0; i < PageBitmap.size * 8; i++)

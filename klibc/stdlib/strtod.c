@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+/*
 double strtod(const char* nptr, char** endptr) {
     int sign = 1;
     char* s = (char*) nptr;
@@ -107,3 +108,4 @@ double strtod(const char* nptr, char** endptr) {
 
     return sign * val;
 }
+*/
