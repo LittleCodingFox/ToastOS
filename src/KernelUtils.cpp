@@ -86,8 +86,8 @@ void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_fr
 
     DEBUG_OUT("%s", "Preparing framebuffer pages");
 
-    uint64_t fbBase = framebuffer->framebuffer_addr;
-    uint64_t fbSize = (uint64_t)framebuffer->framebuffer_height * framebuffer->framebuffer_pitch + 0x1000;
+    uint64_t fbBase = TranslateToPhysicalMemoryAddress(framebuffer->framebuffer_addr);
+    uint64_t fbSize = (uint64_t)framebuffer->framebuffer_height * framebuffer->framebuffer_pitch;
 
     DEBUG_OUT("Framebuffer width: %u; height: %u; bpp: %u; pitch: %u",
         framebuffer->framebuffer_width, framebuffer->framebuffer_height,
@@ -95,21 +95,21 @@ void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_fr
 
     DEBUG_OUT("Locking pages at %p (%llu)", fbBase, fbSize);
 
+    globalAllocator.LockPages((void*)fbBase, fbSize / 0x1000 + 1);
+
+    for (uint64_t t = fbBase; t < fbBase + fbSize; t += 0x1000)
+    {
+        pageTableManager.IdentityMap((void *)t, PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+    }
+
+    framebuffer->framebuffer_addr = fbBase;
+
+    DEBUG_OUT("%s", "Initialized Framebuffer");
+
     pageTableManager.MapMemory((void *)TranslateToHighHalfMemoryAddress((uint64_t)globalAllocator.PageBitmap.buffer), (void *)globalAllocator.PageBitmap.buffer,
         PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
 
     globalAllocator.PageBitmap.buffer = (uint8_t *)TranslateToHighHalfMemoryAddress((uint64_t)globalAllocator.PageBitmap.buffer);
-
-    globalAllocator.LockPages((void*)TranslateToPhysicalMemoryAddress(fbBase), fbSize / 0x1000 + 1);
-
-    for (uint64_t t = fbBase; t < fbBase + fbSize; t += 0x1000)
-    {
-        pageTableManager.MapMemory((void *)TranslateToHighHalfMemoryAddress(t), (void*)t, PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
-    }
-
-    framebuffer->framebuffer_addr = TranslateToHighHalfMemoryAddress(fbBase);
-
-    DEBUG_OUT("%s", "Initialized Framebuffer");
 
     Registers::WriteCR3((uint64_t)pageTableManager.p4);
 

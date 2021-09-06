@@ -58,6 +58,8 @@ void FramebufferRenderer::swapBuffers()
 {
     if(doubleBuffer != NULL && lockedCount == 0)
     {
+        DEBUG_OUT("SWAPBUFFERS: %p; %p; %p; %u", targetFramebuffer, targetFramebuffer->baseAddress, doubleBuffer, doubleBufferSize);
+
         memcpy(targetFramebuffer->baseAddress, doubleBuffer, doubleBufferSize);
     }
 }

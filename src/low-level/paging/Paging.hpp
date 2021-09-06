@@ -22,6 +22,11 @@ inline uint64_t TranslateToKernelPhysicalMemoryAddress(uint64_t virtualAddress)
     return virtualAddress - HIGHER_HALF_KERNEL_MEMORY_OFFSET;
 }
 
+inline uint64_t TranslateToKernelMemoryAddress(uint64_t virtualAddress)
+{
+    return virtualAddress + HIGHER_HALF_KERNEL_MEMORY_OFFSET;
+}
+
 enum PagingFlag
 {
     PAGING_FLAG_PRESENT = (1ull << 0),
