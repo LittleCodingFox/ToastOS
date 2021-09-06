@@ -409,7 +409,7 @@ namespace PCI
                         switch(deviceHeader->progIF)
                         {
                             case 0x01:
-                                //Drivers::AHCI::HandleMassStorageDevice(device);
+                                Drivers::AHCI::HandleMassStorageDevice(device);
 
                             break;
                         }
