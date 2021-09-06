@@ -63,8 +63,6 @@ void kernelDumpStacktrace()
 
   __asm__("movq %%rbp, %0" : "=r"(stackframe));
 
-  const char *from = "FFFFFFFF8020710F";
-
   while (stackframe != NULL)
   {
     uint64_t address = stackframe->rip;

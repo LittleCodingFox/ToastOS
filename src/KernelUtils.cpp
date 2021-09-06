@@ -153,7 +153,7 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
 
     volatile SDTHeader *xsdt = (volatile SDTHeader *)TranslateToHighHalfMemoryAddress(rsdpStruct->XSDTAddress);
 
-    if(rsdpStruct->XSDTAddress == NULL)
+    if(rsdpStruct->XSDTAddress == 0)
     {
         printf("[ACPI] Failed to get XSDT!\n");
 
@@ -251,7 +251,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
         kernelInitStacktrace((char *)symbols->begin, symbols->end - symbols->begin);
     }
 
-    psf2_font_t *psf2Font;
+    psf2_font_t *psf2Font = NULL;
 
     if(font != NULL)
     {

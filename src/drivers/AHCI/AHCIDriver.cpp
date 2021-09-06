@@ -430,7 +430,7 @@ namespace Drivers
             }
 
             volatile HBACommandHeader *commandHeader = (volatile HBACommandHeader *)(uint64_t)(port->commandListBase |
-                (port->commandListBaseUpper << 32));
+                ((uint64_t)port->commandListBaseUpper << 32));
             commandHeader += slot;
 
             InitializeCommandHeader(commandHeader, true);

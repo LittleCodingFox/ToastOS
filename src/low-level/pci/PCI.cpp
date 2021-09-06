@@ -350,7 +350,7 @@ namespace PCI
         outValue.type = type;
         outValue.prefetchable = prefetchable;
 
-        if(address != NULL)
+        if(address != 0)
         {
             outValue.address = TranslateToHighHalfMemoryAddress(address);
 
@@ -359,7 +359,7 @@ namespace PCI
         }
         else
         {
-            outValue.address = NULL;
+            outValue.address = 0;
         }
 
         return outValue;

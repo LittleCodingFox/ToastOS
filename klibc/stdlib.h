@@ -10,7 +10,7 @@ extern "C"
 #endif
 
 long int strtol(const char* nptr, char** endptr, int base);
-unsigned long long strtoull(const char *nptr, char **endptr, register int base);
+unsigned long long strtoull(const char *nptr, char **endptr, int base);
 //double strtod(const char* nptr, char** endptr);
 void srand(unsigned int seed);
 int rand();
