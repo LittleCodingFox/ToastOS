@@ -92,7 +92,7 @@ namespace GPT
 
     const char *Partition::SizeString() const
     {
-        double size = sectorCount * 512.0;
+        uint64_t size = sectorCount * 512;
 
         char sizes[6] = {
             ' ',
@@ -109,12 +109,12 @@ namespace GPT
         {
             sizeIndex++;
 
-            size /= 1024.0;
+            size /= 1024;
         }
 
         char *buffer = (char *)malloc(512);
 
-        sprintf(buffer, "%.02lf %cB", size, sizes[sizeIndex]);
+        sprintf(buffer, "%llu %cB", size, sizes[sizeIndex]);
 
         return buffer;
     }

@@ -86,12 +86,16 @@ void PageFrameAllocator::ReadMemoryMap(stivale2_struct_tag_memmap* memmap)
 
     InitBitmap(bitmapSize, largestFreeMemSeg);
 
+    DEBUG_OUT("Memory Size: %llu", GetMemorySize(memmap));
+
     for (int i = 0; i < memmap->entries; i++)
     {
         stivale2_mmap_entry* desc = (stivale2_mmap_entry*)&memmap->memmap[i];
 
         if (desc->type == STIVALE2_MMAP_USABLE)
         {
+            DEBUG_OUT("Unlocking usable pages for %p-%p (%llu pages)", desc->base, desc->base + desc->length, desc->length / 0x1000);
+
             for(uint64_t index = 0, startIndex = desc->base / 0x1000; index < desc->length / 0x1000; index++)
             {
                 PageBitmap.Set(index + startIndex, false);

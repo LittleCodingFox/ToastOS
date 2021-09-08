@@ -93,10 +93,6 @@ void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_fr
         framebuffer->framebuffer_width, framebuffer->framebuffer_height,
         framebuffer->framebuffer_bpp, framebuffer->framebuffer_pitch);
 
-    DEBUG_OUT("Locking pages at %p (%llu)", fbBase, fbSize);
-
-    globalAllocator.LockPages((void*)fbBase, fbSize / 0x1000 + 1);
-
     for (uint64_t t = fbBase; t < fbBase + fbSize; t += 0x1000)
     {
         pageTableManager.IdentityMap((void *)t, PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);

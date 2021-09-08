@@ -264,7 +264,7 @@ namespace Drivers
             char model[41];
 
             AHCIDriver();
-            void Configure();
+            bool Configure();
             void StartCommand();
             void StopCommand();
             bool Read(void *data, uint64_t sector, uint64_t count) override;
