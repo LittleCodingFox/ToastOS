@@ -51,7 +51,7 @@ sudo losetup -d /dev/loop0
 
 sudo losetup -o9437184 /dev/loop0 $BINDIR/$OS_NAME.img
 
-sudo mke2fs -b1024 /dev/loop0
+sudo mke2fs -b1024 /dev/loop0 -L "Main Volume"
 
 sudo mount -text2 /dev/loop0 /mnt/osdev
 

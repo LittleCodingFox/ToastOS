@@ -29,8 +29,12 @@ inline uint64_t TranslateToKernelMemoryAddress(uint64_t virtualAddress)
 
 inline bool IsHigherHalf(uint64_t physicalAddress)
 {
-    return physicalAddress >= HIGHER_HALF_MEMORY_OFFSET ||
-        physicalAddress >= HIGHER_HALF_KERNEL_MEMORY_OFFSET;
+    return physicalAddress >= HIGHER_HALF_MEMORY_OFFSET;
+}
+
+inline bool IsKernelHigherHalf(uint64_t physicalAddress)
+{
+    return physicalAddress >= HIGHER_HALF_KERNEL_MEMORY_OFFSET;
 }
 
 enum PagingFlag

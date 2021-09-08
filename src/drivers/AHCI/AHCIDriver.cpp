@@ -50,7 +50,11 @@ namespace Drivers
         {
             memset((void *)commandTable, 0, sizeof(HBACommandTable) + (commandHeader->prdtLength - 1) * sizeof(HBAPRDEntry));
 
-            if(IsHigherHalf(dataAddress))
+            if(IsKernelHigherHalf(dataAddress))
+            {
+                dataAddress = TranslateToKernelPhysicalMemoryAddress(dataAddress);
+            }
+            else if(IsHigherHalf(dataAddress))
             {
                 dataAddress = TranslateToPhysicalMemoryAddress(dataAddress);
             }
