@@ -127,8 +127,6 @@ namespace GPT
             return false;
         }
 
-        DEBUG_OUT("Device Read data: %p; sector: %llu; count: %llu; device: %p", data, sector, count, table.GetDevice());
-
         return table.GetDevice()->Read(data, startLBA + sector, count);
     }
 

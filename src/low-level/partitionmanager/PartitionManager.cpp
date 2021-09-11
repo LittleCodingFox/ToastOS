@@ -65,42 +65,9 @@ namespace FileSystem
                 {
                     printf("Found volume %s\n", disk.fileSystem->VolumeName());
 
-                    /*
                     vfs.AddMountPoint("/", disk.fileSystem);
 
-                    FILE_HANDLE handle = vfs.OpenFile("/system/logo.png");
-
-                    uint64_t length = vfs.FileLength(handle);
-
-                    DEBUG_OUT("Handle: %p; Length: %llu", handle, length);
-
-                    char *buffer = (char *)malloc(length);
-
-                    memset(buffer, 0, length);
-
-                    DEBUG_OUT("Buffer: %p", buffer);
-
-                    uint64_t read = vfs.ReadFile(handle, buffer, length);
-
-                    DEBUG_OUT("Read: %llu", read);
-                    */
-
-                    uint64_t length = disk.fileSystem->FileLength("system/logo.png");
-
-                    char *buffer = (char *)malloc(length);
-
-                    DEBUG_OUT("BEGIN READ FILE %i", 0);
-                    
-                    uint64_t read = disk.fileSystem->ReadFile("system/logo.png", buffer, 0, length / 2);
-
-                    DEBUG_OUT("Read: %llu", read);
-
-                    for(uint64_t i = 0; i < read; i++)
-                    {
-                        printf("%c", buffer[i]);
-                    }
-
-                    disk.fileSystem->DebugListDirectories();
+                    //disk.fileSystem->DebugListDirectories();
                 }
             }
         }

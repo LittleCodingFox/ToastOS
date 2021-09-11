@@ -10,8 +10,6 @@ namespace Devices
 
         for(uint64_t i = 0; i < maxBlocks; i++)
         {
-            DEBUG_OUT("ReadUnaligned Buffer: %p sector: %llu; count: %llu; i: %llu", buffer + (i * 512), i + sector / 512, count, i);
-
             bool result = Read(buffer + (i * 512), i + sector / 512, 1);
 
             if(!result)
@@ -21,8 +19,6 @@ namespace Devices
                 return false;
             }
         }
-
-        DEBUG_OUT("ReadUnaligned copying %llu bytes from %p (offset: %llu) to %p", count, buffer + sector % 512, sector % 512, data);
 
         memcpy(data, buffer + sector % 512, count);
         free(buffer);

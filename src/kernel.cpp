@@ -8,7 +8,7 @@
 #include "timer/Timer.hpp"
 #include "KernelUtils.hpp"
 
-static uint8_t stack[4096];
+static uint8_t stack[0x100000];
 
 static stivale2_header_tag_framebuffer framebufferTag = {
     .tag = {

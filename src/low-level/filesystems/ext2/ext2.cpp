@@ -134,22 +134,13 @@ namespace FileSystem
 
                 uint64_t block = GetInodeBlockMap(parent, currentBlock);
 
-                DEBUG_OUT("InodeRead Buffer: %p; ReadBytes: %llu; offset: %llu; chunkSize: %llu", (uint8_t *)buffer + readBytes, readBytes,
-                    offset + (block * blockSize) + blockOffset, chunkSize);
-
-                DEBUG_OUT("READING %llu bytes at offset %llu (count: %llu)", chunkSize, readBytes, count);
-
                 if(!partition->ReadUnaligned((uint8_t *)buffer + readBytes, offset + (block * blockSize) + blockOffset, chunkSize))
                 {
                     return false;
                 }
 
-                DEBUG_OUT("INODEREAD AFTER %i", 0);
-
                 readBytes += chunkSize;
             }
-
-            DEBUG_OUT("INODEREAD AFTER %i", 1);
 
             return true;
         }
@@ -592,18 +583,10 @@ namespace FileSystem
 
             uint8_t temp[readBytes];
 
-            DEBUG_OUT("READFILE BUFFER RANGE: %p-%p", temp, temp + readBytes);
-
-            kernelDumpStacktrace();
-
-            DEBUG_OUT("ReadFile Buffer: %p; temp: %p; readBytes: %llu; size: %llu", buffer, temp, readBytes, sizeof(temp));
-
             if(!InodeRead(temp, cursor, readBytes, inode))
             {
                 return 0;
             }
-
-            DEBUG_OUT("ReadFile MEMCPY: %p; %p; %llu", buffer, temp, readBytes < size ? readBytes : size);
 
             memcpy(buffer, temp, readBytes < size ? readBytes : size);
 
