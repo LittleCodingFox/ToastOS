@@ -101,14 +101,16 @@ userland: libc
 		$(MAKE) -C $$path; \
 	done
 
-run-linux: kernel userland iso-linux
-	qemu-system-x86_64 -drive file=$(BINDIR)/$(OS_NAME).img,format=raw,index=0,media=disk \
-	-bios /usr/share/qemu/OVMF.fd \
-	-m 256M -cpu qemu64 -machine type=q35 -serial file:./debug.log -net none -d int --no-reboot $(QEMU_FLAGS) 2>qemu.log
+run-linux: kernel userland iso-linux run-qemu-linux
 
 debug-linux: CFLAGS += -DKERNEL_DEBUG=1 #-g -O0
 #debug: QEMU_FLAGS += -s -S
 debug-linux: run-linux
+
+run-qemu-linux:
+	qemu-system-x86_64 -drive file=$(BINDIR)/$(OS_NAME).img,format=raw,index=0,media=disk \
+	-bios /usr/share/qemu/OVMF.fd \
+	-m 256M -cpu qemu64 -machine type=q35 -serial file:./debug.log -net none -d int --no-reboot $(QEMU_FLAGS) 2>qemu.log
 
 clean:
 	rm -Rf $(BINDIR)/*.img

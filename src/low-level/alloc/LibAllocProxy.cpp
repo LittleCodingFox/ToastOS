@@ -42,7 +42,7 @@ int liballoc_free(void* ptr, size_t pages)
     void *realPtr = (void *)TranslateToPhysicalMemoryAddress((uint64_t)ptr);
     globalAllocator.FreePages(realPtr, pages);
 
-    DEBUG_OUT("liballoc_free: freed %i pages at address %p", pages, realPtr);
+    DEBUG_OUT("liballoc_free: freed %i pages at address %p", pages, ptr);
 
     for(uint32_t i = 0; i < pages; i++)
     {

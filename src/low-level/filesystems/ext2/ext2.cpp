@@ -1,5 +1,6 @@
 #include "ext2.hpp"
 #include "Bitmap.hpp"
+#include "stacktrace/stacktrace.hpp"
 
 namespace FileSystem
 {
@@ -133,13 +134,22 @@ namespace FileSystem
 
                 uint64_t block = GetInodeBlockMap(parent, currentBlock);
 
+                DEBUG_OUT("InodeRead Buffer: %p; ReadBytes: %llu; offset: %llu; chunkSize: %llu", (uint8_t *)buffer + readBytes, readBytes,
+                    offset + (block * blockSize) + blockOffset, chunkSize);
+
+                DEBUG_OUT("READING %llu bytes at offset %llu (count: %llu)", chunkSize, readBytes, count);
+
                 if(!partition->ReadUnaligned((uint8_t *)buffer + readBytes, offset + (block * blockSize) + blockOffset, chunkSize))
                 {
                     return false;
                 }
 
+                DEBUG_OUT("INODEREAD AFTER %i", 0);
+
                 readBytes += chunkSize;
             }
+
+            DEBUG_OUT("INODEREAD AFTER %i", 1);
 
             return true;
         }
@@ -402,10 +412,14 @@ namespace FileSystem
 
         bool Ext2FileSystem::IsValidEntry(GPT::Partition *partition)
         {
-            uint8_t temp[1024] = { 0 };
+            uint8_t *temp = (uint8_t *)malloc(sizeof(uint8_t[1024]));
+
+            memset(temp, 0, sizeof(uint8_t[1024]));
 
             if(!partition->Read(temp, 2, 2))
             {
+                free(temp);
+
                 return false;
             }
 
@@ -413,27 +427,33 @@ namespace FileSystem
 
             if(header->magic != EXT2FS_SIGNATURE)
             {
+                free(temp);
+
                 return false;
             }
+
+            free(temp);
 
             return true;
         }
 
         Inode Ext2FileSystem::FindSubdir(const Inode &inode, const char *name)
         {
-            Directory directory;
+            Directory *directory = new Directory();
 
             for(uint32_t i = 0; i < inode.inode.size;)
             {
-                InodeRead(&directory, i, sizeof(Directory), inode);
+                InodeRead(directory, i, sizeof(Directory), inode);
 
-                if(strncmp(directory.name, name, directory.directoryNameLength) == 0)
+                if(strncmp(directory->name, name, directory->directoryNameLength) == 0)
                 {
-                    return GetInode(directory.inode);
+                    return GetInode(directory->inode);
                 }
 
-                i += directory.directorySize;
+                i += directory->directorySize;
             }
+
+            free(directory);
 
             return Inode();
         }
@@ -451,7 +471,7 @@ namespace FileSystem
             {
                 searchingFileCursor = 0;
 
-                for(; path[lastPathCursor] != '/' && lastPathCursor <= strlen(path); lastPathCursor++, searchingFileCursor++)
+                for(; path[lastPathCursor] != '/' && lastPathCursor < strlen(path); lastPathCursor++, searchingFileCursor++)
                 {
                     file[searchingFileCursor] = path[lastPathCursor];
                 }
@@ -572,10 +592,18 @@ namespace FileSystem
 
             uint8_t temp[readBytes];
 
+            DEBUG_OUT("READFILE BUFFER RANGE: %p-%p", temp, temp + readBytes);
+
+            kernelDumpStacktrace();
+
+            DEBUG_OUT("ReadFile Buffer: %p; temp: %p; readBytes: %llu; size: %llu", buffer, temp, readBytes, sizeof(temp));
+
             if(!InodeRead(temp, cursor, readBytes, inode))
             {
                 return 0;
             }
+
+            DEBUG_OUT("ReadFile MEMCPY: %p; %p; %llu", buffer, temp, readBytes < size ? readBytes : size);
 
             memcpy(buffer, temp, readBytes < size ? readBytes : size);
 

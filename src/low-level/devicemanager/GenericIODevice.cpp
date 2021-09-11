@@ -1,4 +1,5 @@
 #include "GenericIODevice.hpp"
+#include "debug.hpp"
 
 namespace Devices
 {
@@ -7,8 +8,10 @@ namespace Devices
         uint64_t maxBlocks = ((sector % 512) + count) / 512 + 1;
         uint8_t *buffer = (uint8_t *)malloc(maxBlocks * 512);
 
-        for(uint32_t i = 0; i < maxBlocks; i++)
+        for(uint64_t i = 0; i < maxBlocks; i++)
         {
+            DEBUG_OUT("ReadUnaligned Buffer: %p sector: %llu; count: %llu; i: %llu", buffer + (i * 512), i + sector / 512, count, i);
+
             bool result = Read(buffer + (i * 512), i + sector / 512, 1);
 
             if(!result)
@@ -18,6 +21,8 @@ namespace Devices
                 return false;
             }
         }
+
+        DEBUG_OUT("ReadUnaligned copying %llu bytes from %p (offset: %llu) to %p", count, buffer + sector % 512, sector % 512, data);
 
         memcpy(data, buffer + sector % 512, count);
         free(buffer);
@@ -32,9 +37,9 @@ namespace Devices
         uint8_t *buffer = (uint8_t *)malloc(maxBlocks * 512);
         ReadUnaligned(buffer, maxBlocks * 512, currentSector);
 
-        memcpy(buffer + sector % 12, data, count);
+        memcpy(buffer + sector % 512, data, count);
 
-        for(uint32_t i = 0; i < maxBlocks; i++)
+        for(uint64_t i = 0; i < maxBlocks; i++)
         {
             bool result = Write(buffer + (i * 512), i + (currentSector / 512), 1);
 

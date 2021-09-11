@@ -8,7 +8,7 @@ template<typename T>
 class DynamicArray
 {
 private:
-    uint32_t size;
+    uint64_t size;
     T *ptr;
 public:
     DynamicArray() : size(0), ptr(NULL) {}
@@ -16,13 +16,13 @@ public:
     {
         ptr = new T[size];
 
-        for(uint32_t i = 0; i < size; i++)
+        for(uint64_t i = 0; i < size; i++)
         {
             ptr[i] = other.ptr[i];
         }
     }
 
-    DynamicArray(uint32_t size) : size(size)
+    DynamicArray(uint64_t size) : size(size)
     {
         if(size > 0)
         {
@@ -36,7 +36,7 @@ public:
 
         if(ptr != NULL)
         {
-            for(uint32_t i = 0; i < size; i++)
+            for(uint64_t i = 0; i < size; i++)
             {
                 newPtr[i] = ptr[i];
             }
@@ -67,7 +67,7 @@ public:
 
         T *dst = newPtr;
 
-        for(uint32_t i = 0; i < size; i++)
+        for(uint64_t i = 0; i < size; i++)
         {
             if(i == index)
             {
@@ -85,7 +85,7 @@ public:
 
     void remove(T element)
     {
-        for(int i = 0; i < size; i++)
+        for(uint64_t i = 0; i < size; i++)
         {
             if(ptr[i] == element)
             {
@@ -96,17 +96,17 @@ public:
         }
     }
 
-    const T &operator[](int index) const
+    const T &operator[](uint64_t index) const
     {
         return ptr[index];
     }
 
-    T &operator[](int index)
+    T &operator[](uint64_t index)
     {
         return ptr[index];
     }
 
-    int length() const
+    uint64_t length() const
     {
         return size;
     } 
