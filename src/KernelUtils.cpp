@@ -297,6 +297,10 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
 void _putchar(char character)
 {
-    vtconsole_putchar(console, character);
+    if(console != NULL)
+    {
+        vtconsole_putchar(console, character);
+    }
+    
     SerialPortOutStreamCOM1(character, NULL);
 }

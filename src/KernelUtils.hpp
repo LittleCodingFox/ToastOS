@@ -3,7 +3,6 @@
 #include <stdint.h>
 #include <stivale2.h>
 #include "framebuffer/FramebufferRenderer.hpp"
-#include "cstring/cstring.hpp"
 #include "Bitmap.hpp"
 #include "paging/PageFrameAllocator.hpp"
 #include "paging/Paging.hpp"

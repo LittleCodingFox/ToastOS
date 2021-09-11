@@ -1,5 +1,4 @@
 #include "PCI.hpp"
-#include "cstring/cstring.hpp"
 #include "paging/PageTableManager.hpp"
 #include "../drivers/AHCI/AHCIDriver.hpp"
 #include "devicemanager/DeviceManager.hpp"
@@ -61,8 +60,12 @@ namespace PCI
             case 0x10DE:
                 return "NVIDIA Corporation";
         }
-  
-        return to_hstring(vendorID);
+
+        char *buffer = new char[20];
+
+        sprintf(buffer, "%x", vendorID);
+
+        return buffer;
     }
 
     const char* DeviceName(uint16_t vendorID, uint16_t deviceID)
@@ -88,7 +91,11 @@ namespace PCI
                 break;
         }
 
-        return to_hstring(deviceID);
+        char *buffer = new char[20];
+
+        sprintf(buffer, "%x", deviceID);
+
+        return buffer;
     }
 
     const char* MassStorageControllerSubclassName(uint8_t subclassCode)
@@ -126,7 +133,11 @@ namespace PCI
                 return "Other";
         }
 
-        return to_hstring(subclassCode);
+        char *buffer = new char[20];
+
+        sprintf(buffer, "%x", subclassCode);
+
+        return buffer;
     }
 
     const char* SerialBusControllerSubclassName(uint8_t subclassCode)
@@ -167,7 +178,11 @@ namespace PCI
                 return "SerialBusController - Other";
         }
 
-        return to_hstring(subclassCode);
+        char *buffer = new char[20];
+
+        sprintf(buffer, "%x", subclassCode);
+
+        return buffer;
     }
 
     const char* BridgeDeviceSubclassName(uint8_t subclassCode)
@@ -211,7 +226,11 @@ namespace PCI
                 return "Other";
         }
 
-        return to_hstring(subclassCode);
+        char *buffer = new char[20];
+
+        sprintf(buffer, "%x", subclassCode);
+
+        return buffer;
     }
 
     const char* SubclassName(uint8_t classCode, uint8_t subclassCode)
@@ -235,7 +254,11 @@ namespace PCI
                 return SerialBusControllerSubclassName(subclassCode);
         }
 
-        return to_hstring(subclassCode);
+        char *buffer = new char[20];
+
+        sprintf(buffer, "%x", subclassCode);
+
+        return buffer;
     }
 
     const char* ProgIFName(uint8_t classCode, uint8_t subclassCode, uint8_t progIF)
@@ -301,7 +324,11 @@ namespace PCI
                 }    
         }
 
-        return to_hstring(progIF);
+        char *buffer = new char[20];
+
+        sprintf(buffer, "%x", progIF);
+
+        return buffer;
     }
 
     Bar DecodeBar(volatile uint8_t **ptr)

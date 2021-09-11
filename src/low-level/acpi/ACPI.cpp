@@ -5,16 +5,22 @@
 
 namespace ACPI
 {
+    struct [[gnu::packed]] XSDT
+    {
+        SDTHeader header;
+        uint64_t entries[];
+    };
+
     void *findTable(volatile SDTHeader *header, const char *signature)
     {
         uint32_t entries = (header->length - sizeof(SDTHeader)) / sizeof(uint64_t);
-        uint64_t *entryPtr = (uint64_t *)(header + 1);
+        volatile XSDT *xsdt = reinterpret_cast<volatile XSDT *>(header);
 
-        for(uint32_t i = 0; i < entries; i++, entryPtr++)
+        for(uint32_t i = 0; i < entries; i++)
         {
-            SDTHeader *outHeader = (SDTHeader *)TranslateToHighHalfMemoryAddress(*entryPtr);
+            SDTHeader *outHeader = (SDTHeader *)TranslateToHighHalfMemoryAddress(xsdt->entries[i]);
 
-            if(memcmp(outHeader->signature, signature, sizeof(char[4])) == 0)
+            if(memcmp(outHeader->signature, signature, 4) == 0)
             {
                 return outHeader;
             }

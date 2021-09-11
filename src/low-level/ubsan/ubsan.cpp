@@ -107,3 +107,13 @@ extern "C" void __ubsan_handle_builtin_unreachable()
 {
     ubsanPanic("builtin unreachable");
 }
+
+extern "C" void __ubsan_handle_missing_return(ubsan_source_location_t *location)
+{
+    ubsanPanicAt(location, "Missing return");
+}
+
+extern "C" void __ubsan_handle_vla_bound_not_positive(ubsan_overflow_data_t *data, uintptr_t ptr)
+{
+    ubsanPanicAt(&data->location, "Negative VLA size");
+}

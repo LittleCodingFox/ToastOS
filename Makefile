@@ -42,9 +42,13 @@ INCLUDEDIRS		= -Isrc -Iklibc -Isrc/include -Isrc/low-level -Iext-libs -Iext-libs
 ASMFLAGS		=
 CFLAGS			= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -nostdlib -mno-red-zone -Wall -fpic -O3 -fno-omit-frame-pointer -g \
 	-fno-stack-protector -fno-rtti -fno-exceptions -mno-3dnow -mno-mmx -mno-sse -mno-sse2 -mno-avx
+CFLAGS_INTERNAL	= 
 LDFLAGS			= -T $(SRCDIR)/link.ld -static -Bsymbolic -nostdlib -Map=linker.map -zmax-page-size=0x1000
-
 QEMU_FLAGS		=
+
+ifeq ($(USE_UBSAN), 1)
+	CFLAGS_INTERNAL += -fsanitize=undefined -fno-sanitize=function
+endif
 
 makedirs:
 	mkdir -p bin
@@ -56,7 +60,7 @@ makedirs:
 
 $(COBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
 	mkdir -p $(shell dirname $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(CFLAGS_INTERNAL) -c $< -o $@
 
 $(EXTCOBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
 	mkdir -p $(shell dirname $@)
@@ -68,7 +72,7 @@ $(EXTOBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
 
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
 	mkdir -p $(shell dirname $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(CFLAGS_INTERNAL) -c $< -o $@
 
 $(ASMOBJECTS): $(OBJDIR)/%_asm.o : $(SRCDIR)/%.asm
 	mkdir -p $(shell dirname $@)
@@ -77,12 +81,12 @@ $(ASMOBJECTS): $(OBJDIR)/%_asm.o : $(SRCDIR)/%.asm
 $(LIBCCOBJECTS): CFLAGS += -DIS_LIBC
 $(LIBCCOBJECTS): $(LIBCOBJDIR)/%.o : $(LIBCSRCDIR)/%.c
 	mkdir -p $(shell dirname $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(CFLAGS_INTERNAL) -c $< -o $@
 
 $(LIBKCOBJECTS): CFLAGS += -DIS_LIBK
 $(LIBKCOBJECTS): $(LIBKOBJDIR)/%.o : $(LIBCSRCDIR)/%.c
 	mkdir -p $(shell dirname $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(CFLAGS_INTERNAL) -c $< -o $@
 
 kernel: makedirs $(OBJECTS) $(COBJECTS) $(LIBKCOBJECTS) $(EXTOBJECTS) $(EXTCOBJECTS) $(ASMOBJECTS)
 	$(LD) $(LDFLAGS) $(OBJECTS) $(COBJECTS) $(LIBKCOBJECTS) $(EXTOBJECTS) $(EXTCOBJECTS) $(ASMOBJECTS) -o $(BINDIR)/kernel
