@@ -24,7 +24,7 @@ ProcessInfo *ProcessManager::Execute(const char *name, const char **argv)
 
         for(uint64_t i = 0; i < sizeof(currentProcess->stack); i += 0x1000)
         {
-            globalPageTableManager->MapMemory(&currentProcess->stack + i * 0x1000, &currentProcess->stack,
+            globalPageTableManager->MapMemory(&currentProcess->stack + i * 0x1000, &currentProcess->stack + i * 0x1000,
                 PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
         }
     }

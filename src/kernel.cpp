@@ -7,6 +7,10 @@
 #include "vtconsole/vtconsole.h"
 #include "timer/Timer.hpp"
 #include "KernelUtils.hpp"
+#include "elf/elf.hpp"
+#include "filesystems/VFS.hpp"
+
+using namespace FileSystem;
 
 static uint8_t stack[0x100000];
 
@@ -31,6 +35,35 @@ static struct stivale2_header stivaleHeader = {
 extern "C" void _start(stivale2_struct *stivale2Struct)
 {
     InitializeKernel(stivale2Struct);
+
+    FILE_HANDLE handle = vfs.OpenFile("/bin/test");
+
+    uint64_t length = vfs.FileLength(handle);
+
+    if(length > 0)
+    {
+        uint8_t *buffer = new uint8_t[length];
+
+        if(vfs.ReadFile(handle, buffer, length) == length)
+        {
+            Elf::ElfHeader *header = Elf::LoadElf(buffer);
+
+            if(header == NULL)
+            {
+                DEBUG_OUT("%s", "Invalid elf header!");
+            }
+            else
+            {
+                DEBUG_OUT("%s", "Executing elf");
+
+                int (*entry)() = (int (*)())header->entry;
+
+                int value = entry();
+
+                DEBUG_OUT("VALUE: %i", value);
+            }
+        }
+    }
 
     for(;;);
 }
