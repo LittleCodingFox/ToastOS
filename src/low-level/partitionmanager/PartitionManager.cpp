@@ -65,6 +65,7 @@ namespace FileSystem
                 {
                     printf("Found volume %s\n", disk.fileSystem->VolumeName());
 
+                    //TODO: Dynamic mount points
                     vfs.AddMountPoint("/", disk.fileSystem);
 
                     //disk.fileSystem->DebugListDirectories();

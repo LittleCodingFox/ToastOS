@@ -18,6 +18,15 @@ namespace FileSystem
         const char *path;
     };
 
+    enum FileHandleType
+    {
+        FILE_HANDLE_UNKNOWN,
+        FILE_HANDLE_DIRECTORY,
+        FILE_HANDLE_FILE,
+    };
+
+    typedef uint64_t FileSystemHandle;
+
     class FileSystem
     {
     protected:
@@ -31,11 +40,17 @@ namespace FileSystem
 
         virtual const char *VolumeName() = 0;
 
-        virtual uint64_t FileLength(const char *path) = 0;
+        virtual FileSystemHandle GetFileHandle(const char *path) = 0;
 
-        virtual uint64_t ReadFile(const char *path, void *buffer, uint64_t cursor, uint64_t size) = 0;
+        virtual void DisposeFileHandle(FileSystemHandle handle) = 0;
 
-        virtual uint64_t WriteFile(const char *path, const void *buffer, uint64_t cursor, uint64_t size) = 0;
+        virtual FileHandleType FileHandleType(FileSystemHandle handle) = 0;
+
+        virtual uint64_t FileLength(FileSystemHandle handle) = 0;
+
+        virtual uint64_t ReadFile(FileSystemHandle handle, void *buffer, uint64_t cursor, uint64_t size) = 0;
+
+        virtual uint64_t WriteFile(FileSystemHandle handle, const void *buffer, uint64_t cursor, uint64_t size) = 0;
 
         virtual bool Exists(const char *path) = 0;
 

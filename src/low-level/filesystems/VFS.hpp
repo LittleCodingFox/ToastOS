@@ -7,13 +7,6 @@
 
 namespace FileSystem
 {
-    enum FileType
-    {
-        FILE_TYPE_UNKNOWN,
-        FILE_TYPE_DIRECTORY,
-        FILE_TYPE_FILE
-    };
-
     typedef uint64_t FILE_HANDLE;
 
     #define INVALID_FILE_HANDLE 0xFFFFFFFFFFFFFFFF
@@ -31,10 +24,11 @@ namespace FileSystem
         {
             MountPoint *mountPoint;
             const char *path;
+            FileSystemHandle fsHandle;
             uint64_t length;
             uint64_t cursor;
             bool isValid;
-            ::FileSystem::FileType fileType;
+            ::FileSystem::FileHandleType fileType;
             uint64_t ID;
         };
 
@@ -51,7 +45,7 @@ namespace FileSystem
 
         FILE_HANDLE OpenFile(const char *path);
         void CloseFile(FILE_HANDLE handle);
-        ::FileSystem::FileType FileType(FILE_HANDLE handle);
+        ::FileSystem::FileHandleType FileType(FILE_HANDLE handle);
 
         uint64_t FileLength(FILE_HANDLE handle);
         uint64_t ReadFile(FILE_HANDLE handle, void *buffer, uint64_t length);

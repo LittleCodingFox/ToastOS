@@ -38,6 +38,7 @@ namespace FileSystem
         FileHandle handle;
         handle.ID = fileHandleCounter++;
         handle.cursor = 0;
+        handle.fsHandle = 0;
         handle.mountPoint = NULL;
         handle.path = NULL;
         handle.length = 0;
@@ -99,27 +100,34 @@ namespace FileSystem
 
         for(uint64_t i = 0; i < mountPoints.length(); i++)
         {
-            if(strstr(path, mountPoints[i].path))
+            MountPoint *mountPoint = &mountPoints[i];
+
+            if(strstr(path, mountPoint->path))
             {
-                uint64_t mountPointLen = strlen(mountPoints[i].path);
+                uint64_t mountPointLen = strlen(mountPoint->path);
                 char *innerPath = (char *)malloc(pathLen - mountPointLen + 1);
 
-                memcpy(innerPath, &path[strlen(mountPoints[i].path)], pathLen - mountPointLen);
+                memcpy(innerPath, &path[strlen(mountPoint->path)], pathLen - mountPointLen);
 
                 innerPath[pathLen - mountPointLen] = '\0';
 
-                if(mountPoints[i].fileSystem->Exists(innerPath))
+                if(mountPoint->fileSystem->Exists(innerPath))
                 {
                     FileHandle *handle = NewFileHandle();
 
                     handle->path = innerPath;
-                    handle->mountPoint = &mountPoints[i];
-                    handle->fileType = FILE_TYPE_FILE;
+                    handle->fsHandle = mountPoint->fileSystem->GetFileHandle(innerPath);
+                    handle->mountPoint = mountPoint;
+                    handle->fileType = mountPoint->fileSystem->FileHandleType(handle->fsHandle);
                     handle->cursor = 0;
-                    handle->length = mountPoints[i].fileSystem->FileLength(innerPath);
+                    handle->length = mountPoints[i].fileSystem->FileLength(handle->fsHandle);
                     handle->isValid = true;
 
                     return handle->ID;
+                }
+                else
+                {
+                    free(innerPath);
                 }
 
                 return INVALID_FILE_HANDLE;                
@@ -137,7 +145,7 @@ namespace FileSystem
         }
     }
 
-    ::FileSystem::FileType VFS::FileType(FILE_HANDLE handle)
+    ::FileSystem::FileHandleType VFS::FileType(FILE_HANDLE handle)
     {
         FileHandle *fileHandle = GetFileHandle(handle);
 
@@ -146,7 +154,7 @@ namespace FileSystem
             return fileHandle->fileType;
         }
 
-        return FILE_TYPE_UNKNOWN;
+        return FILE_HANDLE_UNKNOWN;
     }
 
     uint64_t VFS::ReadFile(FILE_HANDLE handle, void *buffer, uint64_t length)
@@ -167,7 +175,7 @@ namespace FileSystem
 
         fileHandle->cursor += length;
 
-        return fileHandle->mountPoint->fileSystem->ReadFile(fileHandle->path, buffer, cursor, length);
+        return fileHandle->mountPoint->fileSystem->ReadFile(fileHandle->fsHandle, buffer, cursor, length);
     }
 
     uint64_t VFS::WriteFile(FILE_HANDLE handle, const void *buffer, uint64_t length)
@@ -183,7 +191,7 @@ namespace FileSystem
 
         fileHandle->cursor += length;
 
-        return fileHandle->mountPoint->fileSystem->WriteFile(fileHandle->path, buffer, cursor, length);
+        return fileHandle->mountPoint->fileSystem->WriteFile(fileHandle->fsHandle, buffer, cursor, length);
     }
     
     uint64_t VFS::SeekFile(FILE_HANDLE handle, uint64_t cursor)

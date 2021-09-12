@@ -210,6 +210,13 @@ namespace FileSystem
         class Ext2FileSystem : public FileSystem
         {
         private:
+            struct FileHandleData
+            {
+                Inode inode;
+                uint64_t ID;
+                const char *path;
+            };
+
             uint64_t inodePerGroup;
             uint64_t GroupFromInode(uint64_t inode);
             uint64_t LocalGroupInodeFromInode(uint64_t inode);
@@ -218,6 +225,9 @@ namespace FileSystem
             uint64_t blockGroupDescriptorTable;
             uint64_t blockSize;
             uint64_t offset;
+
+            DynamicArray<FileHandleData> fileHandles;
+            uint64_t fileHandleCounter;
 
             DiskGroupDescription ReadGroupFromInode(uint64_t inode);
             void WriteGroupFromInode(uint64_t inode, const DiskGroupDescription &group);
@@ -248,16 +258,24 @@ namespace FileSystem
             void DebugListSubdirectory(const Inode &inode, uint32_t offset);
             bool FlushSuperblock();
         public:
-            Ext2FileSystem(GPT::Partition *partition) : FileSystem(partition)
+            Ext2FileSystem(GPT::Partition *partition) : FileSystem(partition), fileHandleCounter(0)
             {
                 Initialize(0, partition->GetSectorCount());
             }
 
             virtual void Initialize(uint64_t sector, uint64_t sectorCount) override;
+
             virtual bool Exists(const char *path) override;
-            virtual uint64_t FileLength(const char *path) override;
-            virtual uint64_t ReadFile(const char *path, void *buffer, uint64_t cursor, uint64_t size) override;
-            virtual uint64_t WriteFile(const char *path, const void *buffer, uint64_t cursor, uint64_t size) override;
+
+            virtual FileSystemHandle GetFileHandle(const char *path) override;
+            virtual void DisposeFileHandle(FileSystemHandle handle) override;
+            virtual ::FileSystem::FileHandleType FileHandleType(FileSystemHandle handle) override;
+
+            virtual uint64_t FileLength(FileSystemHandle handle) override;
+
+            virtual uint64_t ReadFile(FileSystemHandle handle, void *buffer, uint64_t cursor, uint64_t size) override;
+            virtual uint64_t WriteFile(FileSystemHandle handle, const void *buffer, uint64_t cursor, uint64_t size) override;
+
             virtual void DebugListDirectories() override;
 
             virtual const char *VolumeName() override;

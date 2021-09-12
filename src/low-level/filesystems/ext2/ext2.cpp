@@ -517,18 +517,103 @@ namespace FileSystem
             return inode.IsValid();
         }
 
-        uint64_t Ext2FileSystem::FileLength(const char *path)
+        FileSystemHandle Ext2FileSystem::GetFileHandle(const char *path)
         {
             Threading::ScopedLock Lock(lock);
+
+            for(uint64_t i = 0; i < fileHandles.length(); i++)
+            {
+                if(strcmp(fileHandles[i].path, path) == 0)
+                {
+                    return fileHandles[i].ID;
+                }
+            }
 
             Inode inode = GetFile(path);
 
             if(!inode.IsValid())
             {
-                return (uint64_t)-1;
+                return 0;
             }
 
-            uint64_t size = inode.inode.size;
+            FileHandleData data;
+            data.ID = ++fileHandleCounter;
+            data.inode = inode;
+            data.path = path;
+
+            fileHandles.add(data);
+
+            return data.ID;
+        }
+
+        void Ext2FileSystem::DisposeFileHandle(FileSystemHandle handle)
+        {
+            Threading::ScopedLock Lock(lock);
+
+            for(uint64_t i = 0; i < fileHandles.length(); i++)
+            {
+                if(fileHandles[i].ID == handle)
+                {
+                    fileHandles.remove(i);
+
+                    return;
+                }
+            }
+        }
+
+        ::FileSystem::FileHandleType Ext2FileSystem::FileHandleType(FileSystemHandle handle)
+        {
+            Threading::ScopedLock Lock(lock);
+
+            for(uint64_t i = 0; i < fileHandles.length(); i++)
+            {
+                if(fileHandles[i].ID == handle)
+                {
+                    if(fileHandles[i].inode.IsValid())
+                    {
+                        if(fileHandles[i].inode.IsDirectory())
+                        {
+                            return FILE_HANDLE_DIRECTORY;
+                        }
+                        else if(fileHandles[i].inode.IsFile())
+                        {
+                            return FILE_HANDLE_FILE;
+                        }
+                    }
+
+                    break;
+                }
+            }
+
+            return FILE_HANDLE_UNKNOWN;
+        }
+
+        uint64_t Ext2FileSystem::FileLength(FileSystemHandle handle)
+        {
+            Threading::ScopedLock Lock(lock);
+            Inode *inode = NULL;
+
+            for(uint64_t i = 0; i < fileHandles.length(); i++)
+            {
+                if(fileHandles[i].ID == handle)
+                {
+                    inode = &fileHandles[i].inode;
+
+                    break;
+                }
+            }
+
+            if(inode == NULL)
+            {
+                return 0;
+            }
+
+            if(!inode->IsValid())
+            {
+                return 0;
+            }
+
+            uint64_t size = inode->inode.size;
 
             return size;
         }
@@ -558,32 +643,47 @@ namespace FileSystem
             rootInode = GetInode(2);
         }
 
-        uint64_t Ext2FileSystem::ReadFile(const char *path, void *buffer, uint64_t cursor, uint64_t size)
+        uint64_t Ext2FileSystem::ReadFile(FileSystemHandle handle, void *buffer, uint64_t cursor, uint64_t size)
         {
             Threading::ScopedLock Lock(lock);
 
-            Inode inode = GetFile(path);
+            Inode *inode = NULL;
 
-            if(!inode.IsValid())
+            for(uint64_t i = 0; i < fileHandles.length(); i++)
+            {
+                if(fileHandles[i].ID == handle)
+                {
+                    inode = &fileHandles[i].inode;
+
+                    break;
+                }
+            }
+
+            if(inode == NULL)
             {
                 return 0;
             }
 
-            if(inode.inode.size < cursor)
+            if(!inode->IsValid())
+            {
+                return 0;
+            }
+
+            if(inode->inode.size < cursor)
             {
                 return 0;
             }
 
             uint64_t readBytes = size;
 
-            if(inode.inode.size < cursor + size)
+            if(inode->inode.size < cursor + size)
             {
-                readBytes = inode.inode.size - cursor;
+                readBytes = inode->inode.size - cursor;
             }
 
             uint8_t temp[readBytes];
 
-            if(!InodeRead(temp, cursor, readBytes, inode))
+            if(!InodeRead(temp, cursor, readBytes, *inode))
             {
                 return 0;
             }
@@ -593,13 +693,28 @@ namespace FileSystem
             return readBytes;
         }
 
-        uint64_t Ext2FileSystem::WriteFile(const char *path, const void *buffer, uint64_t cursor, uint64_t size)
+        uint64_t Ext2FileSystem::WriteFile(FileSystemHandle handle, const void *buffer, uint64_t cursor, uint64_t size)
         {
             Threading::ScopedLock Lock(lock);
 
-            Inode inode = GetFile(path);
+            Inode *inode = NULL;
 
-            if(!inode.IsValid())
+            for(uint64_t i = 0; i < fileHandles.length(); i++)
+            {
+                if(fileHandles[i].ID == handle)
+                {
+                    inode = &fileHandles[i].inode;
+
+                    break;
+                }
+            }
+
+            if(inode == NULL)
+            {
+                return 0;
+            }
+
+            if(!inode->IsValid())
             {
                 lock.Unlock();
 
@@ -608,18 +723,18 @@ namespace FileSystem
 
             uint64_t writeBytes = size + cursor;
 
-            if(inode.inode.blocks * blockSize < writeBytes)
+            if(inode->inode.blocks * blockSize < writeBytes)
             {
                 return 0;
             }
-            else if(inode.inode.size < writeBytes)
+            else if(inode->inode.size < writeBytes)
             {
-                inode.inode.size = writeBytes;
+                inode->inode.size = writeBytes;
             }
 
-            WriteInode(inode);
+            WriteInode(*inode);
 
-            InodeWrite(buffer, cursor, size, inode);
+            InodeWrite(buffer, cursor, size, *inode);
 
             return size;
         }
