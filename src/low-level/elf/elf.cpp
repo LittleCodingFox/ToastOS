@@ -35,11 +35,14 @@ namespace Elf
 
         DEBUG_OUT("Load at address %p with %llu pages (memsize: %llu; fileSize: %llu)", address, pageCount, memSize, fileSize);
 
-        void *physicalAddress = globalAllocator.RequestPages(pageCount);
+        void *pages[pageCount];
 
         for(uint64_t i = 0; i < pageCount; i++)
         {
-            globalPageTableManager->MapMemory((void *)((startPage + i) * 0x1000), (void *)((uint64_t)physicalAddress + i * 0x1000), flags | PAGING_FLAG_WRITABLE);
+            void *physicalAddress = globalAllocator.RequestPage();
+            pages[i] = physicalAddress;
+
+            globalPageTableManager->MapMemory((void *)((startPage + i) * 0x1000), physicalAddress, flags | PAGING_FLAG_WRITABLE);
         }
 
         memcpy((void *)address, (uint8_t *)data + offset, fileSize);
@@ -47,7 +50,7 @@ namespace Elf
 
         for(uint64_t i = 0; i < pageCount; i++)
         {
-            globalPageTableManager->MapMemory((void *)((startPage + i) * 0x1000), (void *)((uint64_t)physicalAddress + i * 0x1000), flags);
+            globalPageTableManager->MapMemory((void *)((startPage + i) * 0x1000), pages[i], flags);
         }
     }
 
@@ -91,7 +94,7 @@ namespace Elf
         {
             if(programHeader[i].type == ELF_PROGRAM_TYPE_LOAD)
             {
-                LoadElfSegment(data, programHeader + i);
+                LoadElfSegment(data, &programHeader[i]);
             }
         }
 

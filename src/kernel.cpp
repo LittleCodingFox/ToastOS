@@ -43,26 +43,21 @@ extern "C" void _start(stivale2_struct *stivale2Struct)
 
     if(length > 0)
     {
+        DEBUG_OUT("File Length: %llu", length);
+
         uint8_t *buffer = new uint8_t[length];
+
+        memset(buffer, 0, length);
 
         if(vfs.ReadFile(handle, buffer, length) == length)
         {
-            Elf::ElfHeader *header = Elf::LoadElf(buffer);
+            DEBUG_OUT("%s", "Executing elf");
 
-            if(header == NULL)
-            {
-                DEBUG_OUT("%s", "Invalid elf header!");
-            }
-            else
-            {
-                DEBUG_OUT("%s", "Executing elf");
+            const char* argv[1] { NULL };
 
-                const char* argv[1] { NULL };
+            globalProcessManager.Execute(buffer, "elf", argv);
 
-                globalProcessManager.Execute(header, "elf", argv);
-
-                globalProcessManager.SwitchToUsermode((void *)globalProcessManager.CurrentProcess()->elf->entry, (void *)globalProcessManager.CurrentProcess()->rsp);
-            }
+            globalProcessManager.SwitchToUsermode((void *)globalProcessManager.CurrentProcess()->elf->entry, (void *)globalProcessManager.CurrentProcess()->rsp);
         }
     }
 
