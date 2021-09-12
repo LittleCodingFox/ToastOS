@@ -2,5 +2,5 @@
 
 void _start()
 {
-    syscall(0);
+    //syscall(0);
 }
