@@ -1,5 +1,6 @@
+#include "sys/syscall.h"
 
-int _start()
+void _start()
 {
-    return 0;
+    syscall(0);
 }

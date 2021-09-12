@@ -11,12 +11,13 @@ CSRC			= $(call rwildcard,$(SRCDIR),*.c)
 
 COBJECTS		= $(CSRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
-INCLUDEDIRS		= -I../../src/klibc
+INCLUDEDIRS		= -I../../klibc
 
 CFLAGS			= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -Wall -O0 -fno-omit-frame-pointer \
-	-fno-rtti -fno-exceptions -fno-builtin -fno-pie
+	-fno-rtti -fno-exceptions -fno-builtin -fno-pie -fno-stack-protector -fno-rtti -fno-exceptions -mno-3dnow \
+	-mno-mmx -mno-sse -mno-sse2 -mno-avx
 
-LD_FLAGS = -Wl, -Ttext-segment=40000000 -nostdlib -no-pie
+LDFLAGS			= -Ttext-segment=40000000 -nostdlib -no-pie -L../../bin/libc -lc -Map=linker.map 
 
 default: test
 
@@ -25,7 +26,9 @@ makedirs:
 
 test: makedirs $(COBJECTS)
 	mkdir -p $(BINDIR)
-	$(LD) $(LDFLAGS) $(COBJECTS) -o $(BINDIR)/$(PROGRAM_NAME)
+	$(LD) $(COBJECTS) $(LDFLAGS) -o $(BINDIR)/$(PROGRAM_NAME)
+	awk '$$1 ~ /0x[0-9a-f]{16}/ {print substr($$1, 3), $$2}' linker.map > symbols.map
+	rm linker.map
 
 $(COBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
 	mkdir -p $(shell dirname $@)

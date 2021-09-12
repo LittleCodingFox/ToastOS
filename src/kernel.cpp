@@ -9,6 +9,7 @@
 #include "KernelUtils.hpp"
 #include "elf/elf.hpp"
 #include "filesystems/VFS.hpp"
+#include "process/process.hpp"
 
 using namespace FileSystem;
 
@@ -56,11 +57,11 @@ extern "C" void _start(stivale2_struct *stivale2Struct)
             {
                 DEBUG_OUT("%s", "Executing elf");
 
-                int (*entry)() = (int (*)())header->entry;
+                const char* argv[1] { NULL };
 
-                int value = entry();
+                globalProcessManager.Execute(header, "elf", argv);
 
-                DEBUG_OUT("VALUE: %i", value);
+                globalProcessManager.SwitchToUsermode((void *)globalProcessManager.CurrentProcess()->elf->entry, (void *)globalProcessManager.CurrentProcess()->rsp);
             }
         }
     }

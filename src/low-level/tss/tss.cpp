@@ -14,5 +14,5 @@ void InitializeTSS()
     DefaultGDT.tssHigh.limitLow = (tssBase >> 32) & 0xFFFF;
     DefaultGDT.tssHigh.baseLow = (tssBase >> 48) & 0xFFFF;
 
-    __asm__("ltr %%ax" : : "a"(0x30));
+    __asm__("ltr %%ax" : : "a"(GDTTSSSegment));
 }

@@ -283,8 +283,6 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     InitializeACPI(rsdp);
 
-    DEBUG_OUT("%s", "Finished initializing the kernel");
-
     uint64_t MBSize = 1024 * 1024;
 
     DEBUG_OUT("Memory Stats: Free: %lluMB; Used: %lluMB; Reserved: %lluMB", globalAllocator.GetFreeRAM() / MBSize,
@@ -292,7 +290,9 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     InitializeTSS();
 
-    //InitializeSyscalls();
+    InitializeSyscalls();
+
+    DEBUG_OUT("%s", "Finished initializing the kernel");
 }
 
 void _putchar(char character)

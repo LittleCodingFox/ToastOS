@@ -14,9 +14,10 @@ namespace GDTAccessFlag
         Present = (1 << 7)
     };
 }
+
 #define GDTKernelBaseSelector   0x08
 #define GDTUserBaseSelector     0x18
-#define GDTTSSSegment           0x30
+#define GDTTSSSegment           0x28
 
 #define GDTAccessKernelCode (GDTAccessFlag::ReadWrite | GDTAccessFlag::Execute | GDTAccessFlag::Segments | GDTAccessFlag::Present)
 #define GDTAccessKernelData (GDTAccessFlag::ReadWrite | GDTAccessFlag::Segments | GDTAccessFlag::Present)
@@ -42,11 +43,10 @@ struct GDT {
     GDTEntry null; //0x00
     GDTEntry kernelCode; //0x08
     GDTEntry kernelData; //0x10
-    GDTEntry userNull; //0x18
-    GDTEntry userData; //0x20
-    GDTEntry userCode; //0x28
-    GDTEntry tssLow; //0x30
-    GDTEntry tssHigh;
+    GDTEntry userData; //0x18
+    GDTEntry userCode; //0x20
+    GDTEntry tssLow; //0x28
+    GDTEntry tssHigh; //0x30
 } __attribute__((packed)) 
 __attribute((aligned(0x1000)));
 

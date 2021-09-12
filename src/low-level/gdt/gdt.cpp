@@ -30,14 +30,6 @@ GDT DefaultGDT = {
         .limitLow = 0,
         .baseLow = 0,
         .baseMiddle = 0,
-        .accessFlag = 0x00,
-        .limitFlags = 0x00,
-        .baseHigh = 0
-    }, // user null
-    {
-        .limitLow = 0,
-        .baseLow = 0,
-        .baseMiddle = 0,
         .accessFlag = GDTAccessUserData,
         .limitFlags = 0x80,
         .baseHigh = 0

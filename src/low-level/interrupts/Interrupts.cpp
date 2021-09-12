@@ -180,11 +180,11 @@ void interruptIntHandler(InterruptStack stack)
         "  stack_pointer       = %p\n"
         "  stack_segment       = %#x\n"
         "\n"
-        "  rax = 0x%08x    rbx = 0x%08x    rcx = 0x%08x\n"
-        "  rdx = 0x%08x    rsi = 0x%08x    rdi = 0x%08x\n"
-        "  rbp = 0x%08x    r8  = 0x%08x    r9  = 0x%08x\n"
-        "  r10 = 0x%08x    r11 = 0x%08x    r12 = 0x%08x\n"
-        "  r13 = 0x%08x    r14 = 0x%08x    r15 = 0x%08x",
+        "  rax = 0x%016llx    rbx = 0x%016llx    rcx = 0x%016llx\n"
+        "  rdx = 0x%016llx    rsi = 0x%016llx    rdi = 0x%016llx\n"
+        "  rbp = 0x%016llx    r8  = 0x%016llx    r9  = 0x%016llx\n"
+        "  r10 = 0x%016llx    r11 = 0x%016llx    r12 = 0x%016llx\n"
+        "  r13 = 0x%016llx    r14 = 0x%016llx    r15 = 0x%016llx",
         stack.id,
         exception_messages[stack.id],
         stack.errorCode,
@@ -218,11 +218,11 @@ void interruptIntHandler(InterruptStack stack)
         "  stack_pointer       = %p\n"
         "  stack_segment       = %#x\n"
         "\n"
-        "  rax = 0x%08x    rbx = 0x%08x    rcx = 0x%08x\n"
-        "  rdx = 0x%08x    rsi = 0x%08x    rdi = 0x%08x\n"
-        "  rbp = 0x%08x    r8  = 0x%08x    r9  = 0x%08x\n"
-        "  r10 = 0x%08x    r11 = 0x%08x    r12 = 0x%08x\n"
-        "  r13 = 0x%08x    r14 = 0x%08x    r15 = 0x%08x",
+        "  rax = 0x%016llx    rbx = 0x%016llx    rcx = 0x%016llx\n"
+        "  rdx = 0x%016llx    rsi = 0x%016llx    rdi = 0x%016llx\n"
+        "  rbp = 0x%016llx    r8  = 0x%016llx    r9  = 0x%016llx\n"
+        "  r10 = 0x%016llx    r11 = 0x%016llx    r12 = 0x%016llx\n"
+        "  r13 = 0x%016llx    r14 = 0x%016llx    r15 = 0x%016llx",
         stack.id,
         exception_messages[stack.id],
         stack.errorCode,
@@ -349,11 +349,11 @@ void PageFaultHandler(InterruptStack* stack)
             "  stack_pointer       = %p\n"
             "  stack_segment       = %#x\n"
             "\n"
-            "  rax = 0x%08x    rbx = 0x%08x    rcx = 0x%08x\n"
-            "  rdx = 0x%08x    rsi = 0x%08x    rdi = 0x%08x\n"
-            "  rbp = 0x%08x    r8  = 0x%08x    r9  = 0x%08x\n"
-            "  r10 = 0x%08x    r11 = 0x%08x    r12 = 0x%08x\n"
-            "  r13 = 0x%08x    r14 = 0x%08x    r15 = 0x%08x",
+            "  rax = 0x%016llx    rbx = 0x%016llx    rcx = 0x%016llx\n"
+            "  rdx = 0x%016llx    rsi = 0x%016llx    rdi = 0x%016llx\n"
+            "  rbp = 0x%016llx    r8  = 0x%016llx    r9  = 0x%016llx\n"
+            "  r10 = 0x%016llx    r11 = 0x%016llx    r12 = 0x%016llx\n"
+            "  r13 = 0x%016llx    r14 = 0x%016llx    r15 = 0x%016llx",
             Registers::ReadCR2(),
             error_code,
             is_present != 0 ? 'Y' : 'N',

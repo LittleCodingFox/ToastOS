@@ -17,6 +17,8 @@ SyscallPointer syscallHandlers[] =
 
 int64_t KNotImplemented()
 {
+    DEBUG_OUT("Syscall: KNotImplemented", 0);
+
     return -1;
 }
 

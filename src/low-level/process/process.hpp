@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "elf/elf.hpp"
 
 #define PROCESS_STACK_SIZE 1024
 
@@ -12,13 +13,14 @@ struct ProcessInfo
     char **environment;
     uint64_t stack[PROCESS_STACK_SIZE];
     uint64_t rsp;
+    Elf::ElfHeader *elf;
 };
 
 class ProcessManager
 {
 public:
 
-    ProcessInfo *Execute(const char *name, const char **argv);
+    ProcessInfo *Execute(const void *image, const char *name, const char **argv);
 
     ProcessInfo *CurrentProcess();
 

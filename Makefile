@@ -30,6 +30,7 @@ EXTCSRC			= $(call rwildcard, $(SRCDIR)/../ext-libs/printf,*.c)
 EXTCSRC			+= $(call rwildcard, $(SRCDIR)/../ext-libs/liballoc,*.c)
 LIBCSRC			= $(call rwildcard,$(LIBCSRCDIR),*.c)
 ASMSRC			= $(call rwildcard,$(SRCDIR),*.asm)
+LIBCASMSRC		= $(call rwildcard,$(LIBCSRCDIR),*.asm)
 OBJECTS			= $(SRC:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 ASMOBJECTS		= $(ASMSRC:$(SRCDIR)/%.asm=$(OBJDIR)/%_asm.o)
 COBJECTS		= $(CSRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
@@ -37,6 +38,7 @@ EXTOBJECTS		= $(EXTSRC:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 EXTCOBJECTS		= $(EXTCSRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 LIBCCOBJECTS	= $(LIBCSRC:$(LIBCSRCDIR)/%.c=$(LIBCOBJDIR)/%.o)
 LIBKCOBJECTS	= $(LIBCSRC:$(LIBCSRCDIR)/%.c=$(LIBKOBJDIR)/%.o)
+LIBCASMOBJECTS	= $(LIBCASMSRC:$(LIBCSRCDIR)/%.asm=$(LIBCOBJDIR)/%_asm.o)
 
 INCLUDEDIRS		= -Isrc -Iklibc -Isrc/include -Isrc/low-level -Iext-libs -Iext-libs/liballoc/
 ASMFLAGS		=
@@ -88,13 +90,17 @@ $(LIBKCOBJECTS): $(LIBKOBJDIR)/%.o : $(LIBCSRCDIR)/%.c
 	mkdir -p $(shell dirname $@)
 	$(CC) $(CFLAGS) $(CFLAGS_INTERNAL) -c $< -o $@
 
+$(LIBCASMOBJECTS): $(LIBCOBJDIR)/%_asm.o : $(LIBCSRCDIR)/%.asm
+	mkdir -p $(shell dirname $@)
+	$(ASMC) $(ASMFLAGS) $< -f elf64 -o $@
+
 kernel: makedirs $(OBJECTS) $(COBJECTS) $(LIBKCOBJECTS) $(EXTOBJECTS) $(EXTCOBJECTS) $(ASMOBJECTS)
 	$(LD) $(LDFLAGS) $(OBJECTS) $(COBJECTS) $(LIBKCOBJECTS) $(EXTOBJECTS) $(EXTCOBJECTS) $(ASMOBJECTS) -o $(BINDIR)/kernel
 	awk '$$1 ~ /0x[0-9a-f]{16}/ {print substr($$1, 3), $$2}' linker.map > symbols.map
 	rm linker.map
 
-libc: makedirs $(LIBCCOBJECTS)
-	$(AR) rcs "$(LIBCBINDIR)/$@.a" $(LIBCCOBJECTS)
+libc: makedirs $(LIBCCOBJECTS) $(LIBCASMOBJECTS)
+	$(AR) rcs "$(LIBCBINDIR)/$@.a" $(LIBCCOBJECTS) $(LIBCASMOBJECTS)
 
 iso-linux:
 	sh makebootdir.sh
