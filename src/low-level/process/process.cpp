@@ -25,21 +25,19 @@ ProcessInfo *ProcessManager::Execute(const void *image, const char *name, const 
     {
         currentProcess = (ProcessInfo *)globalAllocator.RequestPages(sizeof(ProcessInfo) / 0x1000 + 1);
 
+        DEBUG_OUT("ProcessInfo Size: %llu", sizeof(ProcessInfo));
+
+        uint64_t page = (uint64_t)currentProcess / 0x1000;
+
         uint64_t pageCount = sizeof(ProcessInfo) / 0x1000 + 1;
 
         for(uint64_t i = 0; i < pageCount; i++)
         {
-            globalPageTableManager->IdentityMap((void *)((uint64_t)currentProcess + i * 0x1000), PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+            globalPageTableManager->IdentityMap((void *)((uint64_t)(page + i) * 0x1000), PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
         }
 
         memset(currentProcess, 0, sizeof(ProcessInfo));
         currentProcess->ID = 0;
-
-        for(uint64_t i = 0; i < sizeof(currentProcess->stack); i += 0x1000)
-        {
-            globalPageTableManager->IdentityMap((void *)((uint64_t)currentProcess->stack + i),
-                PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
-        }
     }
     else
     {
@@ -92,7 +90,7 @@ ProcessInfo *ProcessManager::Execute(const void *image, const char *name, const 
 
     currentProcess->environment = env;
 
-    void *stack = (void *)&currentProcess->stack[PROCESS_STACK_SIZE - 1];
+    void *stack = (void *)&currentProcess->stack[PROCESS_STACK_SIZE];
 
     /*
     PushToStack(stack, env);
