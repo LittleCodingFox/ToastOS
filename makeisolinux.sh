@@ -45,6 +45,8 @@ sudo cp limine/BOOTX64.EFI /mnt/osdev/EFI/BOOT/
 
 sync
 
+rm -Rf limine
+
 sudo umount /dev/loop0
 
 sudo losetup -d /dev/loop0
