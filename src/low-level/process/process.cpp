@@ -25,11 +25,17 @@ ProcessInfo *ProcessManager::Execute(const void *image, const char *name, const 
     {
         currentProcess = (ProcessInfo *)globalAllocator.RequestPages(sizeof(ProcessInfo) / 0x1000 + 1);
 
-        DEBUG_OUT("ProcessInfo Size: %llu", sizeof(ProcessInfo));
-
         uint64_t page = (uint64_t)currentProcess / 0x1000;
 
         uint64_t pageCount = sizeof(ProcessInfo) / 0x1000 + 1;
+
+        for(uint64_t i = 0; i < pageCount; i++)
+        {
+            globalPageTableManager->IdentityMap((void *)((uint64_t)(page + i) * 0x1000), PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+        }
+
+        page = (uint64_t)currentProcess->stack / 0x1000;
+        pageCount = sizeof(currentProcess->stack) / 0x1000 + 1;
 
         for(uint64_t i = 0; i < pageCount; i++)
         {
