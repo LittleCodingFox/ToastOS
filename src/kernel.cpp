@@ -55,9 +55,9 @@ extern "C" void _start(stivale2_struct *stivale2Struct)
 
             const char* argv[1] { NULL };
 
-            globalProcessManager.Execute(buffer, "elf", argv);
+            ProcessInfo *process = globalProcessManager.LoadImage(buffer, "elf", argv);
 
-            globalProcessManager.SwitchToUsermode((void *)globalProcessManager.CurrentProcess()->elf->entry, (void *)globalProcessManager.CurrentProcess()->rsp);
+            globalProcessManager.ExecuteProcess(process);
         }
     }
 

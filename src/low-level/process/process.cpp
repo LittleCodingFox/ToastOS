@@ -5,6 +5,7 @@
 #include "paging/PageTableManager.hpp"
 #include "process.hpp"
 #include "debug.hpp"
+#include "registers/Registers.hpp"
 
 ProcessManager globalProcessManager;
 
@@ -17,7 +18,7 @@ ProcessInfo *ProcessManager::CurrentProcess()
     return currentProcess;
 }
 
-ProcessInfo *ProcessManager::Execute(const void *image, const char *name, const char **argv)
+ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, const char **argv)
 {
     Elf::ElfHeader *previous = NULL;
 
@@ -106,6 +107,19 @@ ProcessInfo *ProcessManager::Execute(const void *image, const char *name, const 
 
     currentProcess->rsp = (uint64_t)stack;
 
+    PageTable *pageTableFrame = (PageTable *)globalAllocator.RequestPage();
+
+    globalPageTableManager->IdentityMap(pageTableFrame, PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+
+    memset(pageTableFrame, 0, sizeof(PageTable));
+    
+    for(uint64_t i = 256; i < 512; i++)
+    {
+        pageTableFrame->entries[i] = globalPageTableManager->p4->entries[i];
+    }
+
+    currentProcess->cr3 = (uint64_t)pageTableFrame;
+
     if(previous != NULL)
     {
         Elf::UnloadElf(previous);
@@ -117,7 +131,32 @@ ProcessInfo *ProcessManager::Execute(const void *image, const char *name, const 
 
     currentProcess->elf = elf;
 
+    if(elf != NULL)
+    {
+        Elf::MapElfSegments(elf, globalPageTableManager);
+    }
+
     return currentProcess;
+}
+
+void ProcessManager::ExecuteProcess(ProcessInfo *process)
+{
+    if(process == NULL || process->elf == NULL)
+    {
+        DEBUG_OUT("Failed to execute process %p: Invalid pointer or missing elf image", process);
+
+        return;
+    }
+
+    DEBUG_OUT("Executing process %p", process);
+
+    uint64_t ip = process->elf->entry;
+    uint64_t stackPointer = process->rsp;
+    uint64_t cr3 = process->cr3;
+
+    //Registers::WriteCR3(cr3);
+
+    SwitchToUsermode((void *)ip, (void *)stackPointer);
 }
 
 void ProcessManager::SwitchToUsermode(void *instructionPointer, void *stackPointer)

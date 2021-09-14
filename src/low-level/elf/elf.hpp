@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "paging/PageTableManager.hpp"
 
 namespace Elf
 {
@@ -66,4 +67,5 @@ namespace Elf
 
     ElfHeader *LoadElf(const void *data);
     void UnloadElf(ElfHeader *header);
+    void MapElfSegments(ElfHeader *header, PageTableManager *pageTableManager);
 };

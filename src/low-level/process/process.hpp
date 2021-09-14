@@ -13,6 +13,7 @@ struct ProcessInfo
     char **environment;
     uint64_t stack[PROCESS_STACK_SIZE];
     uint64_t rsp;
+    uint64_t cr3;
     Elf::ElfHeader *elf;
 };
 
@@ -20,10 +21,12 @@ class ProcessManager
 {
 public:
 
-    ProcessInfo *Execute(const void *image, const char *name, const char **argv);
+    ProcessInfo *LoadImage(const void *image, const char *name, const char **argv);
 
     ProcessInfo *CurrentProcess();
 
+    void ExecuteProcess(ProcessInfo *process);
+    
     void SwitchToUsermode(void *instructionPointer, void *stackPointer);
 };
 

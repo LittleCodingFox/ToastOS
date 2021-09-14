@@ -6,7 +6,7 @@
 
 namespace Elf
 {
-    void LoadElfSegment(const void *data, ElfProgramHeader *programHeader)
+    void LoadElfSegment(const void *data, ElfProgramHeader *programHeader, PageTableManager *pageTableManager)
     {
         uint64_t memSize = programHeader->memorySize;
         uint64_t fileSize = programHeader->fileSize;
@@ -42,6 +42,7 @@ namespace Elf
             void *physicalAddress = globalAllocator.RequestPage();
             pages[i] = physicalAddress;
 
+            pageTableManager->MapMemory((void *)((startPage + i) * 0x1000), physicalAddress, flags | PAGING_FLAG_WRITABLE);
             globalPageTableManager->MapMemory((void *)((startPage + i) * 0x1000), physicalAddress, flags | PAGING_FLAG_WRITABLE);
         }
 
@@ -50,7 +51,8 @@ namespace Elf
 
         for(uint64_t i = 0; i < pageCount; i++)
         {
-            globalPageTableManager->MapMemory((void *)((startPage + i) * 0x1000), pages[i], flags);
+            globalPageTableManager->UnmapMemory((void *)((startPage + i) * 0x1000));
+            pageTableManager->MapMemory((void *)((startPage + i) * 0x1000), pages[i], flags);
         }
     }
 
@@ -86,19 +88,20 @@ namespace Elf
             return NULL;
         }
 
-        uint16_t type = header->type;
+        return header;
+    }
 
-        ElfProgramHeader *programHeader = (ElfProgramHeader *)((uint64_t)data + header->phOffset);
+    void MapElfSegments(ElfHeader *header, PageTableManager *pageTableManager)
+    {
+        ElfProgramHeader *programHeader = (ElfProgramHeader *)((uint64_t)header + header->phOffset);
 
         for(uint64_t i = 0; i < header->phNum; i++)
         {
             if(programHeader[i].type == ELF_PROGRAM_TYPE_LOAD)
             {
-                LoadElfSegment(data, &programHeader[i]);
+                LoadElfSegment(header, &programHeader[i], pageTableManager);
             }
         }
-
-        return header;
     }
 
     void UnloadElf(ElfHeader *header)
