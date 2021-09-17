@@ -114,7 +114,7 @@ userland: libc
 run-linux: kernel userland iso-linux run-qemu-linux
 
 debug-linux: CFLAGS += -DKERNEL_DEBUG=1 #-g -O0
-debug-linux: QEMU_FLAGS += -s -S
+#debug-linux: QEMU_FLAGS += -s -S
 debug-linux: run-linux
 
 run-qemu-linux:
