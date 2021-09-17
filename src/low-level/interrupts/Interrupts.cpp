@@ -77,7 +77,7 @@ void Interrupts::Init()
     outport8(PIC1_DATA, 0x01);
     outport8(PIC2_DATA, 0x01);
 
-    // mask all IRQs
+    // unmask all IRQs
     outport8(PIC1_DATA, 0x00);
     outport8(PIC2_DATA, 0x00);
 
@@ -154,6 +154,8 @@ void Interrupts::DisableInterrupts()
 void interruptIntHandler(InterruptStack stack)
 {
     InterruptHandler handler = interrupts.GetHandler(stack.id);
+
+    DEBUG_OUT("Got interrupt %llx", stack.id);
 
     if (handler != NULL)
     {
@@ -251,6 +253,8 @@ void interruptIntHandler(InterruptStack stack)
 void interruptIRQHandler(InterruptStack stack)
 {
     InterruptHandler handler = interrupts.GetHandler(stack.id);
+
+    DEBUG_OUT("Got IRQ interrupt %llx", stack.id);
 
     if (handler != NULL)
     {

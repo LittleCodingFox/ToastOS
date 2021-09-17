@@ -41,7 +41,7 @@ LIBKCOBJECTS	= $(LIBCSRC:$(LIBCSRCDIR)/%.c=$(LIBKOBJDIR)/%.o)
 LIBCASMOBJECTS	= $(LIBCASMSRC:$(LIBCSRCDIR)/%.asm=$(LIBCOBJDIR)/%_asm.o)
 
 INCLUDEDIRS		= -Isrc -Iklibc -Isrc/include -Isrc/low-level -Iext-libs -Iext-libs/liballoc/
-ASMFLAGS		=
+ASMFLAGS		= -g -F dwarf
 CFLAGS			= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -nostdlib -mno-red-zone -Wall -fpic -O3 -fno-omit-frame-pointer -g \
 	-fno-stack-protector -fno-rtti -fno-exceptions -mno-3dnow -mno-mmx -mno-sse -mno-sse2 -mno-avx
 CFLAGS_INTERNAL	= 
@@ -114,7 +114,7 @@ userland: libc
 run-linux: kernel userland iso-linux run-qemu-linux
 
 debug-linux: CFLAGS += -DKERNEL_DEBUG=1 #-g -O0
-#debug: QEMU_FLAGS += -s -S
+debug-linux: QEMU_FLAGS += -s -S
 debug-linux: run-linux
 
 run-qemu-linux:
@@ -134,5 +134,6 @@ clean:
 	rm -Rf tmp
 	rm -Rf boot
 	rm -Rf obj
+	rm -Rf userland/obj
 
 .PHONY: all clean run-linux makedirs debug-linux userland

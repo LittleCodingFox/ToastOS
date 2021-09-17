@@ -10,6 +10,7 @@
 #include "elf/elf.hpp"
 #include "filesystems/VFS.hpp"
 #include "process/process.hpp"
+#include "framebuffer/FramebufferRenderer.hpp"
 
 using namespace FileSystem;
 

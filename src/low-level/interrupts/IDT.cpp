@@ -1,7 +1,6 @@
 #include "IDT.hpp"
+#include "gdt/gdt.hpp"
 #include <string.h>
-
-#define KERNEL_BASE_SELECTOR 0x08
 
 struct __attribute__((packed)) IDTR
 {
@@ -31,7 +30,7 @@ void IDT::RegisterGate(uint16_t n, uint64_t handler, uint8_t type, uint8_t dpl)
     idt[n].ptrLow = (uint16_t)handler;
     idt[n].ptrMid = (uint16_t)(handler >> 16);
     idt[n].ptrHigh = (uint32_t)(handler >> 32);
-    idt[n].selector = KERNEL_BASE_SELECTOR;
+    idt[n].selector = GDTKernelBaseSelector;
     idt[n].ist = 0;
     idt[n].type = type;
     idt[n].s = 0;

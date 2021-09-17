@@ -2,8 +2,8 @@
   global exc%1
   exc%1:
     cli
-    push dword 0
-    push dword %1
+    push qword 0
+    push qword %1
     jmp int_common_stub
 %endmacro
 
@@ -22,7 +22,7 @@
   global exc%1
   exc%1:
     cli
-    push dword %1
+    push qword %1
     jmp int_common_stub
 %endmacro
 
@@ -30,8 +30,8 @@
   global irq%1
   irq%1:
     cli
-    push dword 0
-    push dword (32 + %1)
+    push qword 0
+    push qword (32 + %1)
     jmp irq_common_stub
 %endmacro
 
@@ -39,8 +39,8 @@
   global int%1
   int%1:
     cli
-    push dword 0
-    push dword %1
+    push qword 0
+    push qword %1
     jmp int_common_stub
 %endmacro
 
@@ -82,6 +82,7 @@
 
 int_common_stub:
   save_registers
+  cld
   extern int_handler
   call int_handler
   restore_registers
@@ -91,6 +92,7 @@ int_common_stub:
 
 irq_common_stub:
   save_registers
+  cld
   extern irq_handler
   call irq_handler
   restore_registers

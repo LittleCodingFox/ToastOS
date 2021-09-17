@@ -21,7 +21,7 @@ namespace Elf
 
     #define ELF_SECTION_FLAG_ALLOC 0x2
 
-    typedef struct __attribute__((packed)) ElfHeader
+    struct __attribute__((packed)) ElfHeader
     {
         uint8_t identity[16];
         uint16_t type;
@@ -39,7 +39,7 @@ namespace Elf
         uint16_t strtabIndex;
     };
 
-    typedef struct __attribute__((packed)) ElfProgramHeader
+    struct __attribute__((packed)) ElfProgramHeader
     {
         uint32_t type;
         uint32_t flags;
@@ -51,7 +51,7 @@ namespace Elf
         uint64_t alignment;
     };
 
-    typedef struct __attribute__((packed)) ElfSectionHeader
+    struct __attribute__((packed)) ElfSectionHeader
     {
         uint32_t name;
         uint32_t type;

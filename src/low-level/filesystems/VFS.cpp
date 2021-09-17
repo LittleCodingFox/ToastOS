@@ -129,10 +129,10 @@ namespace FileSystem
                 {
                     free(innerPath);
                 }
-
-                return INVALID_FILE_HANDLE;                
             }
         }
+
+        return INVALID_FILE_HANDLE;
     }
 
     void VFS::CloseFile(FILE_HANDLE handle)

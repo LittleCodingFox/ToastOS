@@ -230,12 +230,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
     stivale2_module *symbols = Stivale2GetModule(modules, "symbols.map");
     stivale2_module *font = Stivale2GetModule(modules, "font.psf");
 
-    GDTDescriptor gdtDescriptor;
-
-    gdtDescriptor.size = sizeof(GDT) - 1;
-    gdtDescriptor.offset = (uint64_t)&DefaultGDT;
-
-    LoadGDT(&gdtDescriptor);
+    LoadGDT();
 
     InitializeInterrupts();
 
@@ -287,8 +282,6 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     DEBUG_OUT("Memory Stats: Free: %lluMB; Used: %lluMB; Reserved: %lluMB", globalAllocator.GetFreeRAM() / MBSize,
         globalAllocator.GetUsedRAM() / MBSize, globalAllocator.GetReservedRAM() / MBSize);
-
-    InitializeTSS();
 
     InitializeSyscalls();
 

@@ -38,6 +38,11 @@ void Timer::Initialize()
 
 void Timer::RunHandlers()
 {
+    if(handlers == NULL)
+    {
+        return;
+    }
+    
     for(uint32_t i = 0; i < handlers->length(); i++)
     {
         void (*handler)() = (void (*)())(*handlers)[i];
@@ -48,11 +53,21 @@ void Timer::RunHandlers()
 
 void Timer::RegisterHandler(void (*callback)())
 {
+    if(handlers == NULL)
+    {
+        return;
+    }
+
     handlers->add((void *)callback);
 }
 
 void Timer::UnregisterHandler(void (*callback)())
 {
+    if(handlers == NULL)
+    {
+        return;
+    }
+    
     handlers->remove((void *)callback);
 }
 
