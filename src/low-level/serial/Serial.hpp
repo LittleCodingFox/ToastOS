@@ -2,6 +2,7 @@
 #define SERIAL_H
 
 #include <stdint.h>
+#include "lock.hpp"
 
 enum SerialPorts
 {
@@ -18,25 +19,24 @@ enum SerialSpeeds
 class Serial
 {
 private:
+    Threading::AtomicLock lock;
 
+public:
     uint16_t port;
     uint16_t speed;
     bool initialized = false;
 
     void Initialize();
 
-public:
-
-    Serial(uint16_t port, uint16_t speed);
-
     void Print(const char *string);
     void PrintLine(const char *string);
     void Write(char c);
-
 };
 
 extern Serial SerialCOM1;
 
 extern "C" void SerialPortOutStreamCOM1(char character, void *arg);
+
+void InitializeSerial();
 
 #endif

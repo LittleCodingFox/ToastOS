@@ -250,6 +250,8 @@ void interruptIntHandler(InterruptStack stack)
 
 void interruptIRQHandler(InterruptStack stack)
 {
+    DEBUG_OUT("Got interrupt %llu", stack.id);
+    
     InterruptHandler handler = interrupts.GetHandler(stack.id);
 
     if (handler != NULL)

@@ -3,7 +3,8 @@
 #include <stdint.h>
 
 #if __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 extern int64_t syscall(uint64_t id, ...);

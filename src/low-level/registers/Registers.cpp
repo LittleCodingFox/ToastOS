@@ -1,10 +1,51 @@
 #include "Registers.hpp"
 
+RegisterState Registers::ReadRegisters()
+{
+  RegisterState state;
+
+  uint64_t outValue = 0;
+
+  #define READREGISTER(name)\
+    asm("mov %%" #name ", %0" : "=r"(outValue) : /* no input */);\
+    state.name = outValue;
+
+  READREGISTER(rsp);
+  READREGISTER(r15);
+  READREGISTER(r14);
+  READREGISTER(r13);
+  READREGISTER(r12);
+  READREGISTER(r11);
+  READREGISTER(r10);
+  READREGISTER(r9);
+  READREGISTER(r8);
+  READREGISTER(rbp);
+  READREGISTER(rdi);
+  READREGISTER(rsi);
+  READREGISTER(rdx);
+  READREGISTER(rcx);
+  READREGISTER(rbx);
+  READREGISTER(rax);
+
+  return state;
+}
+
 uint64_t Registers::ReadCR0()
 {
   uint64_t outValue = 0;
 
   asm ("mov %%cr0, %0" : "=r"(outValue) : /* no input */);
+
+  return outValue;
+}
+
+uint64_t Registers::ReadRFlags()
+{
+  uint64_t outValue = 0;
+
+  asm volatile ("pushf\n\t"
+                "pop %0"
+                : "=g"(outValue));
 
   return outValue;
 }

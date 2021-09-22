@@ -7,7 +7,7 @@
 
 FramebufferRenderer* globalRenderer;
 
-void RefreshFramebuffer()
+void RefreshFramebuffer(InterruptStack *stack)
 {
     globalRenderer->swapBuffers();
 }
@@ -69,16 +69,6 @@ void FramebufferRenderer::clear(uint32_t colour)
     for(uint32_t i = 0; i < framebufferPixelCount; i++)
     {
         doubleBuffer[i] = colour;
-    }
-
-    for(uint32_t i = 0; i < framebufferPixelCount; i++)
-    {
-        if(doubleBuffer[i] != colour)
-        {
-            DEBUG_OUT("INVALID PIXEL AT DOUBLEBUFFER AT %i", i);
-
-            break;
-        }
     }
 }
 

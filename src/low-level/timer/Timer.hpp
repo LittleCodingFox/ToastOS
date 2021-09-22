@@ -10,9 +10,9 @@ private:
 public:
     void Initialize();
     uint32_t GetTicks();
-    void RegisterHandler(void (*callback)());
-    void UnregisterHandler(void (*callback)());
-    void RunHandlers();
+    void RegisterHandler(void (*callback)(InterruptStack *));
+    void UnregisterHandler(void (*callback)(InterruptStack *));
+    void RunHandlers(InterruptStack *stack);
 };
 
 extern Timer timer;

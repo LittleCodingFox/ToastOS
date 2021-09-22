@@ -1,7 +1,7 @@
 #include "Serial.hpp"
 #include <ports/Ports.hpp>
 
-Serial SerialCOM1(SerialPorts::COM1, SerialSpeeds::Speed115200);
+Serial SerialCOM1;
 
 #define SERIAL_PORT_DATA_PORT(base)             (base)
 #define SERIAL_PORT_FIFO_COMMAND_PORT(base)     (base + 2)
@@ -11,15 +11,18 @@ Serial SerialCOM1(SerialPorts::COM1, SerialSpeeds::Speed115200);
 
 #define SERIAL_PORT_LINE_ENABLE_DLAB            0x80
 
-bool serialPortIsTransmitFIFOEmpty(uint16_t port)
+void InitializeSerial()
 {
-    return (inport8(SERIAL_PORT_LINE_STATUS_PORT(port)) & 0x20);
+    SerialCOM1.port = SerialPorts::COM1;
+    SerialCOM1.speed = SerialSpeeds::Speed115200;
+    SerialCOM1.initialized = false;
+
+    SerialCOM1.Initialize();
 }
 
-Serial::Serial(uint16_t port, uint16_t speed)
+bool SerialPortIsTransmitFIFOEmpty(uint16_t port)
 {
-    this->port = port;
-    this->speed = speed;
+    return (inport8(SERIAL_PORT_LINE_STATUS_PORT(port)) & 0x20);
 }
 
 void Serial::Initialize()
@@ -42,17 +45,17 @@ void Serial::Initialize()
 
 void Serial::Write(char c)
 {
+    Threading::ScopedLock lock(this->lock);
+
     Initialize();
 
-    while(serialPortIsTransmitFIFOEmpty(port) == false);
+    while(SerialPortIsTransmitFIFOEmpty(port) == false);
 
     outport8(port, c);
 }
 
 void Serial::Print(const char *string)
 {
-    Initialize();
-
     while(*string)
     {
         Write(*string);

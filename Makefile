@@ -1,10 +1,12 @@
-CC				= clang++
+CC				= clang
+CPP				= clang++
 LD				= ld
 AR				= x86_64-elf-ar
 STRIP			= x86_64-elf-strip
 READELF			= x86_64-elf-readelf
 OVMFDIR			= OVMFbin
 ASMC			= nasm
+ASC				= x86_64-elf-as
 
 KERNEL_NAME		= kernel
 
@@ -30,9 +32,11 @@ EXTCSRC			= $(call rwildcard, $(SRCDIR)/../ext-libs/printf,*.c)
 EXTCSRC			+= $(call rwildcard, $(SRCDIR)/../ext-libs/liballoc,*.c)
 LIBCSRC			= $(call rwildcard,$(LIBCSRCDIR),*.c)
 ASMSRC			= $(call rwildcard,$(SRCDIR),*.asm)
+ASSRC			= $(call rwildcard,$(SRCDIR),*.s)
 LIBCASMSRC		= $(call rwildcard,$(LIBCSRCDIR),*.asm)
 OBJECTS			= $(SRC:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 ASMOBJECTS		= $(ASMSRC:$(SRCDIR)/%.asm=$(OBJDIR)/%_asm.o)
+ASOBJECTS		= $(ASSRC:$(SRCDIR)/%.s=$(OBJDIR)/%_asm.o)
 COBJECTS		= $(CSRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 EXTOBJECTS		= $(EXTSRC:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 EXTCOBJECTS		= $(EXTCSRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
@@ -70,15 +74,19 @@ $(EXTCOBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
 
 $(EXTOBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
 	mkdir -p $(shell dirname $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CPP) $(CFLAGS) -c $< -o $@
 
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
 	mkdir -p $(shell dirname $@)
-	$(CC) $(CFLAGS) $(CFLAGS_INTERNAL) -c $< -o $@
+	$(CPP) $(CFLAGS) $(CFLAGS_INTERNAL) -c $< -o $@
 
 $(ASMOBJECTS): $(OBJDIR)/%_asm.o : $(SRCDIR)/%.asm
 	mkdir -p $(shell dirname $@)
 	$(ASMC) $(ASMFLAGS) $< -f elf64 -o $@
+
+$(ASOBJECTS): $(OBJDIR)/%_asm.o : $(SRCDIR)/%.s
+	mkdir -p $(shell dirname $@)
+	$(ASC) $< -o $@
 
 $(LIBCCOBJECTS): CFLAGS += -DIS_LIBC
 $(LIBCCOBJECTS): $(LIBCOBJDIR)/%.o : $(LIBCSRCDIR)/%.c
@@ -94,8 +102,10 @@ $(LIBCASMOBJECTS): $(LIBCOBJDIR)/%_asm.o : $(LIBCSRCDIR)/%.asm
 	mkdir -p $(shell dirname $@)
 	$(ASMC) $(ASMFLAGS) $< -f elf64 -o $@
 
-kernel: makedirs $(OBJECTS) $(COBJECTS) $(LIBKCOBJECTS) $(EXTOBJECTS) $(EXTCOBJECTS) $(ASMOBJECTS)
-	$(LD) $(LDFLAGS) $(OBJECTS) $(COBJECTS) $(LIBKCOBJECTS) $(EXTOBJECTS) $(EXTCOBJECTS) $(ASMOBJECTS) -o $(BINDIR)/kernel
+kernel: makedirs $(OBJECTS) $(COBJECTS) $(LIBKCOBJECTS) $(EXTOBJECTS) $(EXTCOBJECTS) $(ASMOBJECTS) $(ASOBJECTS)
+	@echo $(CRTBEGINPATH)
+	@echo $(CRTENDPATH)
+	$(LD) $(LDFLAGS) $(OBJECTS) $(COBJECTS) $(LIBKCOBJECTS) $(EXTOBJECTS) $(EXTCOBJECTS) $(ASMOBJECTS) $(ASOBJECTS) -o $(BINDIR)/kernel
 	awk '$$1 ~ /0x[0-9a-f]{16}/ {print substr($$1, 3), $$2}' linker.map > symbols.map
 	rm linker.map
 
@@ -113,8 +123,8 @@ userland: libc
 
 run-linux: kernel userland iso-linux run-qemu-linux
 
-debug-linux: CFLAGS += -DKERNEL_DEBUG=1 #-g -O0
-#debug-linux: QEMU_FLAGS += -s -S
+debug-linux: CFLAGS += -DKERNEL_DEBUG=1 #-O0
+debug-linux: QEMU_FLAGS += -s -S
 debug-linux: run-linux
 
 run-qemu-linux:

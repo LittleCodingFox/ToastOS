@@ -4,5 +4,8 @@ void _start()
 {
     syscall(0);
 
-    for(;;) {}
+    for(;;)
+    {
+        syscall(0);
+    }
 }

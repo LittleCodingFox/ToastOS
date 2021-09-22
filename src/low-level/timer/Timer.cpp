@@ -20,7 +20,7 @@ void timerCallback(InterruptStack *stack)
 {
     currentTick++;
 
-    timer.RunHandlers();
+    timer.RunHandlers(stack);
 }
 
 void Timer::Initialize()
@@ -36,7 +36,7 @@ void Timer::Initialize()
     outport8(PIT_0, (divisor >> 8) & 0xFF);
 }
 
-void Timer::RunHandlers()
+void Timer::RunHandlers(InterruptStack *stack)
 {
     if(handlers == NULL)
     {
@@ -45,13 +45,13 @@ void Timer::RunHandlers()
     
     for(uint32_t i = 0; i < handlers->length(); i++)
     {
-        void (*handler)() = (void (*)())(*handlers)[i];
+        void (*handler)(InterruptStack *) = (void (*)(InterruptStack *))(*handlers)[i];
 
-        handler();
+        handler(stack);
     }
 }
 
-void Timer::RegisterHandler(void (*callback)())
+void Timer::RegisterHandler(void (*callback)(InterruptStack *))
 {
     if(handlers == NULL)
     {
@@ -61,7 +61,7 @@ void Timer::RegisterHandler(void (*callback)())
     handlers->add((void *)callback);
 }
 
-void Timer::UnregisterHandler(void (*callback)())
+void Timer::UnregisterHandler(void (*callback)(InterruptStack *))
 {
     if(handlers == NULL)
     {

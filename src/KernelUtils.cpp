@@ -13,7 +13,8 @@
 #include "tss/tss.hpp"
 #include "syscall/syscall.hpp"
 #include "../klibc/sys/syscall.h"
-#include "process/process.hpp"
+#include "process/Process.hpp"
+#include "schedulers/RoundRobinScheduler.hpp"
 
 PageTableManager pageTableManager;
 
@@ -183,7 +184,7 @@ void CursorHandler (struct vtconsole* vtc, vtcursor_t* cur)
 {
 }
 
-void RefreshFramebuffer();
+void RefreshFramebuffer(InterruptStack *stack);
 
 void *Stivale2GetTag(stivale2_struct *stivale2Struct, uint64_t ID)
 {
@@ -222,6 +223,8 @@ stivale2_module *Stivale2GetModule(stivale2_struct_tag_modules *modules, const c
 
 void InitializeKernel(stivale2_struct *stivale2Struct)
 {
+    InitializeSerial();
+
     stivale2_struct_tag_framebuffer *framebuffer = (stivale2_struct_tag_framebuffer *)Stivale2GetTag(stivale2Struct, STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID);
     stivale2_struct_tag_memmap *memmap = (stivale2_struct_tag_memmap *)Stivale2GetTag(stivale2Struct, STIVALE2_STRUCT_TAG_MEMMAP_ID);
     stivale2_struct_tag_modules *modules = (stivale2_struct_tag_modules *)Stivale2GetTag(stivale2Struct, STIVALE2_STRUCT_TAG_MODULES_ID);
@@ -280,12 +283,14 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     uint64_t MBSize = 1024 * 1024;
 
-    DEBUG_OUT("Memory Stats: Free: %lluMB; Used: %lluMB; Reserved: %lluMB", globalAllocator.GetFreeRAM() / MBSize,
-        globalAllocator.GetUsedRAM() / MBSize, globalAllocator.GetReservedRAM() / MBSize);
-
     InitializeSyscalls();
 
+    globalProcessManager = new ProcessManager(new RoundRobinScheduler());
+
     DEBUG_OUT("%s", "Finished initializing the kernel");
+
+    DEBUG_OUT("Memory Stats: Free: %lluMB; Used: %lluMB; Reserved: %lluMB", globalAllocator.GetFreeRAM() / MBSize,
+        globalAllocator.GetUsedRAM() / MBSize, globalAllocator.GetReservedRAM() / MBSize);
 }
 
 void _putchar(char character)

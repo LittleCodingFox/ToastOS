@@ -87,7 +87,6 @@ int_common_stub:
   call int_handler
   restore_registers
   add rsp, 16
-  sti
   iretq
 
 irq_common_stub:
@@ -97,11 +96,9 @@ irq_common_stub:
   call irq_handler
   restore_registers
   add rsp, 16
-  sti
   iretq
 
 ; define exceptions
-; should be keep in sync with src/arch/x86_64/core/isr.h
 def_exception_handler 0
 def_exception_handler 1
 def_exception_handler 2
@@ -136,7 +133,6 @@ def_exception_handler 30
 def_exception_handler 31
 
 ; define hardware interrupts
-; should be keep in sync with src/arch/x86_64/core/isr.h
 def_irq_handler 0
 def_irq_handler 1
 def_irq_handler 2
