@@ -8,6 +8,7 @@
 #include "ports/Ports.hpp"
 #include "registers/Registers.hpp"
 #include "timer/Timer.hpp"
+#include "syscall/syscall.hpp"
 
 ProcessManager *globalProcessManager;
 uint64_t processIDCounter = 0;
@@ -48,24 +49,6 @@ void ProcessManager::SwitchProcess(InterruptStack *stack)
 
     DEBUG_OUT("Switching processes %p to %p", current, next);
 
-    if(current->state == PROCESS_STATE_NEEDS_INIT)
-    {
-        current->state = PROCESS_STATE_RUNNING;
-
-        lock.Unlock();
-
-        DEBUG_OUT("Initializing task: rsp: %p; rip: %p; cr3: %p", current->rsp, current->rip, current->cr3);
-
-        //Called from timer, so must finish up PIC
-        outport8(PIC1, PIC_EOI);
-
-        SwitchTasks(current);
-
-        DEBUG_OUT("AFTER %i", 0);
-
-        return;
-    }
-
     if(current == next)
     {
         lock.Unlock();
@@ -76,39 +59,42 @@ void ProcessManager::SwitchProcess(InterruptStack *stack)
         return;
     }
 
-    current->r10 = stack->r10;
-    current->r11 = stack->r11;
-    current->r12 = stack->r12;
-    current->r13 = stack->r13;
-    current->r14 = stack->r14;
-    current->r15 = stack->r15;
-    current->r8 = stack->r8;
-    current->r9 = stack->r9;
-    current->rax = stack->rax;
-    current->rbp = stack->rbp;
-    current->rbx = stack->rbx;
-    current->rcx = stack->rcx;
-    current->rdi = stack->rdi;
-    current->rdx = stack->rdx;
-    current->rsi = stack->rsi;
-    current->rsp = stack->stackPointer;
-    current->rip = stack->instructionPointer;
-    current->rflags = stack->cpuFlags;
+    if(current->state == PROCESS_STATE_RUNNING)
+    {
+        current->r10 = stack->r10;
+        current->r11 = stack->r11;
+        current->r12 = stack->r12;
+        current->r13 = stack->r13;
+        current->r14 = stack->r14;
+        current->r15 = stack->r15;
+        current->r8 = stack->r8;
+        current->r9 = stack->r9;
+        current->rax = stack->rax;
+        current->rbp = stack->rbp;
+        current->rbx = stack->rbx;
+        current->rcx = stack->rcx;
+        current->rdi = stack->rdi;
+        current->rdx = stack->rdx;
+        current->rsi = stack->rsi;
+        current->rsp = stack->stackPointer;
+        current->rip = stack->instructionPointer;
+        current->rflags = stack->cpuFlags;
+
+        DEBUG_OUT("Current RIP: %p", current->rip);
+    }
 
     if(next->state == PROCESS_STATE_NEEDS_INIT)
     {
         next->state = PROCESS_STATE_RUNNING;
 
-        lock.Unlock();
-
-        DEBUG_OUT("Initializing task: rsp: %p; rip: %p; cr3: %p", next->rsp, next->rip, next->cr3);
+        DEBUG_OUT("Initializing task %p: rsp: %p; rip: %p; cr3: %p", next, next->rsp, next->rip, next->cr3);
 
         //Called from timer, so must finish up PIC
         outport8(PIC1, PIC_EOI);
 
-        SwitchTasks(next);
+        lock.Unlock();
 
-        DEBUG_OUT("AFTER %i", 1);
+        SwitchTasks(next);
 
         return;
     }
@@ -125,12 +111,18 @@ void ProcessManager::SwitchProcess(InterruptStack *stack)
 
 ProcessInfo *ProcessManager::CurrentProcess()
 {
-    return scheduler->CurrentProcess()->process;
+    lock.Lock();
+
+    ProcessInfo *current = scheduler->CurrentProcess()->process;
+
+    lock.Unlock();
+
+    return current;
 }
 
 ProcessInfo *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const char *name)
 {
-    Threading::ScopedLock lock(this->lock);
+    lock.Lock();
 
     ProcessInfo *newProcess = (ProcessInfo *)globalAllocator.RequestPages(sizeof(ProcessInfo) / 0x1000 + 1);
 
@@ -193,12 +185,14 @@ ProcessInfo *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const cha
 
     scheduler->AddProcess(newProcess);
 
+    lock.Unlock();
+
     return newProcess;
 }
 
 ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, const char **argv)
 {
-    Threading::ScopedLock lock(this->lock);
+    lock.Lock();
 
     ProcessInfo *newProcess = (ProcessInfo *)globalAllocator.RequestPages(sizeof(ProcessInfo) / 0x1000 + 1);
 
@@ -312,15 +306,19 @@ ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, cons
 
     scheduler->AddProcess(newProcess);
 
+    lock.Unlock();
+
     return newProcess;
 }
 
 void ProcessManager::ExecuteProcess(ProcessInfo *process)
 {
-    Threading::ScopedLock lock(this->lock);
+    lock.Lock();
 
     if(process == NULL || process->elf == NULL)
     {
+        lock.Unlock();
+
         DEBUG_OUT("Failed to execute process %p: Invalid pointer or missing elf image", process);
 
         return;
@@ -334,13 +332,13 @@ void ProcessManager::ExecuteProcess(ProcessInfo *process)
 
     //Registers::WriteCR3(cr3);
 
+    lock.Unlock();
+
     SwitchToUsermode((void *)ip, (void *)stackPointer);
 }
 
 void ProcessManager::SwitchToUsermode(void *instructionPointer, void *stackPointer)
 {
-    Threading::ScopedLock lock(this->lock);
-
     DEBUG_OUT("Switching to usermode at instruction %p and stack %p", instructionPointer, stackPointer);
 
     ::SwitchToUsermode(instructionPointer, stackPointer);

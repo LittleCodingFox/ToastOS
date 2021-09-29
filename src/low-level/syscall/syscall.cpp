@@ -2,17 +2,36 @@
 #include "../gdt/gdt.hpp"
 #include "../debug.hpp"
 #include "syscall.hpp"
+#include "../lock.hpp"
 
 extern "C" void syscallHandler();
 
 typedef void (*SyscallPointer)(void);
 
+Threading::AtomicLock syscallLock;
+
+bool PerformingSyscall()
+{
+    return syscallLock.IsLocked();
+}
+
+void SyscallLock()
+{
+    syscallLock.Lock();
+}
+
+void SyscallUnlock()
+{
+    syscallLock.Unlock();
+}
+
 int64_t KNotImplemented();
+size_t SyscallWrite(int fd, const void *buffer, size_t count);
 
 SyscallPointer syscallHandlers[] =
 {
     (SyscallPointer)KNotImplemented,
-    (SyscallPointer)KNotImplemented,
+    (SyscallPointer)SyscallWrite,
 };
 
 int64_t KNotImplemented()

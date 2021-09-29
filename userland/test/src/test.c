@@ -1,11 +1,10 @@
-#include "sys/syscall.h"
+#include <stdio.h>
+#include "syscall.h"
 
 void _start()
 {
-    syscall(0);
-
     for(;;)
     {
-        syscall(0);
+        write(stdout, "test\n", 5);
     }
 }
