@@ -9,6 +9,10 @@ extern "C"
 {
 #endif
 
+#if !IS_LIBK
+#include "printf/printf.h"
+#endif
+
 extern int stdin;
 extern int stdout;
 extern int stderr;

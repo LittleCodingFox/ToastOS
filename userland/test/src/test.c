@@ -3,8 +3,12 @@
 
 void _start()
 {
+    char buffer[1024];
+
+    sprintf(buffer, "buffer test! %i\n", 0);
+
     for(;;)
     {
-        write(stdout, "test\n", 5);
+        printf(buffer);
     }
 }

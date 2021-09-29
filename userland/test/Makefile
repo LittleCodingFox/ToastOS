@@ -11,7 +11,7 @@ CSRC			= $(call rwildcard,$(SRCDIR),*.c)
 
 COBJECTS		= $(CSRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
-INCLUDEDIRS		= -I../../klibc
+INCLUDEDIRS		= -I../../klibc -I../../ext-libs
 
 CFLAGS			= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -Wall -O0 -fno-omit-frame-pointer \
 	-fno-rtti -fno-exceptions -fno-builtin -fno-pie -fno-stack-protector -fno-rtti -fno-exceptions -mno-3dnow \
