@@ -6,9 +6,22 @@
 bool isLeftShiftPressed;
 bool isRightShiftPressed;
 
-extern vtconsole_t *console;
+bool gotKeyboardInput = false;
+char keyboardInput;
 
-void HandleKeyboardKeyPress(uint8_t scancode)
+extern "C" bool GotKeyboardInput()
+{
+    return gotKeyboardInput;
+}
+
+extern "C" char KeyboardInput()
+{
+    gotKeyboardInput = false;
+
+    return keyboardInput;
+}
+
+extern "C" void HandleKeyboardKeyPress(uint8_t scancode)
 {
     switch (scancode)
     {
@@ -29,17 +42,20 @@ void HandleKeyboardKeyPress(uint8_t scancode)
             return;
 
         case Enter:
-            vtconsole_putchar(console, '\n');
+            gotKeyboardInput = true;
+            keyboardInput = '\n';
 
             return;
 
         case Spacebar:
-            vtconsole_putchar(console, ' ');
+            gotKeyboardInput = true;
+            keyboardInput = ' ';
 
             return;
 
         case BackSpace:
-            vtconsole_putchar(console, '\b');
+            gotKeyboardInput = true;
+            keyboardInput = '\b';
 
             return;
     }
@@ -48,6 +64,7 @@ void HandleKeyboardKeyPress(uint8_t scancode)
 
     if (ascii != 0)
     {
-        vtconsole_putchar(console, ascii);
+        gotKeyboardInput = true;
+        keyboardInput = ascii;
     }
 }

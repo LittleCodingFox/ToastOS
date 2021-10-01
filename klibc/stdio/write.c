@@ -12,8 +12,17 @@ size_t write(int fd, const void *buffer, size_t count)
 #if IS_LIBC
     return syscall(SYSCALL_WRITE, fd, buffer, count);
 #else
-    printf("%.*s", count, buffer);
+    if(fd == 1)
+    {
+        printf("%.*s", count, buffer);
 
-    return count;
+        return count;
+    }
+    else if(fd > 2)
+    {
+        //TODO
+    }
+
+    return 0;
 #endif
 }

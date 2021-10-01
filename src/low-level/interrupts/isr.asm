@@ -131,6 +131,7 @@ def_exception_handler 28
 def_exception_handler 29
 def_exception_handler 30
 def_exception_handler 31
+def_exception_handler 48 ; 0x30
 
 ; define hardware interrupts
 def_irq_handler 0
@@ -146,3 +147,9 @@ def_irq_handler 9
 def_irq_handler 10
 def_irq_handler 11
 def_irq_handler 12
+
+global ProcessYield
+
+ProcessYield:
+  int 0x30
+  ret

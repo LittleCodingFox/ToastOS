@@ -1,14 +1,15 @@
 #include <stdio.h>
-#include "syscall.h"
 
 void _start()
 {
-    char buffer[1024];
+    char buffer[1];
 
-    sprintf(buffer, "buffer test! %i\n", 0);
+    printf("type keys to print them!\n");
 
     for(;;)
     {
-        printf(buffer);
+        read(stdin, buffer, 1);
+
+        printf("you typed the character: %c\n", buffer[0]);
     }
 }

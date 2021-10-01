@@ -18,6 +18,7 @@ extern int stdout;
 extern int stderr;
 
 size_t write(int fd, const void *buffer, size_t count);
+size_t read(int fd, const void *buffer, size_t count);
 
 #ifdef __cplusplus
 }

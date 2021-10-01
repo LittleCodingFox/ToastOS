@@ -97,7 +97,7 @@ public:
 
     ProcessInfo *CurrentProcess();
 
-    void SwitchProcess(InterruptStack *stack);
+    void SwitchProcess(InterruptStack *stack, bool fromTimer);
 };
 
 #define PushToStack(stack, value)\
@@ -105,3 +105,5 @@ public:
     *((uint64_t *)stack) = (uint64_t)(value);
 
 extern ProcessManager *globalProcessManager;
+
+extern "C" void ProcessYield();

@@ -9,6 +9,7 @@
 #include "registers/Registers.hpp"
 #include "timer/Timer.hpp"
 #include "syscall/syscall.hpp"
+#include "stacktrace/stacktrace.hpp"
 
 ProcessManager *globalProcessManager;
 uint64_t processIDCounter = 0;
@@ -20,7 +21,7 @@ void SwitchProcess(InterruptStack *stack)
 {
     //DEBUG_OUT("SWITCH PROCESS %p", stack);
 
-    globalProcessManager->SwitchProcess(stack);
+    globalProcessManager->SwitchProcess(stack, true);
 }
 
 ProcessManager::ProcessManager(IScheduler *scheduler) : scheduler(scheduler)
@@ -28,7 +29,7 @@ ProcessManager::ProcessManager(IScheduler *scheduler) : scheduler(scheduler)
     timer.RegisterHandler(::SwitchProcess);
 }
 
-void ProcessManager::SwitchProcess(InterruptStack *stack)
+void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
 {
     interrupts.DisableInterrupts(); //Will be enabled in the switch task call
 
@@ -41,8 +42,11 @@ void ProcessManager::SwitchProcess(InterruptStack *stack)
     {
         lock.Unlock();
 
-        //Called from timer, so must finish up PIC
-        outport8(PIC1, PIC_EOI);
+        if(fromTimer)
+        {
+            //Called from timer, so must finish up PIC
+            outport8(PIC1, PIC_EOI);
+        }
 
         return;
     }
@@ -53,8 +57,11 @@ void ProcessManager::SwitchProcess(InterruptStack *stack)
     {
         lock.Unlock();
 
-        //Called from timer, so must finish up PIC
-        outport8(PIC1, PIC_EOI);
+        if(fromTimer)
+        {
+            //Called from timer, so must finish up PIC
+            outport8(PIC1, PIC_EOI);
+        }
 
         return;
     }
@@ -87,8 +94,11 @@ void ProcessManager::SwitchProcess(InterruptStack *stack)
 
         //DEBUG_OUT("Initializing task %p: rsp: %p; rip: %p; cr3: %p", next, next->rsp, next->rip, next->cr3);
 
-        //Called from timer, so must finish up PIC
-        outport8(PIC1, PIC_EOI);
+        if(fromTimer)
+        {
+            //Called from timer, so must finish up PIC
+            outport8(PIC1, PIC_EOI);
+        }
 
         lock.Unlock();
 
@@ -105,8 +115,11 @@ void ProcessManager::SwitchProcess(InterruptStack *stack)
         next->rsp, next->rip, next->cr3, next->cs, next->ss);
     */
 
-    //Called from timer, so must finish up PIC
-    outport8(PIC1, PIC_EOI);
+    if(fromTimer)
+    {
+        //Called from timer, so must finish up PIC
+        outport8(PIC1, PIC_EOI);
+    }
 
     SwitchTasks(next);
 }

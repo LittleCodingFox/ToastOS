@@ -79,6 +79,7 @@ extern "C"
     extern void exc29();
     extern void exc30();
     extern void exc31();
+    extern void exc48();
 
     extern void irq0();
     extern void irq1();

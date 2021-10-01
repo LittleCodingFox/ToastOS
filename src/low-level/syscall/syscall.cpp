@@ -27,11 +27,13 @@ void SyscallUnlock()
 
 int64_t KNotImplemented();
 size_t SyscallWrite(int fd, const void *buffer, size_t count);
+size_t SyscallRead(int fd, void *buffer, size_t count);
 
 SyscallPointer syscallHandlers[] =
 {
     (SyscallPointer)KNotImplemented,
     (SyscallPointer)SyscallWrite,
+    (SyscallPointer)SyscallRead,
 };
 
 int64_t KNotImplemented()

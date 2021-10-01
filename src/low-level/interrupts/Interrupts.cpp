@@ -15,6 +15,7 @@ void BreakpointHandler(InterruptStack *stack);
 void PageFaultHandler(InterruptStack *stack);
 void DoubleFaultHandler(InterruptStack *stack);
 void KeyboardHandler(InterruptStack *stack);
+void SwitchProcess(InterruptStack *stack);
 
 static const char *exception_messages[] =
 {
@@ -115,6 +116,9 @@ void Interrupts::Init()
     idt.RegisterInterrupt(30, (uint64_t)exc30);
     idt.RegisterInterrupt(31, (uint64_t)exc31);
 
+    // Custom interrupts
+    idt.RegisterInterrupt(0x30, (uint64_t)exc48);
+
     // Hardware interrupts
     idt.RegisterInterrupt(IRQ0, (uint64_t)irq0);
     idt.RegisterInterrupt(IRQ1, (uint64_t)irq1);
@@ -135,6 +139,7 @@ void Interrupts::Init()
     RegisterHandler(EXCEPTION_PF, PageFaultHandler);
     RegisterHandler(EXCEPTION_DF, DoubleFaultHandler);
     RegisterHandler(IRQ1, KeyboardHandler);
+    RegisterHandler(0x30, SwitchProcess);
 
     idt.Load();
 
@@ -250,8 +255,6 @@ void interruptIntHandler(InterruptStack stack)
 
 void interruptIRQHandler(InterruptStack stack)
 {
-    DEBUG_OUT("Got interrupt %llu", stack.id);
-    
     InterruptHandler handler = interrupts.GetHandler(stack.id);
 
     if (handler != NULL)
