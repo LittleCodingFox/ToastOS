@@ -1,12 +1,13 @@
-#include "../registers/Registers.hpp"
-#include "../gdt/gdt.hpp"
-#include "../debug.hpp"
 #include "syscall.hpp"
-#include "../lock.hpp"
+#include "process/Process.hpp"
+#include "registers/Registers.hpp"
+#include "gdt/gdt.hpp"
+#include "debug.hpp"
+#include "lock.hpp"
 
 extern "C" void syscallHandler();
 
-typedef void (*SyscallPointer)(void);
+typedef int64_t (*SyscallPointer)(InterruptStack *stack);
 
 Threading::AtomicLock syscallLock;
 
@@ -25,9 +26,9 @@ void SyscallUnlock()
     syscallLock.Unlock();
 }
 
-int64_t KNotImplemented();
-size_t SyscallWrite(int fd, const void *buffer, size_t count);
-size_t SyscallRead(int fd, void *buffer, size_t count);
+int64_t KNotImplemented(InterruptStack *stack);
+size_t SyscallWrite(InterruptStack *stack);
+size_t SyscallRead(InterruptStack *stack);
 
 SyscallPointer syscallHandlers[] =
 {
@@ -36,7 +37,33 @@ SyscallPointer syscallHandlers[] =
     (SyscallPointer)SyscallRead,
 };
 
-int64_t KNotImplemented()
+void SyscallHandler(InterruptStack *stack)
+{
+    if(stack->rdi <= sizeof(syscallHandlers) / sizeof(SyscallPointer) && syscallHandlers[stack->rdi] != NULL)
+    {
+        ProcessInfo *process = globalProcessManager->CurrentProcess();
+
+        bool needsPermissionChange = process->permissionLevel == PROCESS_PERMISSION_USER;
+
+        if(needsPermissionChange)
+        {
+            process->permissionLevel = PROCESS_PERMISSION_KERNEL;
+        }
+
+        auto handler = syscallHandlers[stack->rdi];
+
+        auto result = handler(stack);
+
+        stack->rax = result;
+
+        if(needsPermissionChange)
+        {
+            process->permissionLevel = PROCESS_PERMISSION_USER;
+        }
+    }
+}
+
+int64_t KNotImplemented(InterruptStack *stack)
 {
     DEBUG_OUT("Syscall: KNotImplemented", 0);
 
@@ -45,6 +72,7 @@ int64_t KNotImplemented()
 
 void InitializeSyscalls()
 {
+    /*
     Registers::WriteMSR(Registers::IA32_EFER, Registers::ReadMSR(Registers::IA32_EFER) | 1);
 
     uint64_t star = Registers::ReadMSR(Registers::IA32_STAR);
@@ -59,4 +87,5 @@ void InitializeSyscalls()
         Registers::ReadMSR(Registers::IA32_EFER),
         Registers::ReadMSR(Registers::IA32_STAR),
         Registers::ReadMSR(Registers::IA32_LSTAR));
+    */
 }

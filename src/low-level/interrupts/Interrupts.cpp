@@ -16,6 +16,7 @@ void PageFaultHandler(InterruptStack *stack);
 void DoubleFaultHandler(InterruptStack *stack);
 void KeyboardHandler(InterruptStack *stack);
 void SwitchProcess(InterruptStack *stack);
+void SyscallHandler(InterruptStack *stack);
 
 static const char *exception_messages[] =
 {
@@ -117,7 +118,8 @@ void Interrupts::Init()
     idt.RegisterInterrupt(31, (uint64_t)exc31);
 
     // Custom interrupts
-    idt.RegisterInterrupt(0x30, (uint64_t)exc48);
+    idt.RegisterInterrupt(0x30, (uint64_t)exc48, 0, 1);
+    idt.RegisterInterrupt(0x80, (uint64_t)exc128, 3, 2);
 
     // Hardware interrupts
     idt.RegisterInterrupt(IRQ0, (uint64_t)irq0);
@@ -140,6 +142,7 @@ void Interrupts::Init()
     RegisterHandler(EXCEPTION_DF, DoubleFaultHandler);
     RegisterHandler(IRQ1, KeyboardHandler);
     RegisterHandler(0x30, SwitchProcess);
+    RegisterHandler(0x80, SyscallHandler);
 
     idt.Load();
 

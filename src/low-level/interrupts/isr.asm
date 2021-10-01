@@ -1,7 +1,6 @@
 %macro def_exception_handler 1
   global exc%1
   exc%1:
-    cli
     push qword 0
     push qword %1
     jmp int_common_stub
@@ -21,7 +20,6 @@
 %macro def_exception_handler_err 1
   global exc%1
   exc%1:
-    cli
     push qword %1
     jmp int_common_stub
 %endmacro
@@ -29,7 +27,6 @@
 %macro def_irq_handler 1
   global irq%1
   irq%1:
-    cli
     push qword 0
     push qword (32 + %1)
     jmp irq_common_stub
@@ -38,7 +35,6 @@
 %macro def_int_handler 1
   global int%1
   int%1:
-    cli
     push qword 0
     push qword %1
     jmp int_common_stub
@@ -131,7 +127,8 @@ def_exception_handler 28
 def_exception_handler 29
 def_exception_handler 30
 def_exception_handler 31
-def_exception_handler 48 ; 0x30
+def_exception_handler 48  ; 0x30 (process yield)
+def_exception_handler 128 ; 0x80 (syscall)
 
 ; define hardware interrupts
 def_irq_handler 0

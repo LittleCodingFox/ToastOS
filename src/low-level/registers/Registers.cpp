@@ -30,6 +30,23 @@ RegisterState Registers::ReadRegisters()
   return state;
 }
 
+uint64_t Registers::ReadCS()
+{
+  uint64_t outValue = 0;
+
+  asm ("mov %%cs, %0" : "=r"(outValue) : /* no input */);
+
+  return outValue;
+}
+uint64_t Registers::ReadSS()
+{
+  uint64_t outValue = 0;
+
+  asm ("mov %%ss, %0" : "=r"(outValue) : /* no input */);
+
+  return outValue;
+}
+
 uint64_t Registers::ReadCR0()
 {
   uint64_t outValue = 0;

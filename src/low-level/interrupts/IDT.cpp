@@ -25,20 +25,20 @@ void IDT::Load()
     asm ("lidt %0" : : "m"(idtRegister));
 }
 
-void IDT::RegisterGate(uint16_t n, uint64_t handler, uint8_t type, uint8_t dpl)
+void IDT::RegisterGate(uint16_t n, uint64_t handler, uint8_t type, uint8_t dpl, uint8_t ist)
 {
     idt[n].ptrLow = (uint16_t)handler;
     idt[n].ptrMid = (uint16_t)(handler >> 16);
     idt[n].ptrHigh = (uint32_t)(handler >> 32);
     idt[n].selector = GDTKernelBaseSelector;
-    idt[n].ist = 0;
+    idt[n].ist = ist;
     idt[n].type = type;
     idt[n].s = 0;
     idt[n].dpl = dpl;
     idt[n].present = 1;
 }
 
-void IDT::RegisterInterrupt(uint16_t n, uint64_t handler)
+void IDT::RegisterInterrupt(uint16_t n, uint64_t handler, uint8_t dpl, uint8_t ist)
 {
-    RegisterGate(n, handler, IDT_INTERRUPT_GATE, 0);
+    RegisterGate(n, handler, IDT_INTERRUPT_GATE, dpl, ist);
 }

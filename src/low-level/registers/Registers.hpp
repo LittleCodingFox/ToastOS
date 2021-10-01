@@ -46,4 +46,6 @@ public:
     static void WriteMSR(uint64_t msr, uint64_t value);
     static uint64_t ReadRSP();
     static RegisterState ReadRegisters();
+    static uint64_t ReadCS();
+    static uint64_t ReadSS();
 };

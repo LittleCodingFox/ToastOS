@@ -34,8 +34,8 @@ private:
 public:
     void Init();
     void Load();
-    void RegisterGate(uint16_t n, uint64_t handler, uint8_t type, uint8_t dpl);
-    void RegisterInterrupt(uint16_t n, uint64_t handler);
+    void RegisterGate(uint16_t n, uint64_t handler, uint8_t type, uint8_t dpl, uint8_t ist);
+    void RegisterInterrupt(uint16_t n, uint64_t handler, uint8_t dpl = 0, uint8_t ist = 0);
 };
 
 extern IDT idt;

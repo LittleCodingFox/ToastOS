@@ -8,8 +8,7 @@ void _start()
 
     for(;;)
     {
-        read(stdin, buffer, 1);
-
-        printf("you typed the character: %c\n", buffer[0]);
+        size_t count = read(stdin, buffer, 1);
+        printf("you typed the character: %c (count: %llu)\n", buffer[0], count);
     }
 }

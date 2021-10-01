@@ -1,8 +1,14 @@
 #include "syscall.hpp"
+#include "interrupts/Interrupts.hpp"
 #include "printf/printf.h"
+#include "debug.hpp"
 
-size_t SyscallWrite(int fd, const void *buffer, size_t count)
+size_t SyscallWrite(InterruptStack *stack)
 {
+    uint64_t fd = stack->rsi;
+    const void *buffer = (const void *)stack->rdx;
+    size_t count = (size_t)stack->rcx;
+
     if(fd == 0) //stdin
     {
         //TODO

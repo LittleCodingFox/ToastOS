@@ -3,6 +3,7 @@
 #include <string.h>
 #include "Process.hpp"
 #include "debug.hpp"
+#include "gdt/gdt.hpp"
 #include "paging/PageFrameAllocator.hpp"
 #include "paging/PageTableManager.hpp"
 #include "ports/Ports.hpp"
@@ -19,7 +20,7 @@ extern "C" void SwitchTasks(ProcessControlBlock* next);
 
 void SwitchProcess(InterruptStack *stack)
 {
-    //DEBUG_OUT("SWITCH PROCESS %p", stack);
+    DEBUG_OUT("SWITCH PROCESS %p", stack);
 
     globalProcessManager->SwitchProcess(stack, true);
 }
@@ -86,6 +87,17 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
         current->rsp = stack->stackPointer;
         current->rip = stack->instructionPointer;
         current->rflags = stack->cpuFlags;
+
+        if(current->process->permissionLevel == PROCESS_PERMISSION_KERNEL)
+        {
+            current->cs = (GDTKernelBaseSelector + 0x00);
+            current->ss = (GDTKernelBaseSelector + 0x08);
+        }
+        else
+        {
+            current->cs = (GDTUserBaseSelector + 0x10) | 3;
+            current->ss = (GDTUserBaseSelector + 0x08) | 3;
+        }
     }
 
     if(next->state == PROCESS_STATE_NEEDS_INIT)
@@ -109,11 +121,9 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
 
     lock.Unlock();
 
-    /*
     DEBUG_OUT("Switching tasks:\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%x\n\tss: 0x%x\nnext:\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%x\n\tss: 0x%x",
         current->rsp, current->rip, current->cr3, current->cs, current->ss,
         next->rsp, next->rip, next->cr3, next->cs, next->ss);
-    */
 
     if(fromTimer)
     {

@@ -2,7 +2,6 @@
 
 #if IS_LIBC
 #   include "../sys/syscall.h"
-#   define SYSCALL_READ 2
 #else
 #   include "printf/printf.h"
 #   include "low-level/keyboard/Keyboard.hpp"

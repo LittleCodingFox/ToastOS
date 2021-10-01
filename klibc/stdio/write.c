@@ -2,7 +2,6 @@
 
 #if IS_LIBC
 #   include "../sys/syscall.h"
-#   define SYSCALL_WRITE 1
 #else
 #   include "printf/printf.h"
 #endif

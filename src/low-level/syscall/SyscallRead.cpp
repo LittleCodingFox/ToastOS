@@ -3,8 +3,12 @@
 #include "process/Process.hpp"
 #include "debug.hpp"
 
-size_t SyscallRead(int fd, void *buffer, size_t count)
+int64_t SyscallRead(InterruptStack *stack)
 {
+    uint64_t fd = stack->rsi;
+    void *buffer = (void *)stack->rdx;
+    size_t count = (size_t)stack->rcx;
+
     if(fd == 0) //stdin
     {
         while(!GotKeyboardInput())

@@ -80,6 +80,7 @@ extern "C"
     extern void exc30();
     extern void exc31();
     extern void exc48();
+    extern void exc128();
 
     extern void irq0();
     extern void irq1();
@@ -98,28 +99,28 @@ extern "C"
 
 typedef struct _stack
 {
-  uint64_t r15;
-  uint64_t r14;
-  uint64_t r13;
-  uint64_t r12;
-  uint64_t r11;
-  uint64_t r10;
-  uint64_t r9;
-  uint64_t r8;
-  uint64_t rbp;
-  uint64_t rdi;
-  uint64_t rsi;
-  uint64_t rdx;
-  uint64_t rcx;
-  uint64_t rbx;
-  uint64_t rax;
-  uint64_t id;
-  uint64_t errorCode;
-  uint64_t instructionPointer;
-  uint64_t codeSegment;
-  uint64_t cpuFlags;
-  uint64_t stackPointer;
-  uint64_t stackSegment;
+  uint64_t r15;                 // 0
+  uint64_t r14;                 // 8
+  uint64_t r13;                 // 16
+  uint64_t r12;                 // 24
+  uint64_t r11;                 // 32
+  uint64_t r10;                 // 40
+  uint64_t r9;                  // 48
+  uint64_t r8;                  // 56
+  uint64_t rbp;                 // 64
+  uint64_t rdi;                 // 72
+  uint64_t rsi;                 // 80
+  uint64_t rdx;                 // 88
+  uint64_t rcx;                 // 96
+  uint64_t rbx;                 // 104
+  uint64_t rax;                 // 112
+  uint64_t id;                  // 120
+  uint64_t errorCode;           // 128
+  uint64_t instructionPointer;  // 136
+  uint64_t codeSegment;         // 144
+  uint64_t cpuFlags;            // 152
+  uint64_t stackPointer;        // 160
+  uint64_t stackSegment;        // 168
 } __attribute__((packed)) InterruptStack;
 
 typedef void (*InterruptHandler)(InterruptStack* stack);
