@@ -29,8 +29,17 @@ void RoundRobinScheduler::AddProcess(ProcessInfo *process)
     node->rsp = process->rsp;
     node->cr3 = process->cr3;
     node->rflags = process->rflags;
-    node->cs = GDTKernelBaseSelector;
-    node->ss = GDTKernelBaseSelector + 0x08;
+
+    if(process->permissionLevel == PROCESS_PERMISSION_KERNEL)
+    {
+        node->cs = (GDTKernelBaseSelector + 0x00);
+        node->ss = (GDTKernelBaseSelector + 0x08);
+    }
+    else
+    {
+        node->cs = (GDTUserBaseSelector + 0x10) | 3;
+        node->ss = (GDTUserBaseSelector + 0x08) | 3;
+    }
 
     node->process = process;
 

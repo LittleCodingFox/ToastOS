@@ -18,7 +18,7 @@ extern "C" void SwitchTasks(ProcessControlBlock* next);
 
 void SwitchProcess(InterruptStack *stack)
 {
-    DEBUG_OUT("SWITCH PROCESS %p", stack);
+    //DEBUG_OUT("SWITCH PROCESS %p", stack);
 
     globalProcessManager->SwitchProcess(stack);
 }
@@ -47,7 +47,7 @@ void ProcessManager::SwitchProcess(InterruptStack *stack)
         return;
     }
 
-    DEBUG_OUT("Switching processes %p to %p", current, next);
+    //DEBUG_OUT("Switching processes %p to %p", current, next);
 
     if(current == next)
     {
@@ -79,15 +79,13 @@ void ProcessManager::SwitchProcess(InterruptStack *stack)
         current->rsp = stack->stackPointer;
         current->rip = stack->instructionPointer;
         current->rflags = stack->cpuFlags;
-
-        DEBUG_OUT("Current RIP: %p", current->rip);
     }
 
     if(next->state == PROCESS_STATE_NEEDS_INIT)
     {
         next->state = PROCESS_STATE_RUNNING;
 
-        DEBUG_OUT("Initializing task %p: rsp: %p; rip: %p; cr3: %p", next, next->rsp, next->rip, next->cr3);
+        //DEBUG_OUT("Initializing task %p: rsp: %p; rip: %p; cr3: %p", next, next->rsp, next->rip, next->cr3);
 
         //Called from timer, so must finish up PIC
         outport8(PIC1, PIC_EOI);
@@ -101,7 +99,11 @@ void ProcessManager::SwitchProcess(InterruptStack *stack)
 
     lock.Unlock();
 
-    DEBUG_OUT("Switching tasks: rsp: %p; rip: %p; cr3: %p -> rsp: %p; rip: %p; cr3: %p", current->rsp, current->rip, current->cr3, next->rsp, next->rip, next->cr3);
+    /*
+    DEBUG_OUT("Switching tasks:\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%x\n\tss: 0x%x\nnext:\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%x\n\tss: 0x%x",
+        current->rsp, current->rip, current->cr3, current->cs, current->ss,
+        next->rsp, next->rip, next->cr3, next->cs, next->ss);
+    */
 
     //Called from timer, so must finish up PIC
     outport8(PIC1, PIC_EOI);
@@ -120,7 +122,7 @@ ProcessInfo *ProcessManager::CurrentProcess()
     return current;
 }
 
-ProcessInfo *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const char *name)
+ProcessInfo *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const char *name, uint64_t permissionLevel)
 {
     lock.Lock();
 
@@ -145,6 +147,7 @@ ProcessInfo *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const cha
 
     memset(newProcess, 0, sizeof(ProcessInfo));
     newProcess->ID = ++processIDCounter;
+    newProcess->permissionLevel = permissionLevel;
 
     newProcess->name = strdup(name);
 
@@ -190,7 +193,7 @@ ProcessInfo *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const cha
     return newProcess;
 }
 
-ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, const char **argv)
+ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, const char **argv, uint64_t permissionLevel)
 {
     lock.Lock();
 
@@ -215,31 +218,7 @@ ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, cons
 
     memset(newProcess, 0, sizeof(ProcessInfo));
     newProcess->ID = ++processIDCounter;
-        /*
-    }
-    else
-    {
-        currentProcess->ID++;
-
-        previous = currentProcess->elf;
-
-        free(currentProcess->name);
-
-        for(uint32_t i = 0; currentProcess->argv[i] != NULL; i++)
-        {
-            free(currentProcess->argv[i]);
-        }
-
-        free(currentProcess->argv);
-
-        for(uint32_t i = 0; currentProcess->environment[i] != NULL; i++)
-        {
-            free(currentProcess->environment[i]);
-        }
-
-        free(currentProcess->environment);
-    }
-    */
+    newProcess->permissionLevel = permissionLevel;
 
     newProcess->name = strdup(name);
 
@@ -309,37 +288,4 @@ ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, cons
     lock.Unlock();
 
     return newProcess;
-}
-
-void ProcessManager::ExecuteProcess(ProcessInfo *process)
-{
-    lock.Lock();
-
-    if(process == NULL || process->elf == NULL)
-    {
-        lock.Unlock();
-
-        DEBUG_OUT("Failed to execute process %p: Invalid pointer or missing elf image", process);
-
-        return;
-    }
-
-    DEBUG_OUT("Executing process %p", process);
-
-    uint64_t ip = process->elf->entry;
-    uint64_t stackPointer = process->rsp;
-    uint64_t cr3 = process->cr3;
-
-    //Registers::WriteCR3(cr3);
-
-    lock.Unlock();
-
-    SwitchToUsermode((void *)ip, (void *)stackPointer);
-}
-
-void ProcessManager::SwitchToUsermode(void *instructionPointer, void *stackPointer)
-{
-    DEBUG_OUT("Switching to usermode at instruction %p and stack %p", instructionPointer, stackPointer);
-
-    ::SwitchToUsermode(instructionPointer, stackPointer);
 }

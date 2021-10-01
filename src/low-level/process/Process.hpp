@@ -7,9 +7,16 @@
 
 #define PROCESS_STACK_SIZE 1024
 
+enum ProcessPermissionLevel
+{
+    PROCESS_PERMISSION_KERNEL,
+    PROCESS_PERMISSION_USER
+};
+
 struct ProcessInfo
 {
     uint64_t ID;
+    uint64_t permissionLevel;
     char *name;
     char **argv;
     char **environment;
@@ -85,14 +92,10 @@ public:
 
     ProcessManager(IScheduler *scheduler);
 
-    ProcessInfo *LoadImage(const void *image, const char *name, const char **argv);
-    ProcessInfo *CreateFromEntryPoint(uint64_t entryPoint, const char *name);
+    ProcessInfo *LoadImage(const void *image, const char *name, const char **argv, uint64_t permissionLevel);
+    ProcessInfo *CreateFromEntryPoint(uint64_t entryPoint, const char *name, uint64_t permissionLevel);
 
     ProcessInfo *CurrentProcess();
-
-    void ExecuteProcess(ProcessInfo *process);
-    
-    void SwitchToUsermode(void *instructionPointer, void *stackPointer);
 
     void SwitchProcess(InterruptStack *stack);
 };

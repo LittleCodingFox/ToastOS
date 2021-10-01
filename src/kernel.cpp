@@ -37,7 +37,10 @@ static struct stivale2_header stivaleHeader = {
 void KernelTask()
 {
     //Dummy task
-    for(;;);
+    for(;;)
+    {
+        //DEBUG_OUT("KERNEL TASK", 0);
+    }
 }
 
 extern "C" void _start(stivale2_struct *stivale2Struct)
@@ -62,9 +65,8 @@ extern "C" void _start(stivale2_struct *stivale2Struct)
 
             const char* argv[1] { NULL };
 
-            globalProcessManager->CreateFromEntryPoint((uint64_t)KernelTask, "KernelTask");
-
-            globalProcessManager->LoadImage(buffer, "elf", argv);
+            globalProcessManager->CreateFromEntryPoint((uint64_t)KernelTask, "KernelTask", PROCESS_PERMISSION_KERNEL);
+            globalProcessManager->LoadImage(buffer, "elf", argv, PROCESS_PERMISSION_USER);
         }
     }
 
