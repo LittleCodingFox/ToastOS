@@ -1,9 +1,6 @@
 global SwitchTasks
 
 SwitchTasks:
-	; update cr3
-	;mov rax, [rsi + 120]
-	;mov cr3, rax
 
 	push qword [rdi + 0]	; ss
 	push qword [rdi + 8]	; rsp
@@ -12,7 +9,6 @@ SwitchTasks:
 	push qword [rdi + 32]	; rip
 
 	; load registers from new task
-	mov rax, [rdi + 40] 
 	mov rbx, [rdi + 48]
 	mov rcx, [rdi + 56] 
 	mov rdx, [rdi + 64] 
@@ -26,6 +22,11 @@ SwitchTasks:
 	mov r13, [rdi + 128] 
 	mov r14, [rdi + 136]
 	mov r15, [rdi + 144]
+
+	; update cr3
+	mov rax, [rdi + 160] 	; copy to rax
+	mov cr3, rax			; set cr3
+	mov rax, [rdi + 40] 	; set proper rax value
 
 	; will be overwritten, so do it last
 	mov rdi, [rdi + 152]

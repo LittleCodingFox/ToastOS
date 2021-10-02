@@ -20,7 +20,7 @@ extern "C" void SwitchTasks(ProcessControlBlock* next);
 
 void SwitchProcess(InterruptStack *stack)
 {
-    DEBUG_OUT("SWITCH PROCESS %p", stack);
+    //DEBUG_OUT("SWITCH PROCESS %p", stack);
 
     globalProcessManager->SwitchProcess(stack, true);
 }
@@ -121,9 +121,11 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
 
     lock.Unlock();
 
+    /*
     DEBUG_OUT("Switching tasks:\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%x\n\tss: 0x%x\nnext:\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%x\n\tss: 0x%x",
         current->rsp, current->rip, current->cr3, current->cs, current->ss,
         next->rsp, next->rip, next->cr3, next->cs, next->ss);
+    */
 
     if(fromTimer)
     {
@@ -149,23 +151,53 @@ ProcessInfo *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const cha
 {
     lock.Lock();
 
+    PageTable *pageTableFrame = (PageTable *)globalAllocator.RequestPage();
+
+    globalPageTableManager->MapMemory((void *)TranslateToHighHalfMemoryAddress((uint64_t)pageTableFrame),
+        pageTableFrame, PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+
+    PageTable *higherPageTableFrame = (PageTable *)TranslateToHighHalfMemoryAddress((uint64_t)pageTableFrame);
+
+    memset(higherPageTableFrame, 0, sizeof(PageTable));
+    
+    for(uint64_t i = 256; i < 512; i++)
+    {
+        higherPageTableFrame->entries[i] = globalPageTableManager->p4->entries[i];
+    }
+
+    PageTableManager userPageManager;
+    userPageManager.p4 = pageTableFrame;
+
     ProcessInfo *newProcess = (ProcessInfo *)globalAllocator.RequestPages(sizeof(ProcessInfo) / 0x1000 + 1);
 
     uint64_t page = (uint64_t)newProcess / 0x1000;
+    uint64_t offset = (uint64_t)newProcess % 0x1000;
 
-    uint64_t pageCount = sizeof(ProcessInfo) / 0x1000 + 1;
+    uint64_t pageCount = (sizeof(ProcessInfo) + offset) / 0x1000 + 1;
 
     for(uint64_t i = 0; i < pageCount; i++)
     {
-        globalPageTableManager->IdentityMap((void *)((uint64_t)(page + i) * 0x1000), PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+        globalPageTableManager->MapMemory((void *)((uint64_t)TranslateToHighHalfMemoryAddress((page + i) * 0x1000)),
+            (void *)((uint64_t)(page + i) * 0x1000),
+            PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
     }
 
+    newProcess = (ProcessInfo *)TranslateToHighHalfMemoryAddress((uint64_t)newProcess);
+
     page = (uint64_t)newProcess->stack / 0x1000;
-    pageCount = sizeof(newProcess->stack) / 0x1000 + 1;
+    offset = (uint64_t)newProcess->stack % 0x1000;
+    pageCount = (sizeof(newProcess->stack) + offset) / 0x1000 + 1;
 
     for(uint64_t i = 0; i < pageCount; i++)
     {
-        globalPageTableManager->IdentityMap((void *)((uint64_t)(page + i) * 0x1000), PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
+        globalPageTableManager->MapMemory((void *)(uint64_t)((page + i) * 0x1000),
+            (void *)((uint64_t)TranslateToPhysicalMemoryAddress((page + i) * 0x1000)),
+            PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
+
+        //Do the same for the user
+        userPageManager.MapMemory((void *)(uint64_t)((page + i) * 0x1000),
+            (void *)((uint64_t)TranslateToPhysicalMemoryAddress((page + i) * 0x1000)),
+            PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
     }
 
     memset(newProcess, 0, sizeof(ProcessInfo));
@@ -173,8 +205,6 @@ ProcessInfo *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const cha
     newProcess->permissionLevel = permissionLevel;
 
     newProcess->name = strdup(name);
-
-    memset(newProcess->stack, 0, sizeof(uint64_t[PROCESS_STACK_SIZE]));
 
     //TODO: proper env
 
@@ -196,18 +226,7 @@ ProcessInfo *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const cha
     newProcess->rip = entryPoint;
     newProcess->rflags = 0x202;
 
-    PageTable *pageTableFrame = (PageTable *)globalAllocator.RequestPage();
-
-    globalPageTableManager->IdentityMap(pageTableFrame, PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
-
-    memset(pageTableFrame, 0, sizeof(PageTable));
-    
-    for(uint64_t i = 256; i < 512; i++)
-    {
-        pageTableFrame->entries[i] = globalPageTableManager->p4->entries[i];
-    }
-
-    newProcess->cr3 = Registers::ReadCR3(); //(uint64_t)pageTableFrame;
+    newProcess->cr3 = (uint64_t)pageTableFrame;
 
     scheduler->AddProcess(newProcess);
 
@@ -220,23 +239,53 @@ ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, cons
 {
     lock.Lock();
 
+    PageTable *pageTableFrame = (PageTable *)globalAllocator.RequestPage();
+
+    globalPageTableManager->MapMemory((void *)TranslateToHighHalfMemoryAddress((uint64_t)pageTableFrame), pageTableFrame,
+        PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+
+    PageTable *higherPageTableFrame = (PageTable *)TranslateToHighHalfMemoryAddress((uint64_t)pageTableFrame);
+
+    memset(higherPageTableFrame, 0, sizeof(PageTable));
+    
+    for(uint64_t i = 256; i < 512; i++)
+    {
+        higherPageTableFrame->entries[i] = globalPageTableManager->p4->entries[i];
+    }
+
+    PageTableManager userPageManager;
+    userPageManager.p4 = pageTableFrame;
+
     ProcessInfo *newProcess = (ProcessInfo *)globalAllocator.RequestPages(sizeof(ProcessInfo) / 0x1000 + 1);
 
     uint64_t page = (uint64_t)newProcess / 0x1000;
+    uint64_t offset = (uint64_t)newProcess % 0x1000;
 
-    uint64_t pageCount = sizeof(ProcessInfo) / 0x1000 + 1;
+    uint64_t pageCount = (sizeof(ProcessInfo) + offset) / 0x1000 + 1;
 
     for(uint64_t i = 0; i < pageCount; i++)
     {
-        globalPageTableManager->IdentityMap((void *)((uint64_t)(page + i) * 0x1000), PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+        globalPageTableManager->MapMemory((void *)((uint64_t)TranslateToHighHalfMemoryAddress((page + i) * 0x1000)),
+            (void *)((uint64_t)(page + i) * 0x1000),
+            PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
     }
 
+    newProcess = (ProcessInfo *)TranslateToHighHalfMemoryAddress((uint64_t)newProcess);
+
     page = (uint64_t)newProcess->stack / 0x1000;
-    pageCount = sizeof(newProcess->stack) / 0x1000 + 1;
+    offset = (uint64_t)newProcess->stack % 0x1000;
+    pageCount = (sizeof(newProcess->stack) + offset) / 0x1000 + 1;
 
     for(uint64_t i = 0; i < pageCount; i++)
     {
-        globalPageTableManager->IdentityMap((void *)((uint64_t)(page + i) * 0x1000), PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
+        globalPageTableManager->MapMemory((void *)(uint64_t)((page + i) * 0x1000),
+            (void *)((uint64_t)TranslateToPhysicalMemoryAddress((page + i) * 0x1000)),
+            PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
+
+        //Do the same for the user
+        userPageManager.MapMemory((void *)(uint64_t)((page + i) * 0x1000),
+            (void *)((uint64_t)TranslateToPhysicalMemoryAddress((page + i) * 0x1000)),
+            PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
     }
 
     memset(newProcess, 0, sizeof(ProcessInfo));
@@ -244,8 +293,6 @@ ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, cons
     newProcess->permissionLevel = permissionLevel;
 
     newProcess->name = strdup(name);
-
-    memset(newProcess->stack, 0, sizeof(uint64_t[PROCESS_STACK_SIZE]));
 
     int argc = 0;
 
@@ -282,18 +329,7 @@ ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, cons
     newProcess->rsp = (uint64_t)stack;
     newProcess->rflags = 0x202;
 
-    PageTable *pageTableFrame = (PageTable *)globalAllocator.RequestPage();
-
-    globalPageTableManager->IdentityMap(pageTableFrame, PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
-
-    memset(pageTableFrame, 0, sizeof(PageTable));
-    
-    for(uint64_t i = 256; i < 512; i++)
-    {
-        pageTableFrame->entries[i] = globalPageTableManager->p4->entries[i];
-    }
-
-    newProcess->cr3 = Registers::ReadCR3(); //(uint64_t)pageTableFrame;
+    newProcess->cr3 = /*Registers::ReadCR3(); //*/(uint64_t)pageTableFrame;
 
     Elf::ElfHeader *elf = Elf::LoadElf(image);
 
@@ -301,7 +337,7 @@ ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, cons
 
     if(elf != NULL)
     {
-        Elf::MapElfSegments(elf, globalPageTableManager);
+        Elf::MapElfSegments(elf, /*globalPageTableManager*/&userPageManager);
 
         newProcess->rip = elf->entry;
     }

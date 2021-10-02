@@ -46,6 +46,15 @@ void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_fr
     pageTableManager.IdentityMap((void *)(uint64_t)pageTableManager.p4,
         PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
 
+    //Preallocate upper area
+    for(uint64_t i = 256; i < 512; i++)
+    {
+        void *page = globalAllocator.RequestPage();
+        memset(page, 0, 0x1000);
+
+        pageTableManager.p4->entries[i] = (uint64_t)page | PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE;
+    }
+
     //Enable write protection
     Registers::WriteCR0(Registers::ReadCR0() | (1 << 16));
 
@@ -85,9 +94,9 @@ void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_fr
         }
     }
 
-    DEBUG_OUT("%s", "Preparing framebuffer pages");
+    DEBUG_OUT("Preparing framebuffer pages for address %p", framebuffer->framebuffer_addr);
 
-    uint64_t fbBase = TranslateToPhysicalMemoryAddress(framebuffer->framebuffer_addr);
+    uint64_t fbBase = framebuffer->framebuffer_addr;
     uint64_t fbSize = (uint64_t)framebuffer->framebuffer_height * framebuffer->framebuffer_pitch;
 
     DEBUG_OUT("Framebuffer width: %u; height: %u; bpp: %u; pitch: %u",
@@ -96,7 +105,7 @@ void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_fr
 
     for (uint64_t t = fbBase; t < fbBase + fbSize; t += 0x1000)
     {
-        pageTableManager.IdentityMap((void *)t, PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+        pageTableManager.MapMemory((void *)t, (void *)TranslateToPhysicalMemoryAddress((uint64_t)t), PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
     }
 
     framebuffer->framebuffer_addr = fbBase;
@@ -235,9 +244,9 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     LoadGDT();
 
-    InitializeInterrupts();
-
     InitializeMemory(memmap, framebuffer);
+
+    InitializeInterrupts();
 
     if(symbols != NULL)
     {

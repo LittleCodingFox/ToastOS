@@ -361,7 +361,8 @@ void PageFaultHandler(InterruptStack* stack)
             "  rdx = 0x%016llx    rsi = 0x%016llx    rdi = 0x%016llx\n"
             "  rbp = 0x%016llx    r8  = 0x%016llx    r9  = 0x%016llx\n"
             "  r10 = 0x%016llx    r11 = 0x%016llx    r12 = 0x%016llx\n"
-            "  r13 = 0x%016llx    r14 = 0x%016llx    r15 = 0x%016llx",
+            "  r13 = 0x%016llx    r14 = 0x%016llx    r15 = 0x%016llx\n"
+            "  cr3 = 0x%016llx",
             Registers::ReadCR2(),
             error_code,
             is_present != 0 ? 'Y' : 'N',
@@ -388,5 +389,6 @@ void PageFaultHandler(InterruptStack* stack)
             stack->r12,
             stack->r13,
             stack->r14,
-            stack->r15);
+            stack->r15,
+            Registers::ReadCR3());
 }

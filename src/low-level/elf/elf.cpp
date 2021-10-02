@@ -11,6 +11,7 @@ namespace Elf
         uint64_t memSize = programHeader->memorySize;
         uint64_t fileSize = programHeader->fileSize;
         uint64_t address = programHeader->virtualAddress;
+        uint64_t higherAddress = TranslateToHighHalfMemoryAddress(address);
         uint64_t offset = programHeader->offset;
 
         if(memSize == 0)
@@ -35,24 +36,19 @@ namespace Elf
 
         DEBUG_OUT("Load at address %p with %llu pages (memsize: %llu; fileSize: %llu)", address, pageCount, memSize, fileSize);
 
-        void *pages[pageCount];
-
         for(uint64_t i = 0; i < pageCount; i++)
         {
             void *physicalAddress = globalAllocator.RequestPage();
-            pages[i] = physicalAddress;
 
-            pageTableManager->MapMemory((void *)((startPage + i) * 0x1000), physicalAddress, flags | PAGING_FLAG_WRITABLE);
-            globalPageTableManager->MapMemory((void *)((startPage + i) * 0x1000), physicalAddress, flags | PAGING_FLAG_WRITABLE);
+            pageTableManager->MapMemory((void *)((startPage + i) * 0x1000), physicalAddress, flags);
+            globalPageTableManager->MapMemory((void *)TranslateToHighHalfMemoryAddress((startPage + i) * 0x1000), physicalAddress, flags | PAGING_FLAG_WRITABLE);
         }
 
-        memcpy((void *)address, (uint8_t *)data + offset, fileSize);
-        memset((void *)(address + fileSize), 0, memSize - fileSize);
+        memcpy((void *)higherAddress, (uint8_t *)data + offset, fileSize);
 
-        for(uint64_t i = 0; i < pageCount; i++)
+        if(memSize > fileSize)
         {
-            globalPageTableManager->UnmapMemory((void *)((startPage + i) * 0x1000));
-            pageTableManager->MapMemory((void *)((startPage + i) * 0x1000), pages[i], flags);
+            memset((void *)(higherAddress + fileSize), 0, memSize - fileSize);
         }
     }
 
@@ -127,7 +123,7 @@ namespace Elf
 
                 for(uint64_t j = 0; j < pageCount; j++)
                 {
-                    globalPageTableManager->UnmapMemory((void *)((startPage + j) * 0x1000));
+                    globalPageTableManager->UnmapMemory((void *)(TranslateToHighHalfMemoryAddress((startPage + j) * 0x1000)));
                 }
             }
         }
