@@ -29,12 +29,18 @@ void SyscallUnlock()
 int64_t KNotImplemented(InterruptStack *stack);
 size_t SyscallWrite(InterruptStack *stack);
 size_t SyscallRead(InterruptStack *stack);
+size_t SyscallClose(InterruptStack *stack);
+size_t SyscallOpen(InterruptStack *stack);
+size_t SyscallSeek(InterruptStack *stack);
 
 SyscallPointer syscallHandlers[] =
 {
-    (SyscallPointer)KNotImplemented,
-    (SyscallPointer)SyscallWrite,
-    (SyscallPointer)SyscallRead,
+    (SyscallPointer)KNotImplemented, // 0
+    (SyscallPointer)SyscallWrite, // 1
+    (SyscallPointer)SyscallRead, // 2
+    (SyscallPointer)SyscallOpen, // 3
+    (SyscallPointer)SyscallClose, // 4
+    (SyscallPointer)SyscallSeek, // 5
 };
 
 void SyscallHandler(InterruptStack *stack)

@@ -1,7 +1,11 @@
 #include "syscall.hpp"
 #include "keyboard/Keyboard.hpp"
 #include "process/Process.hpp"
+#include "filesystems/VFS.hpp"
 #include "debug.hpp"
+#include "errno.h"
+
+using namespace FileSystem;
 
 int64_t SyscallRead(InterruptStack *stack)
 {
@@ -24,9 +28,16 @@ int64_t SyscallRead(InterruptStack *stack)
 
         return 1;
     }
-    else if(fd > 2) //actual files
+    else if(fd >= 3) //actual files
     {
-        //TODO
+        FILE_HANDLE handle = fd - 3;
+
+        if(vfs.FileType(handle) != FILE_HANDLE_FILE)
+        {
+            return -ENOENT;
+        }
+
+        return vfs.ReadFile(handle, buffer, count);
     }
 
     return 0;

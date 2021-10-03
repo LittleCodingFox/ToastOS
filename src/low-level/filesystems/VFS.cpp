@@ -157,6 +157,18 @@ namespace FileSystem
         return FILE_HANDLE_UNKNOWN;
     }
 
+    uint64_t VFS::FileOffset(FILE_HANDLE handle)
+    {
+        FileHandle *fileHandle = GetFileHandle(handle);
+
+        if(fileHandle == NULL || fileHandle->isValid == false)
+        {
+            return 0;
+        }
+
+        return fileHandle->cursor;
+    }
+
     uint64_t VFS::ReadFile(FILE_HANDLE handle, void *buffer, uint64_t length)
     {
         FileHandle *fileHandle = GetFileHandle(handle);

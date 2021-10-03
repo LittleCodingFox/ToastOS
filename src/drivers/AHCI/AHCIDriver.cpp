@@ -40,15 +40,20 @@ namespace Drivers
 
         void InitializeCommandHeader(volatile HBACommandHeader *commandHeader, bool write)
         {
-            commandHeader->commandFISLength = sizeof(FISREGHost2Device) / sizeof(uint32_t);
-            commandHeader->write = write;
-            commandHeader->prdtLength = 1;
+            volatile HBACommandHeader *higherCommandHeader = (volatile HBACommandHeader *)TranslateToHighHalfMemoryAddress((uint64_t)commandHeader);
+
+            higherCommandHeader->commandFISLength = sizeof(FISREGHost2Device) / sizeof(uint32_t);
+            higherCommandHeader->write = write;
+            higherCommandHeader->prdtLength = 1;
         }
 
         void InitializeCommandTable(volatile HBACommandTable *commandTable, volatile HBACommandHeader *commandHeader, 
             uintptr_t dataAddress, size_t count)
         {
-            memset((void *)commandTable, 0, sizeof(HBACommandTable) + (commandHeader->prdtLength - 1) * sizeof(HBAPRDEntry));
+            volatile HBACommandTable *higherCommandTable = (volatile HBACommandTable *)TranslateToHighHalfMemoryAddress((uint64_t)commandTable);
+            volatile HBACommandHeader *higherCommandHeader = (volatile HBACommandHeader *)TranslateToHighHalfMemoryAddress((uint64_t)commandHeader);
+
+            memset((void *)higherCommandTable, 0, sizeof(HBACommandTable) + (higherCommandHeader->prdtLength - 1) * sizeof(HBAPRDEntry));
 
             if(IsKernelHigherHalf(dataAddress))
             {
@@ -59,41 +64,43 @@ namespace Drivers
                 dataAddress = TranslateToPhysicalMemoryAddress(dataAddress);
             }
 
-            commandTable->prdtEntry[0].dataBaseAddress = (uint64_t)dataAddress;
-            commandTable->prdtEntry[0].dataBaseAddressUpper = ((uint64_t)dataAddress >> 32);
-            commandTable->prdtEntry[0].interruptOnCompletion = 1;
-            commandTable->prdtEntry[0].byteCount = (count * 512) - 1;
+            higherCommandTable->prdtEntry[0].dataBaseAddress = (uint64_t)dataAddress;
+            higherCommandTable->prdtEntry[0].dataBaseAddressUpper = ((uint64_t)dataAddress >> 32);
+            higherCommandTable->prdtEntry[0].interruptOnCompletion = 1;
+            higherCommandTable->prdtEntry[0].byteCount = (count * 512) - 1;
         }
 
         void InitializeFISRegCommand(volatile FISREGHost2Device *command, bool write, uintptr_t sector, size_t count)
         {
-            memset((void *)command, 0, sizeof(FISREGHost2Device));
+            volatile FISREGHost2Device *higherCommand = (volatile FISREGHost2Device *)TranslateToHighHalfMemoryAddress((uint64_t)command);
 
-            command->fisType = FIS_TYPE_REG_H2D;
+            memset((void *)higherCommand, 0, sizeof(FISREGHost2Device));
 
-            command->commandControl = 1;
+            higherCommand->fisType = FIS_TYPE_REG_H2D;
+
+            higherCommand->commandControl = 1;
 
             if(write)
             {
-                command->command = ATA_CMD_WRITE_DMA_EX;
+                higherCommand->command = ATA_CMD_WRITE_DMA_EX;
             }
             else
             {
-                command->command = ATA_CMD_READ_DMA_EX;
+                higherCommand->command = ATA_CMD_READ_DMA_EX;
             }
 
-            command->lba0 = (uint8_t)((sector & 0x000000000000FF));
-            command->lba1 = (uint8_t)((sector & 0x0000000000FF00) >> 8);
-            command->lba2 = (uint8_t)((sector & 0x00000000FF0000) >> 16);
+            higherCommand->lba0 = (uint8_t)((sector & 0x000000000000FF));
+            higherCommand->lba1 = (uint8_t)((sector & 0x0000000000FF00) >> 8);
+            higherCommand->lba2 = (uint8_t)((sector & 0x00000000FF0000) >> 16);
 
-            command->deviceRegister = 1 << 6;
+            higherCommand->deviceRegister = 1 << 6;
 
-            command->lba3 = (uint8_t)((sector & 0x000000FF000000) >> 24);
-            command->lba4 = (uint8_t)((sector & 0x0000FF00000000) >> 32);
-            command->lba5 = (uint8_t)((sector & 0x00FF0000000000) >> 40);
+            higherCommand->lba3 = (uint8_t)((sector & 0x000000FF000000) >> 24);
+            higherCommand->lba4 = (uint8_t)((sector & 0x0000FF00000000) >> 32);
+            higherCommand->lba5 = (uint8_t)((sector & 0x00FF0000000000) >> 40);
 
-            command->countLow = count & 0xFF;
-            command->countHigh = (count >> 8) & 0xFF;
+            higherCommand->countLow = count & 0xFF;
+            higherCommand->countHigh = (count >> 8) & 0xFF;
         }
 
         bool ATABusyWait(volatile HBAPort *port)
@@ -230,19 +237,14 @@ namespace Drivers
         {
             void *newBase = globalAllocator.RequestPage();
 
-            globalPageTableManager->IdentityMap(newBase,
-                PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+            globalPageTableManager->MapMemory((void *)TranslateToHighHalfMemoryAddress((uint64_t)newBase),
+                newBase, PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
 
-            memset(newBase, 0, 0x1000);
+            memset((void *)TranslateToHighHalfMemoryAddress((uint64_t)newBase), 0, 0x1000);
 
             port->commandListBase = (uint64_t)newBase;
 
             HBAFIS *fis = new HBAFIS();
-
-            globalPageTableManager->IdentityMap((void *)TranslateToPhysicalMemoryAddress((uint64_t)fis), 
-                PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
-
-            fis = (HBAFIS *)TranslateToPhysicalMemoryAddress((uint64_t)fis);
 
             memset(fis, 0, sizeof(HBAFIS));
 
@@ -250,9 +252,9 @@ namespace Drivers
             fis->linkFIS.type = FIS_TYPE_REG_D2H;
             fis->pioFIS.type = FIS_TYPE_PIO_SETUP;
 
-            port->fisBaseAddress = (uint64_t)fis;
+            port->fisBaseAddress = (uint64_t)TranslateToPhysicalMemoryAddress((uint64_t)fis);
 
-            volatile HBACommandHeader *commandHeader = (HBACommandHeader *)newBase;
+            volatile HBACommandHeader *commandHeader = (HBACommandHeader *)TranslateToHighHalfMemoryAddress((uint64_t)newBase);
 
             for(uint32_t i = 0; i < 32; i++)
             {
@@ -260,8 +262,8 @@ namespace Drivers
 
                 void *commandTableAddress = globalAllocator.RequestPage();
 
-                globalPageTableManager->IdentityMap(commandTableAddress,
-                    PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+                globalPageTableManager->MapMemory((void *)TranslateToHighHalfMemoryAddress((uint64_t)commandTableAddress),
+                    commandTableAddress, PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
 
                 commandHeader[i].commandTableBaseAddress = (uint64_t)commandTableAddress;
             }
@@ -292,15 +294,17 @@ namespace Drivers
 
             InitializeCommandHeader(commandHeader, false);
 
-            volatile HBACommandTable *commandTable = (HBACommandTable *)(uint64_t)((uint64_t)commandHeader->commandTableBaseAddress);
+            volatile HBACommandTable *commandTable = (HBACommandTable *)(uint64_t)((uint64_t)((volatile HBACommandHeader *)
+                TranslateToHighHalfMemoryAddress((uint64_t)commandHeader))->commandTableBaseAddress);
 
             InitializeCommandTable(commandTable, commandHeader, (uintptr_t)&identify, 0);
 
-            volatile FISREGHost2Device *commandFIS = (FISREGHost2Device *)((uint64_t)commandTable->commandFIS);
+            volatile FISREGHost2Device *commandFIS = (FISREGHost2Device *)((uint64_t)TranslateToPhysicalMemoryAddress((uint64_t)((volatile HBACommandTable *)
+                TranslateToHighHalfMemoryAddress((uint64_t)commandTable))->commandFIS));
 
             InitializeFISRegCommand(commandFIS, false, 0, 0);
 
-            commandFIS->command = ATA_CMD_IDENTIFY;
+            ((volatile FISREGHost2Device *)TranslateToHighHalfMemoryAddress((uint64_t)commandFIS))->command = ATA_CMD_IDENTIFY;
 
             if(!ATABusyWait(port))
             {
@@ -387,11 +391,13 @@ namespace Drivers
 
             InitializeCommandHeader(commandHeader, false);
 
-            volatile HBACommandTable *commandTable = (HBACommandTable *)(((uint64_t)commandHeader->commandTableBaseAddress));
+            volatile HBACommandTable *commandTable = (HBACommandTable *)(uint64_t)((uint64_t)((volatile HBACommandHeader *)
+                TranslateToHighHalfMemoryAddress((uint64_t)commandHeader))->commandTableBaseAddress);
 
             InitializeCommandTable(commandTable, commandHeader, (uintptr_t)buffer, sectorCount);
 
-            volatile FISREGHost2Device *commandFIS = (FISREGHost2Device *)(commandTable->commandFIS);
+            volatile FISREGHost2Device *commandFIS = (FISREGHost2Device *)((uint64_t)TranslateToPhysicalMemoryAddress((uint64_t)((volatile HBACommandTable *)
+                TranslateToHighHalfMemoryAddress((uint64_t)commandTable))->commandFIS));
 
             InitializeFISRegCommand(commandFIS, false, sector, sectorCount);
 
@@ -443,13 +449,15 @@ namespace Drivers
 
             InitializeCommandHeader(commandHeader, true);
 
-            volatile HBACommandTable *commandTable = (volatile HBACommandTable *)(uint64_t)(commandHeader->commandTableBaseAddress);
+            volatile HBACommandTable *commandTable = (HBACommandTable *)(uint64_t)((uint64_t)((volatile HBACommandHeader *)
+                TranslateToHighHalfMemoryAddress((uint64_t)commandHeader))->commandTableBaseAddress);
 
             InitializeCommandTable(commandTable, commandHeader, (uintptr_t)buffer, sectorCount);
 
-            volatile FISREGHost2Device *command = (volatile FISREGHost2Device *)commandTable->commandFIS;
+            volatile FISREGHost2Device *commandFIS = (FISREGHost2Device *)((uint64_t)TranslateToPhysicalMemoryAddress((uint64_t)((volatile HBACommandTable *)
+                TranslateToHighHalfMemoryAddress((uint64_t)commandTable))->commandFIS));
 
-            InitializeFISRegCommand(command, true, sector, sectorCount);
+            InitializeFISRegCommand(commandFIS, true, sector, sectorCount);
 
             if(!ATABusyWait(port))
             {

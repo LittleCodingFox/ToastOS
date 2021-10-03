@@ -1,7 +1,11 @@
 #include "syscall.hpp"
 #include "interrupts/Interrupts.hpp"
 #include "printf/printf.h"
+#include "filesystems/VFS.hpp"
 #include "debug.hpp"
+#include "errno.h"
+
+using namespace FileSystem;
 
 size_t SyscallWrite(InterruptStack *stack)
 {
@@ -23,13 +27,16 @@ size_t SyscallWrite(InterruptStack *stack)
     {
         //TODO
     }
-    else if(fd < 0)
+    else if(fd >= 3) //actual files
     {
-        return 0;
-    }
-    else if(fd > 2) //actual files
-    {
-        //TODO
+        FILE_HANDLE handle = fd - 3;
+
+        if(vfs.FileType(handle) != FILE_HANDLE_FILE)
+        {
+            return -ENOENT;
+        }
+
+        return vfs.WriteFile(handle, buffer, count);
     }
 
     return 0;

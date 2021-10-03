@@ -48,6 +48,7 @@ namespace FileSystem
         ::FileSystem::FileHandleType FileType(FILE_HANDLE handle);
 
         uint64_t FileLength(FILE_HANDLE handle);
+        uint64_t FileOffset(FILE_HANDLE handle);
         uint64_t ReadFile(FILE_HANDLE handle, void *buffer, uint64_t length);
         uint64_t WriteFile(FILE_HANDLE handle, const void *buffer, uint64_t length);
         uint64_t SeekFile(FILE_HANDLE handle, uint64_t cursor);
