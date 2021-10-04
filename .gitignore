@@ -13,3 +13,12 @@ qemu.log
 limine
 symbols.map
 toolchain
+dist/lib/ld.so
+dist/lib/libc.so
+dist/lib/libcrypt.so
+dist/lib/libdl.so
+dist/lib/libm.so
+dist/lib/libpthread.so
+dist/lib/libresolv.so
+dist/lib/librt.so
+dist/lib/libutil.so

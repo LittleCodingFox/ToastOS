@@ -16,6 +16,7 @@ SRCDIR  		= src
 OBJDIR   		= obj/kernel
 BINDIR   		= bin
 TMPDIR	 		= tmp
+DISTDIR			= dist
 
 LIBCSRCDIR 		= klibc
 
@@ -103,14 +104,14 @@ $(LIBCASMOBJECTS): $(LIBCOBJDIR)/%_asm.o : $(LIBCSRCDIR)/%.asm
 	$(ASMC) $(ASMFLAGS) $< -f elf64 -o $@
 
 kernel: makedirs $(OBJECTS) $(COBJECTS) $(LIBKCOBJECTS) $(EXTOBJECTS) $(EXTCOBJECTS) $(ASMOBJECTS) $(ASOBJECTS)
-	@echo $(CRTBEGINPATH)
-	@echo $(CRTENDPATH)
 	$(LD) $(LDFLAGS) $(OBJECTS) $(COBJECTS) $(LIBKCOBJECTS) $(EXTOBJECTS) $(EXTCOBJECTS) $(ASMOBJECTS) $(ASOBJECTS) -o $(BINDIR)/kernel
 	awk '$$1 ~ /0x[0-9a-f]{16}/ {print substr($$1, 3), $$2}' linker.map > symbols.map
 	rm linker.map
 
 libc: makedirs $(LIBCCOBJECTS) $(LIBCASMOBJECTS) $(EXTCOBJECTS)
 	$(AR) rcs "$(LIBCBINDIR)/$@.a" $(LIBCCOBJECTS) $(LIBCASMOBJECTS) $(EXTCOBJECTS)
+	mkdir -p $(DISTDIR)/lib
+	cp toolchain/pkg-builds/mlibc/*.so $(DISTDIR)/lib
 
 iso-linux:
 	sh makebootdir.sh
