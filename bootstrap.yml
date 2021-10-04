@@ -1,0 +1,121 @@
+general:
+  everything_by_default: true
+
+sources:
+  - name: binutils
+    subdir: toolchain
+    git: 'https://sourceware.org/git/binutils-gdb.git'
+    tag: 'binutils-2_37'
+    version: '2.37'
+
+  - name: gcc
+    subdir: toolchain
+    git: 'https://gcc.gnu.org/git/gcc.git'
+    tag: 'releases/gcc-11.2.0'
+    version: '11.2.0'
+    regenerate:
+      - args: ['autoconf']
+        workdir: '@THIS_SOURCE_DIR@/gcc'
+
+  - name: mlibc
+    subdir: 'toolchain'
+    git: 'https://github.com/LittleCodingFox/mlibc.git'
+    branch: 'feature/toastos'
+    rolling_version: true
+    version: '0.0pl@ROLLING_ID@'
+
+tools:
+  - name: host-binutils
+    from_source: binutils
+    configure:
+      - args:
+        - '@THIS_SOURCE_DIR@/configure'
+        - '--prefix=@PREFIX@'
+        - '--target=x86_64-toast'
+        - '--with-sysroot=@SYSROOT_DIR@'
+        - '--disable-werror'
+        - '--enable-shared'
+        - '--enable-targets=x86_64-elf,x86_64-pe'
+        - 'CFLAGS=-O2 -pipe'
+    compile:
+      - args: ['make', '-j@PARALLELISM@', 'all-binutils', 'all-gas', 'all-ld']
+    install:
+      - args: ['make', 'install-strip-binutils', 'install-strip-gas', 'install-strip-ld']
+
+  - name: host-gcc
+    from_source: gcc
+    tools_required:
+      - tool: host-binutils
+        recursive: true
+    configure:
+      - args:
+        - '@THIS_SOURCE_DIR@/configure'
+        - '--prefix=@PREFIX@'
+        - '--target=x86_64-toast'
+        - '--with-sysroot=@SYSROOT_DIR@'
+        - '--enable-languages=c,c++'
+        - '--enable-shared'
+        - '--disable-multilib'
+        - '--enable-initfini-array'
+        - 'CFLAGS=-O2 -pipe'
+        - 'CXXFLAGS=-O2 -pipe'
+    stages:
+      - name: compiler
+        pkgs_required:
+          - mlibc-headers
+        compile:
+          - args: ['make', '-j@PARALLELISM@', 'all-gcc']
+          - args: ['make', 'install-gcc']
+          - args: ['mkdir', '-p', '@PREFIX@/x86_64-toast/bin']
+          - args: ['ln', '-sf', '../../../host-binutils/x86_64-toast/bin/as',
+                                '@PREFIX@/x86_64-toast/bin/as']
+          - args: ['ln', '-sf', '../../../host-binutils/x86_64-toast/bin/ld',
+                                '@PREFIX@/x86_64-toast/bin/ld']
+
+packages:
+  - name: mlibc-headers
+    from_source: mlibc
+    revision: 2
+    implict_package: true
+    configure:
+      - args:
+        - 'meson'
+        - '--cross-file'
+        - '@SOURCE_ROOT@/cross_file.txt'
+        - '--prefix=/usr'
+        - '-Dheaders_only=true'
+        - '-Ddisable_iconv_option=true'
+        - '-Ddisable_intl_option=true'
+        - '@THIS_SOURCE_DIR@'
+    build:
+      - args: ['ninja']
+      - args: ['ninja', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+
+  - name: mlibc
+    from_source: mlibc
+    revision: 2
+    tools_required:
+      - tool: host-gcc
+        stage_dependencies: [compiler]
+    implict_package: true
+    pkgs_required:
+      - mlibc-headers
+    configure:
+      - args:
+        - 'meson'
+        - '--cross-file'
+        - '@SOURCE_ROOT@/cross_file.txt'
+        - '--prefix=/usr'
+        - '--libdir=lib'
+        - '--buildtype=debugoptimized'
+        - '-Dmlibc_no_headers=true'
+        - '-Ddisable_iconv_option=true'
+        - '-Ddisable_intl_option=true'
+        - '@THIS_SOURCE_DIR@'
+    build:
+      - args: ['ninja']
+      - args: ['ninja', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'

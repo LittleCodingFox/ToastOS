@@ -132,6 +132,13 @@ run-qemu-linux:
 	-bios /usr/share/qemu/OVMF.fd \
 	-m 256M -cpu qemu64 -machine type=q35 -serial file:./debug.log -net none -d int --no-reboot $(QEMU_FLAGS) 2>qemu.log
 
+toolchain:
+	rm -Rf toolchain
+	mkdir -p toolchain
+	cd toolchain && xbstrap init ..
+	cd toolchain && xbstrap install-tool --all
+	cd toolchain && xbstrap install mlibc
+
 clean:
 	rm -Rf $(BINDIR)/*.img
 	rm -Rf $(BINDIR)/*.iso

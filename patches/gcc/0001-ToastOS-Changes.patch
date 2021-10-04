@@ -1,0 +1,146 @@
+From 1f80264cf4fe4858aed407d2ef041b9f2debee42 Mon Sep 17 00:00:00 2001
+From: Nuno Silva <little.coding.fox@gmail.com>
+Date: Sun, 3 Oct 2021 22:02:27 +0100
+Subject: [PATCH] ToastOS Changes
+
+---
+ config.sub                  |  2 +-
+ fixincludes/mkfixinc.sh     |  1 +
+ gcc/config.gcc              | 12 ++++++++++++
+ gcc/config/toast.h          | 28 ++++++++++++++++++++++++++++
+ libgcc/config.host          |  8 ++++++++
+ libstdc++-v3/crossconfig.m4 |  8 +++++++-
+ 6 files changed, 57 insertions(+), 2 deletions(-)
+ create mode 100644 gcc/config/toast.h
+
+diff --git a/config.sub b/config.sub
+index 63c1f1c8b5e..275b2ff49ba 100755
+--- a/config.sub
++++ b/config.sub
+@@ -1700,7 +1700,7 @@ case $os in
+ 	     | hpux* | unos* | osf* | luna* | dgux* | auroraux* | solaris* \
+ 	     | sym* |  plan9* | psp* | sim* | xray* | os68k* | v88r* \
+ 	     | hiux* | abug | nacl* | netware* | windows* \
+-	     | os9* | macos* | osx* | ios* \
++	     | os9* | macos* | osx* | ios* | toast* \
+ 	     | mpw* | magic* | mmixware* | mon960* | lnews* \
+ 	     | amigaos* | amigados* | msdos* | newsos* | unicos* | aof* \
+ 	     | aos* | aros* | cloudabi* | sortix* | twizzler* \
+diff --git a/fixincludes/mkfixinc.sh b/fixincludes/mkfixinc.sh
+index df90720b716..de7761842a9 100755
+--- a/fixincludes/mkfixinc.sh
++++ b/fixincludes/mkfixinc.sh
+@@ -11,6 +11,7 @@ target=fixinc.sh
+ 
+ # Check for special fix rules for particular targets
+ case $machine in
++	*-toast* | \
+     i?86-*-cygwin* | \
+     i?86-*-mingw32* | \
+     x86_64-*-mingw32* | \
+diff --git a/gcc/config.gcc b/gcc/config.gcc
+index 357b0bed067..7608b7a219e 100644
+--- a/gcc/config.gcc
++++ b/gcc/config.gcc
+@@ -940,6 +940,12 @@ case ${target} in
+   default_use_cxa_atexit=yes
+   use_gcc_stdint=wrap
+   ;;
++*-*-toast*)
++  gas=yes
++  gnu_ld=yes
++  default_use_cxa_atexit=yes
++  use_gcc_stdint=wrap
++  ;;
+ *-*-uclinux*)
+   extra_options="$extra_options gnu-user.opt"
+   use_gcc_stdint=wrap
+@@ -1923,6 +1929,12 @@ i[34567]86-*-freebsd*)
+ x86_64-*-freebsd*)
+ 	tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h ${fbsd_tm_file} i386/x86-64.h i386/freebsd.h i386/freebsd64.h"
+ 	;;
++i[34567]86-*-toast*)
++    tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h glibc-stdint.h i386/i386elf.h toast.h"
++    ;;
++x86_64-*-toast*)
++    tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h glibc-stdint.h i386/i386elf.h i386/x86-64.h toast.h"
++    ;;
+ i[34567]86-*-netbsdelf*)
+ 	tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h ${nbsd_tm_file} i386/netbsd-elf.h"
+ 	extra_options="${extra_options} netbsd.opt netbsd-elf.opt"
+diff --git a/gcc/config/toast.h b/gcc/config/toast.h
+new file mode 100644
+index 00000000000..0b1e69a0448
+--- /dev/null
++++ b/gcc/config/toast.h
+@@ -0,0 +1,28 @@
++/* Useful if you wish to make target-specific GCC changes. */
++#undef TARGET_TOAST
++#define TARGET_TOAST 1
++ 
++/* Default arguments you want when running your
++   i686-myos-gcc/x86_64-myos-gcc toolchain */
++#undef LIB_SPEC
++#define LIB_SPEC "-lc" /* link against C standard library */
++ 
++/* Files that are linked before user code.
++   The %s tells GCC to look for these files in the library directory. */
++#undef STARTFILE_SPEC
++#define STARTFILE_SPEC "crt0.o%s crti.o%s crtbegin.o%s"
++ 
++/* Files that are linked after user code. */
++#undef ENDFILE_SPEC
++#define ENDFILE_SPEC "crtend.o%s crtn.o%s"
++ 
++/* Additional predefined macros. */
++#undef TARGET_OS_CPP_BUILTINS
++#define TARGET_OS_CPP_BUILTINS()      \
++  do {                                \
++    builtin_define ("__toast__");      \
++    builtin_define ("__unix__");      \
++    builtin_assert ("system=myos");   \
++    builtin_assert ("system=unix");   \
++    builtin_assert ("system=posix");   \
++  } while(0);
+\ No newline at end of file
+diff --git a/libgcc/config.host b/libgcc/config.host
+index 50f00062232..26fcfd1b8e8 100644
+--- a/libgcc/config.host
++++ b/libgcc/config.host
+@@ -327,6 +327,14 @@ case ${host} in
+ *-*-elf)
+   extra_parts="crtbegin.o crtend.o"
+   ;;
++i[34567]86-*-toast*)
++	extra_parts="$extra_parts crti.o crtbegin.o crtend.o crtn.o"
++	tmake_file="$tmake_file i386/t-crtstuff t-crtstuff-pic t-libgcc-pic"
++	;;
++x86_64-*-toast*)
++	extra_parts="$extra_parts crti.o crtbegin.o crtend.o crtn.o"
++	tmake_file="$tmake_file i386/t-crtstuff t-crtstuff-pic t-libgcc-pic"
++	;;
+ esac
+ 
+ # Except on ARM where we do not use DWARF, table based EH on VxWorks
+diff --git a/libstdc++-v3/crossconfig.m4 b/libstdc++-v3/crossconfig.m4
+index ff44d5ae019..f342f17ff02 100644
+--- a/libstdc++-v3/crossconfig.m4
++++ b/libstdc++-v3/crossconfig.m4
+@@ -249,7 +249,13 @@ case "${host}" in
+     GLIBCXX_CHECK_MATH_SUPPORT
+     GLIBCXX_CHECK_STDLIB_SUPPORT
+     ;;
+-  *-tpf)
++  *-toast*)
++    GLIBCXX_CHECK_COMPILER_FEATURES
++    GLIBCXX_CHECK_LINKER_FEATURES
++    GLIBCXX_CHECK_MATH_SUPPORT
++    GLIBCXX_CHECK_STDLIB_SUPPORT
++    ;;
++	*-tpf)
+     SECTION_FLAGS='-ffunction-sections -fdata-sections'
+     SECTION_LDFLAGS='-Wl,--gc-sections $SECTION_LDFLAGS'
+     AC_SUBST(SECTION_FLAGS)
+-- 
+2.30.2.windows.1
+
