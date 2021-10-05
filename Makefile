@@ -146,6 +146,9 @@ toolchain:
 	cd toolchain && xbstrap install-tool --all
 	cd toolchain && xbstrap install mlibc
 
+rebuild-mlibc:
+	cd toolchain && xbstrap build mlibc --reconfigure
+
 clean:
 	rm -Rf $(BINDIR)/*.img
 	rm -Rf $(BINDIR)/*.iso

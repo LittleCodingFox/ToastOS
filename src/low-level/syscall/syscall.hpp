@@ -2,8 +2,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define SYSCALL_WRITE       1
-#define SYSCALL_READ        2
+#define SYSCALL_READ        1
+#define SYSCALL_WRITE       2
 #define SYSCALL_OPEN        3
 #define SYSCALL_CLOSE       4
 #define SYSCALL_SEEK        5

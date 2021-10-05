@@ -14,23 +14,35 @@ int64_t SyscallVMMap(InterruptStack *stack)
     int flags = (int)stack->r8;
     int fd = (int)stack->r9;
 
+    DEBUG_OUT("VMMap: Hint: %p; size: %llu; prot: %i; flags: %i; fd: %i", hint, size, prot, flags, fd);
+
     uint64_t ptr = (uint64_t)new uint8_t[size];
 
     if(ptr != 0)
     {
+        uint64_t pages = size / 0x1000 + 1;
+
         PageTableManager userManager;
         userManager.p4 = (PageTable *)process->cr3;
 
         if(hint != NULL)
         {
-            userManager.MapMemory(hint, (void *)TranslateToPhysicalMemoryAddress(ptr),
-                PAGING_FLAG_PRESENT | PAGING_FLAG_USER_ACCESSIBLE | PAGING_FLAG_WRITABLE);
+            for(uint64_t i = 0; i < pages; i++)
+            {
+                userManager.MapMemory((void *)((uint64_t)hint + i * 0x1000),
+                    (void *)(TranslateToPhysicalMemoryAddress(ptr) + i * 0x1000),
+                    PAGING_FLAG_PRESENT | PAGING_FLAG_USER_ACCESSIBLE | PAGING_FLAG_WRITABLE);
+            }
 
             return (int64_t)hint;
         }
         else
         {
-            userManager.IdentityMap((void *)TranslateToPhysicalMemoryAddress(ptr), PAGING_FLAG_PRESENT | PAGING_FLAG_USER_ACCESSIBLE | PAGING_FLAG_WRITABLE);
+            for(uint64_t i = 0; i < pages; i++)
+            {
+                userManager.IdentityMap((void *)(TranslateToPhysicalMemoryAddress(ptr + i * 0x1000)),
+                    PAGING_FLAG_PRESENT | PAGING_FLAG_USER_ACCESSIBLE | PAGING_FLAG_WRITABLE);
+            }
 
             return TranslateToPhysicalMemoryAddress(ptr);
         }

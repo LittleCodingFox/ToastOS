@@ -34,7 +34,7 @@ namespace Elf
         uint64_t startPage = address / 0x1000;
         uint64_t pageCount = ((address + memSize) / 0x1000) - (address / 0x1000) + 1;
 
-        DEBUG_OUT("Load at address %p with %llu pages (memsize: %llu; fileSize: %llu)", address, pageCount, memSize, fileSize);
+        DEBUG_OUT("Load at address %p with %llu pages (memsize: %llu; fileSize: %llu; offset: %p)", address, pageCount, memSize, fileSize, programHeader->offset);
 
         for(uint64_t i = 0; i < pageCount; i++)
         {

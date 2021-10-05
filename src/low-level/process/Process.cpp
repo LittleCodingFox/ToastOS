@@ -31,7 +31,7 @@ void SwitchProcess(InterruptStack *stack)
         return;
     }
 
-    DEBUG_OUT("SWITCH PROCESS %p", stack);
+    //DEBUG_OUT("SWITCH PROCESS %p", stack);
 
     globalProcessManager->SwitchProcess(stack, true);
 }
@@ -68,7 +68,7 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
         return;
     }
 
-    DEBUG_OUT("Switching processes %p to %p", current, next);
+    //DEBUG_OUT("Switching processes %p to %p", current, next);
 
     if(current == next)
     {
@@ -120,7 +120,7 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
     {
         next->state = PROCESS_STATE_RUNNING;
 
-        DEBUG_OUT("Initializing task %p: rsp: %p; rip: %p; cr3: %p", next, next->rsp, next->rip, next->cr3);
+        //DEBUG_OUT("Initializing task %p: rsp: %p; rip: %p; cr3: %p", next, next->rsp, next->rip, next->cr3);
 
         if(fromTimer)
         {
@@ -135,9 +135,11 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
         return;
     }
 
+    /*
     DEBUG_OUT("Switching tasks:\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%x\n\tss: 0x%x\nnext:\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%x\n\tss: 0x%x",
         current->rsp, current->rip, current->cr3, current->cs, current->ss,
         next->rsp, next->rip, next->cr3, next->cs, next->ss);
+    */
 
     if(fromTimer)
     {

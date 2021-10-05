@@ -49,7 +49,7 @@ SyscallPointer syscallHandlers[] =
 
 void SyscallHandler(InterruptStack *stack)
 {
-    DEBUG_OUT("SYSCALL %llu", stack->rdi);
+    //DEBUG_OUT("SYSCALL %llu", stack->rdi);
 
     if(stack->rdi <= sizeof(syscallHandlers) / sizeof(SyscallPointer) && syscallHandlers[stack->rdi] != NULL)
     {
