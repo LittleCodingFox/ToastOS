@@ -86,23 +86,22 @@ public:
 
 class ProcessManager
 {
-public:
+private:
     IScheduler *scheduler;
+public:
     Threading::AtomicLock lock;
 
     ProcessManager(IScheduler *scheduler);
 
-    ProcessInfo *LoadImage(const void *image, const char *name, const char **argv, uint64_t permissionLevel);
+    ProcessInfo *LoadImage(const void *image, const char *name, const char **argv, const char **envp, uint64_t permissionLevel);
     ProcessInfo *CreateFromEntryPoint(uint64_t entryPoint, const char *name, uint64_t permissionLevel);
 
     ProcessInfo *CurrentProcess();
 
     void SwitchProcess(InterruptStack *stack, bool fromTimer);
-};
 
-#define PushToStack(stack, value)\
-    stack = (char *)stack - sizeof(uint64_t);\
-    *((uint64_t *)stack) = (uint64_t)(value);
+    bool IsLocked();
+};
 
 extern ProcessManager *globalProcessManager;
 

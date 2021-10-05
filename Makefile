@@ -112,6 +112,7 @@ libc: makedirs $(LIBCCOBJECTS) $(LIBCASMOBJECTS) $(EXTCOBJECTS)
 	$(AR) rcs "$(LIBCBINDIR)/$@.a" $(LIBCCOBJECTS) $(LIBCASMOBJECTS) $(EXTCOBJECTS)
 	mkdir -p $(DISTDIR)/lib
 	cp toolchain/pkg-builds/mlibc/*.so $(DISTDIR)/lib
+	cp $(DISTDIR)/lib/ld.so $(DISTDIR)/lib/ld64.so.1
 
 iso-linux:
 	sh makebootdir.sh
@@ -131,6 +132,11 @@ debug-linux: run-linux
 run-qemu-linux:
 	qemu-system-x86_64 -drive file=$(BINDIR)/$(OS_NAME).img,format=raw,index=0,media=disk \
 	-bios /usr/share/qemu/OVMF.fd \
+	-m 256M -cpu qemu64 -machine type=q35 -serial file:./debug.log -net none -d int --no-reboot $(QEMU_FLAGS) 2>qemu.log
+
+debug-qemu-linux:
+	qemu-system-x86_64 -drive file=$(BINDIR)/$(OS_NAME).img,format=raw,index=0,media=disk \
+	-bios /usr/share/qemu/OVMF.fd -s -S \
 	-m 256M -cpu qemu64 -machine type=q35 -serial file:./debug.log -net none -d int --no-reboot $(QEMU_FLAGS) 2>qemu.log
 
 toolchain:

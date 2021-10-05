@@ -27,24 +27,30 @@ void SyscallUnlock()
 }
 
 int64_t KNotImplemented(InterruptStack *stack);
-size_t SyscallWrite(InterruptStack *stack);
-size_t SyscallRead(InterruptStack *stack);
-size_t SyscallClose(InterruptStack *stack);
-size_t SyscallOpen(InterruptStack *stack);
-size_t SyscallSeek(InterruptStack *stack);
+int64_t SyscallWrite(InterruptStack *stack);
+int64_t SyscallRead(InterruptStack *stack);
+int64_t SyscallClose(InterruptStack *stack);
+int64_t SyscallOpen(InterruptStack *stack);
+int64_t SyscallSeek(InterruptStack *stack);
+int64_t SyscallAnonAlloc(InterruptStack *stack);
+int64_t SyscallVMMap(InterruptStack *stack);
 
 SyscallPointer syscallHandlers[] =
 {
-    (SyscallPointer)KNotImplemented, // 0
-    (SyscallPointer)SyscallWrite, // 1
-    (SyscallPointer)SyscallRead, // 2
-    (SyscallPointer)SyscallOpen, // 3
-    (SyscallPointer)SyscallClose, // 4
-    (SyscallPointer)SyscallSeek, // 5
+    [0] = (SyscallPointer)KNotImplemented,
+    [SYSCALL_WRITE] = (SyscallPointer)SyscallWrite,
+    [SYSCALL_READ] = (SyscallPointer)SyscallRead,
+    [SYSCALL_OPEN] = (SyscallPointer)SyscallOpen,
+    [SYSCALL_CLOSE] = (SyscallPointer)SyscallClose,
+    [SYSCALL_SEEK] = (SyscallPointer)SyscallSeek,
+    [SYSCALL_ANON_ALLOC] = (SyscallPointer)SyscallAnonAlloc,
+    [SYSCALL_VM_MAP] = (SyscallPointer)SyscallVMMap
 };
 
 void SyscallHandler(InterruptStack *stack)
 {
+    DEBUG_OUT("SYSCALL %llu", stack->rdi);
+
     if(stack->rdi <= sizeof(syscallHandlers) / sizeof(SyscallPointer) && syscallHandlers[stack->rdi] != NULL)
     {
         ProcessInfo *process = globalProcessManager->CurrentProcess();

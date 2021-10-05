@@ -6,11 +6,11 @@
 
 namespace Elf
 {
-    void LoadElfSegment(const void *data, ElfProgramHeader *programHeader, PageTableManager *pageTableManager)
+    void LoadElfSegment(const void *data, ElfProgramHeader *programHeader, PageTableManager *pageTableManager, uint64_t base)
     {
         uint64_t memSize = programHeader->memorySize;
         uint64_t fileSize = programHeader->fileSize;
-        uint64_t address = programHeader->virtualAddress;
+        uint64_t address = programHeader->virtualAddress + base;
         uint64_t higherAddress = TranslateToHighHalfMemoryAddress(address);
         uint64_t offset = programHeader->offset;
 
@@ -52,7 +52,7 @@ namespace Elf
         }
     }
 
-    ElfHeader *LoadElf(const void *data)
+    ElfHeader *LoadElf(const void *data, uint64_t base, Auxval *auxval)
     {
         DEBUG_OUT("Loading Elf at ptr %p", data);
 
@@ -84,18 +84,48 @@ namespace Elf
             return NULL;
         }
 
+        Auxval value;
+
+        value.entry = base + header->entry;
+        value.phdr = 0;
+        value.programHeaderSize = sizeof(ElfProgramHeader);
+        value.phNum = header->phNum;
+
+        *auxval = value;
+
         return header;
     }
 
-    void MapElfSegments(ElfHeader *header, PageTableManager *pageTableManager)
+    void MapElfSegments(ElfHeader *header, PageTableManager *pageTableManager, uint64_t base, Auxval *auxval, char **ldPath)
     {
+        *ldPath = NULL;
+
         ElfProgramHeader *programHeader = (ElfProgramHeader *)((uint64_t)header + header->phOffset);
 
         for(uint64_t i = 0; i < header->phNum; i++)
         {
-            if(programHeader[i].type == ELF_PROGRAM_TYPE_LOAD)
+            ElfProgramHeader *currentHeader = &programHeader[i];
+
+            if(currentHeader->type == ELF_PROGRAM_TYPE_LOAD)
             {
-                LoadElfSegment(header, &programHeader[i], pageTableManager);
+                LoadElfSegment(header, currentHeader, pageTableManager, base);
+            }
+            else if(currentHeader->type == ELF_PROGRAM_TYPE_PHDR)
+            {
+                auxval->phdr = base + currentHeader->virtualAddress;
+
+                DEBUG_OUT("PHDR: %p", auxval->phdr);
+            }
+            else if(currentHeader->type == ELF_PROGRAM_TYPE_INTERP)
+            {
+                uint32_t fileSize = currentHeader->fileSize;
+                char *fileName = new char[fileSize + 1];
+
+                fileName[fileSize] = '\0';
+
+                memcpy(fileName, (uint8_t *)header + currentHeader->offset, fileSize);
+
+                *ldPath = fileName;
             }
         }
     }

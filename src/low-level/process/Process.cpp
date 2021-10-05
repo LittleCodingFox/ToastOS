@@ -11,6 +11,12 @@
 #include "timer/Timer.hpp"
 #include "syscall/syscall.hpp"
 #include "stacktrace/stacktrace.hpp"
+#include "filesystems/VFS.hpp"
+
+using namespace FileSystem;
+
+#define LD_BASE 0x40000000
+#define push(stack, value) *(--stack) = (value)
 
 ProcessManager *globalProcessManager;
 uint64_t processIDCounter = 0;
@@ -20,7 +26,12 @@ extern "C" void SwitchTasks(ProcessControlBlock* next);
 
 void SwitchProcess(InterruptStack *stack)
 {
-    //DEBUG_OUT("SWITCH PROCESS %p", stack);
+    if(globalProcessManager->IsLocked())
+    {
+        return;
+    }
+
+    DEBUG_OUT("SWITCH PROCESS %p", stack);
 
     globalProcessManager->SwitchProcess(stack, true);
 }
@@ -30,39 +41,44 @@ ProcessManager::ProcessManager(IScheduler *scheduler) : scheduler(scheduler)
     timer.RegisterHandler(::SwitchProcess);
 }
 
+bool ProcessManager::IsLocked()
+{
+    return lock.IsLocked();
+}
+
 void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
 {
-    interrupts.DisableInterrupts(); //Will be enabled in the switch task call
-
     lock.Lock();
+
+    interrupts.DisableInterrupts(); //Will be enabled in the switch task call
 
     ProcessControlBlock *current = scheduler->CurrentProcess();
     ProcessControlBlock *next = scheduler->NextProcess();
 
     if(current == NULL || next == NULL)
     {
-        lock.Unlock();
-
         if(fromTimer)
         {
             //Called from timer, so must finish up PIC
             outport8(PIC1, PIC_EOI);
         }
+
+        lock.Unlock();
 
         return;
     }
 
-    //DEBUG_OUT("Switching processes %p to %p", current, next);
+    DEBUG_OUT("Switching processes %p to %p", current, next);
 
     if(current == next)
     {
-        lock.Unlock();
-
         if(fromTimer)
         {
             //Called from timer, so must finish up PIC
             outport8(PIC1, PIC_EOI);
         }
+
+        lock.Unlock();
 
         return;
     }
@@ -104,7 +120,7 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
     {
         next->state = PROCESS_STATE_RUNNING;
 
-        //DEBUG_OUT("Initializing task %p: rsp: %p; rip: %p; cr3: %p", next, next->rsp, next->rip, next->cr3);
+        DEBUG_OUT("Initializing task %p: rsp: %p; rip: %p; cr3: %p", next, next->rsp, next->rip, next->cr3);
 
         if(fromTimer)
         {
@@ -119,19 +135,17 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
         return;
     }
 
-    lock.Unlock();
-
-    /*
     DEBUG_OUT("Switching tasks:\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%x\n\tss: 0x%x\nnext:\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%x\n\tss: 0x%x",
         current->rsp, current->rip, current->cr3, current->cs, current->ss,
         next->rsp, next->rip, next->cr3, next->cs, next->ss);
-    */
 
     if(fromTimer)
     {
         //Called from timer, so must finish up PIC
         outport8(PIC1, PIC_EOI);
     }
+
+    lock.Unlock();
 
     SwitchTasks(next);
 }
@@ -212,14 +226,14 @@ ProcessInfo *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const cha
 
     newProcess->environment = env;
 
-    void *stack = (void *)&newProcess->stack[PROCESS_STACK_SIZE];
+    uint64_t *stack = (uint64_t *)&newProcess->stack[PROCESS_STACK_SIZE];
 
-    PushToStack(stack, entryPoint);
+    push(stack, entryPoint);
 
     /*
-    PushToStack(stack, env);
-    PushToStack(stack, _argv);
-    PushToStack(stack, argc);
+    push(stack, env);
+    push(stack, _argv);
+    push(stack, argc);
     */
 
     newProcess->rsp = (uint64_t)stack;
@@ -235,7 +249,7 @@ ProcessInfo *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const cha
     return newProcess;
 }
 
-ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, const char **argv, uint64_t permissionLevel)
+ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, const char **argv, const char **envp, uint64_t permissionLevel)
 {
     lock.Lock();
 
@@ -294,53 +308,173 @@ ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, cons
 
     newProcess->name = strdup(name);
 
-    int argc = 0;
-
-    while(argv[argc])
-    {
-        argc++;
-    }
-
-    char **_argv = (char **)malloc(sizeof(char *[argc + 1]));
-
-    for(uint32_t i = 0; i < argc; i++)
-    {
-        _argv[i] = strdup(argv[i]);
-    }
-
-    _argv[argc] = NULL;
-
-    newProcess->argv = _argv;
-
-    //TODO: proper env
-
-    char **env = (char **)calloc(1, sizeof(char *[10]));
-
-    newProcess->environment = env;
-
-    void *stack = (void *)&newProcess->stack[PROCESS_STACK_SIZE];
-
-    /*
-    PushToStack(stack, env);
-    PushToStack(stack, _argv);
-    PushToStack(stack, argc);
-    */
-
-    newProcess->rsp = (uint64_t)stack;
     newProcess->rflags = 0x202;
 
-    newProcess->cr3 = /*Registers::ReadCR3(); //*/(uint64_t)pageTableFrame;
+    newProcess->cr3 = (uint64_t)pageTableFrame;
 
-    Elf::ElfHeader *elf = Elf::LoadElf(image);
+    Elf::Auxval auxval;
+    char *ldPath = NULL;
+
+    Elf::ElfHeader *elf = Elf::LoadElf(image, 0, &auxval);
 
     newProcess->elf = elf;
 
+    uint64_t rip;
+
     if(elf != NULL)
     {
-        Elf::MapElfSegments(elf, /*globalPageTableManager*/&userPageManager);
+        Elf::MapElfSegments(elf, &userPageManager, 0, &auxval, &ldPath);
 
-        newProcess->rip = elf->entry;
+        if(ldPath != NULL)
+        {
+            DEBUG_OUT("Found LD for process: %s", ldPath);
+
+            FILE_HANDLE ldHandle = vfs.OpenFile(ldPath);
+
+            if(vfs.FileType(ldHandle) != FILE_HANDLE_FILE)
+            {
+                DEBUG_OUT("Failed to load ld binary at %s", ldPath);
+
+                lock.Unlock();
+
+                //TODO: Cleanup
+
+                return NULL;
+            }
+            else
+            {
+                uint64_t fileSize = vfs.FileLength(ldHandle);
+
+                DEBUG_OUT("Loading LD with size %llu", fileSize);
+
+                uint8_t *ldImage = new uint8_t[fileSize];
+
+                if(vfs.ReadFile(ldHandle, ldImage, fileSize) != fileSize)
+                {
+                    DEBUG_OUT("Failed to load ld binary at %s: I/O Error", ldPath);
+
+                    lock.Unlock();
+
+                    //TODO: Cleanup
+                    return NULL;
+                }
+
+                Elf::Auxval ldAuxval;
+
+                Elf::ElfHeader *ldElf = Elf::LoadElf(ldImage, LD_BASE, &ldAuxval);
+
+                if(ldElf == NULL)
+                {
+                    DEBUG_OUT("Invalid ld binary at %s", ldPath);
+
+                    lock.Unlock();
+
+                    //TODO: Cleanup
+                    return NULL;
+                }
+                else
+                {
+                    Elf::MapElfSegments(ldElf, &userPageManager, LD_BASE, &ldAuxval, &ldPath);
+
+                    rip = ldAuxval.entry;
+                }
+            }
+        }
+        else
+        {
+            rip = auxval.entry;
+        }
     }
+    else
+    {
+        lock.Unlock();
+
+        //TODO: Cleanup
+        return NULL;
+    }
+
+    uint64_t stackEnd = (uint64_t)&newProcess->stack[PROCESS_STACK_SIZE];
+    uint64_t *stack = (uint64_t *)stackEnd;
+    uint8_t *byteStack = (uint8_t *)stack;
+
+    uint32_t envc = 0;
+
+    while(envp[envc])
+    {
+        uint32_t length = strlen(envp[envc]) + 1;
+        byteStack = (uint8_t *)byteStack - length;
+
+        memcpy(byteStack, envp[envc], length);
+
+        envc++;
+    }
+
+    uint32_t argc = 0;
+
+    while(argv[argc])
+    {
+        uint32_t length = strlen(argv[argc]) + 1;
+        byteStack = (uint8_t *)byteStack - length;
+        memcpy(byteStack, argv[argc], length);
+
+        argc++;
+    }
+
+    byteStack -= (size_t)byteStack & 0xF;
+
+    stack = (uint64_t *)byteStack;
+
+    if(((argc + envc + 1) & 1) != 0)
+    {
+        stack--;
+    }
+
+    //Zero aux vector entry
+    push(stack, 0);
+    push(stack, 0);
+
+    //Entry
+    push(stack, auxval.entry);
+    push(stack, AT_ENTRY);
+
+    //PHDR
+    push(stack, auxval.phdr);
+    push(stack, AT_PHDR);
+
+    //PHENT
+    push(stack, auxval.programHeaderSize);
+    push(stack, AT_PHENT);
+
+    //PHNUM
+    push(stack, auxval.phNum);
+    push(stack, AT_PHNUM);
+
+    offset = 0;
+
+    push(stack, 0);
+
+    stack -= envc;
+
+    for(uint32_t i = 0; i < envc; i++)
+    {
+        stack[i] = stackEnd - (offset += strlen(envp[i]) + 1);
+    }
+
+    push(stack, 0);
+
+    stack -= argc;
+
+    for(uint32_t i = 0; i < argc; i++)
+    {
+        stack[i] = stackEnd - (offset += strlen(argv[i]) + 1);
+    }
+
+    push(stack, argc);
+
+    newProcess->rsp = (uint64_t)stack;
+    newProcess->rip = rip;
+
+    DEBUG_OUT("Initializing process at RIP %p auxval entry: %p", rip, auxval.entry);
 
     scheduler->AddProcess(newProcess);
 

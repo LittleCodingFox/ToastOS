@@ -63,10 +63,11 @@ extern "C" void _start(stivale2_struct *stivale2Struct)
         {
             DEBUG_OUT("%s", "Executing elf");
 
-            const char* argv[1] { NULL };
+            const char *argv[1] { NULL };
+            const char *envp[1] { NULL };
 
             globalProcessManager->CreateFromEntryPoint((uint64_t)KernelTask, "KernelTask", PROCESS_PERMISSION_KERNEL);
-            globalProcessManager->LoadImage(buffer, "elf", argv, PROCESS_PERMISSION_USER);
+            globalProcessManager->LoadImage(buffer, "elf", argv, envp, PROCESS_PERMISSION_USER);
         }
     }
 
