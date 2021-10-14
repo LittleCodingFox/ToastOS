@@ -177,7 +177,7 @@ namespace FileSystem
             return 0;
         }
 
-        if(fileHandle->cursor + length >= fileHandle->length)
+        if(fileHandle->cursor + length > fileHandle->length)
         {
             length = fileHandle->length - fileHandle->cursor;
         }
@@ -185,7 +185,7 @@ namespace FileSystem
         uint64_t cursor = fileHandle->cursor;
 
         fileHandle->cursor += length;
-
+        
         return fileHandle->mountPoint->fileSystem->ReadFile(fileHandle->fsHandle, buffer, cursor, length);
     }
 

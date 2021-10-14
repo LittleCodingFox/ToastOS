@@ -3,6 +3,7 @@
 #include "process/Process.hpp"
 #include "debug.hpp"
 #include "errno.h"
+#include "paging/PageFrameAllocator.hpp"
 
 #define PROT_NONE       0x00
 #define PROT_READ       0x01
@@ -48,26 +49,35 @@ int64_t SyscallVMMap(InterruptStack *stack)
     {
         if(flags & MAP_FIXED)
         {
-            
+            //TODO: Don't force hint/Add VMM
+            for(uint64_t i = 0; i < pages; i++)
+            {
+                void *physicalMemory = globalAllocator.RequestPage();
+
+                userManager.MapMemory((void *)((uint64_t)hint + i * 0x1000), physicalMemory, pagingFlags);
+            }
+
+            DEBUG_OUT("Mapping %p-%p with paging flags 0x%x", hint, (uint64_t)hint + pages * 0x1000, pagingFlags);
+
+            return (uint64_t)hint;
         }
         else
         {
-            uint64_t ptr = (uint64_t)new uint8_t[size];
+            void *physical = globalAllocator.RequestPages(pages);
 
-            if(ptr != 0)
+            if(physical != 0)
             {
                 for(uint64_t i = 0; i < pages; i++)
                 {
-                    userManager.IdentityMap((void *)(TranslateToPhysicalMemoryAddress(ptr + i * 0x1000)), pagingFlags);
+                    userManager.IdentityMap((void *)((uint64_t)physical + i * 0x1000), pagingFlags);
                 }
 
-                DEBUG_OUT("Identity Mapping %p-%p (%p-%p)", ptr, ptr + pages * 0x1000,
-                    TranslateToPhysicalMemoryAddress(ptr), TranslateToPhysicalMemoryAddress(ptr + pages * 0x1000));
+                DEBUG_OUT("Allocating %p-%p with paging flags 0x%x", physical, (uint64_t)physical + pages * 0x1000, pagingFlags);
 
-                return TranslateToPhysicalMemoryAddress(ptr);
+                return (uint64_t)physical;
             }
 
-            DEBUG_OUT("Failed to identity map for size %llu", size);
+            DEBUG_OUT("Failed to map memory for size %llu", size);
         }
     }
 

@@ -122,7 +122,7 @@ namespace FileSystem
 
                 if(currentBlock > parent.inode.blocks)
                 {
-                    break;
+                    return false;
                 }
 
                 uint64_t chunkSize = count - readBytes;
@@ -682,7 +682,7 @@ namespace FileSystem
                 readBytes = inode->inode.size - cursor;
             }
 
-            uint8_t temp[readBytes];
+            uint8_t *temp = new uint8_t[readBytes];
 
             if(!InodeRead(temp, cursor, readBytes, *inode))
             {
@@ -690,6 +690,8 @@ namespace FileSystem
             }
 
             memcpy(buffer, temp, readBytes < size ? readBytes : size);
+
+            delete [] temp;
 
             return readBytes;
         }

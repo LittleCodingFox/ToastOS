@@ -17,6 +17,7 @@
 #include "schedulers/RoundRobinScheduler.hpp"
 #include "partitionmanager/PartitionManager.hpp"
 #include "filesystems/VFS.hpp"
+#include "sse/sse.hpp"
 
 PageTableManager pageTableManager;
 
@@ -257,6 +258,8 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
         DEBUG_OUT("Initializing kernel symbols from size %llu", symbols->end - symbols->begin);
         kernelInitStacktrace((char *)symbols->begin, symbols->end - symbols->begin);
     }
+
+    EnableSSE();
 
     psf2_font_t *psf2Font = NULL;
 

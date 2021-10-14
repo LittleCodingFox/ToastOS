@@ -51,5 +51,5 @@ int64_t SyscallSeek(InterruptStack *stack)
             return vfs->SeekFileEnd(handle);
     }
 
-    return vfs->FileOffset(handle);
+    return -EINVAL;
 }

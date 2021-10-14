@@ -39,9 +39,11 @@ public:
     static uint64_t ReadCR0();
     static uint64_t ReadCR2();
     static uint64_t ReadCR3();
+    static uint64_t ReadCR4();
     static uint64_t ReadRFlags();
     static void WriteCR0(uint64_t value);
     static void WriteCR3(uint64_t value);
+    static void WriteCR4(uint64_t value);
     static uint64_t ReadMSR(uint64_t msr);
     static void WriteMSR(uint64_t msr, uint64_t value);
     static uint64_t ReadRSP();

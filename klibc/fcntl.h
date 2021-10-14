@@ -7,6 +7,6 @@
 #define O_CREAT     0x0100
 #define O_TRUNC     0x0200
 
-#define SEEK_SET    0
 #define SEEK_CUR    1
 #define SEEK_END    2
+#define SEEK_SET    3

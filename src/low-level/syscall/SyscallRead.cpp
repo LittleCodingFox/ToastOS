@@ -37,7 +37,9 @@ int64_t SyscallRead(InterruptStack *stack)
             return -ENOENT;
         }
 
-        return vfs->ReadFile(handle, buffer, count);
+        uint64_t read = vfs->ReadFile(handle, buffer, count);
+        
+        return read;
     }
 
     return 0;

@@ -68,6 +68,8 @@ struct ProcessControlBlock
 
     uint64_t stack[PROCESS_STACK_SIZE];
 
+    char __attribute__((aligned(16))) FXSAVE[512];
+
     ProcessInfo *process;
 
     uint64_t state;

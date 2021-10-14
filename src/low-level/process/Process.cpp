@@ -107,6 +107,8 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
         current->rip = stack->instructionPointer;
         current->rflags = stack->cpuFlags;
 
+        asm volatile(" fxsave %0" :: "m"(current->FXSAVE));
+
         if(current->process->permissionLevel == PROCESS_PERMISSION_KERNEL)
         {
             current->cs = (GDTKernelBaseSelector + 0x00);
@@ -149,6 +151,8 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
         //Called from timer, so must finish up PIC
         outport8(PIC1, PIC_EOI);
     }
+
+    asm volatile(" fxrstor %0" : : "m"(next->FXSAVE));
 
     lock.Unlock();
 
