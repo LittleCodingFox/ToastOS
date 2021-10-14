@@ -32,12 +32,12 @@ int64_t SyscallRead(InterruptStack *stack)
     {
         FILE_HANDLE handle = fd - 3;
 
-        if(vfs.FileType(handle) != FILE_HANDLE_FILE)
+        if(vfs->FileType(handle) == FILE_HANDLE_UNKNOWN)
         {
             return -ENOENT;
         }
 
-        return vfs.ReadFile(handle, buffer, count);
+        return vfs->ReadFile(handle, buffer, count);
     }
 
     return 0;

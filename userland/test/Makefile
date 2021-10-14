@@ -16,7 +16,7 @@ COBJECTS		= $(CSRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
 INCLUDEDIRS		= -I../../toolchain/system-root/usr/include
 
-CFLAGS			= $(INCLUDEDIRS) -fshort-wchar -Wall -O0 -fno-omit-frame-pointer \
+CFLAGS			= $(INCLUDEDIRS) -fshort-wchar -Wall -O0 -g -fno-omit-frame-pointer \
 	-fno-rtti -fno-exceptions -fno-stack-protector -mno-3dnow \
 	-mno-mmx -mno-sse -mno-sse2 -mno-avx
 

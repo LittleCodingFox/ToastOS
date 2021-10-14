@@ -47,7 +47,7 @@ namespace GPT
                 continue;
             }
 
-            partitions.add(new Partition(*this, entry->uniqueGuid, entry->typeGuid, entry->firstLBA, entry->lastLBA - entry->firstLBA + 1));
+            partitions.push_back(new Partition(*this, entry->uniqueGuid, entry->typeGuid, entry->firstLBA, entry->lastLBA - entry->firstLBA + 1));
         }
 
         free(headerBuffer);
@@ -63,7 +63,7 @@ namespace GPT
 
     uint32_t PartitionTable::PartitionCount() const
     {
-        return partitions.length();
+        return partitions.size();
     }
 
     Partition &PartitionTable::GetPartition(int index)

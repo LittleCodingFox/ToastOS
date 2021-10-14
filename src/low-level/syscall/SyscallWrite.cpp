@@ -31,12 +31,12 @@ size_t SyscallWrite(InterruptStack *stack)
     {
         FILE_HANDLE handle = fd - 3;
 
-        if(vfs.FileType(handle) != FILE_HANDLE_FILE)
+        if(vfs->FileType(handle) != FILE_HANDLE_UNKNOWN)
         {
             return -ENOENT;
         }
 
-        return vfs.WriteFile(handle, buffer, count);
+        return vfs->WriteFile(handle, buffer, count);
     }
 
     return 0;

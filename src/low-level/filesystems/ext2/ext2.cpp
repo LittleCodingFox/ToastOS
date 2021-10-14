@@ -521,7 +521,7 @@ namespace FileSystem
         {
             Threading::ScopedLock Lock(lock);
 
-            for(uint64_t i = 0; i < fileHandles.length(); i++)
+            for(uint64_t i = 0; i < fileHandles.size(); i++)
             {
                 if(strcmp(fileHandles[i].path, path) == 0)
                 {
@@ -541,7 +541,7 @@ namespace FileSystem
             data.inode = inode;
             data.path = path;
 
-            fileHandles.add(data);
+            fileHandles.push_back(data);
 
             return data.ID;
         }
@@ -550,11 +550,12 @@ namespace FileSystem
         {
             Threading::ScopedLock Lock(lock);
 
-            for(uint64_t i = 0; i < fileHandles.length(); i++)
+            for(auto &fileHandle : fileHandles)
             {
-                if(fileHandles[i].ID == handle)
+                if(fileHandle.ID == handle)
                 {
-                    fileHandles.remove(i);
+                    //TODO: Erase
+                    //fileHandles.;
 
                     return;
                 }
@@ -565,7 +566,7 @@ namespace FileSystem
         {
             Threading::ScopedLock Lock(lock);
 
-            for(uint64_t i = 0; i < fileHandles.length(); i++)
+            for(uint64_t i = 0; i < fileHandles.size(); i++)
             {
                 if(fileHandles[i].ID == handle)
                 {
@@ -593,7 +594,7 @@ namespace FileSystem
             Threading::ScopedLock Lock(lock);
             Inode *inode = NULL;
 
-            for(uint64_t i = 0; i < fileHandles.length(); i++)
+            for(uint64_t i = 0; i < fileHandles.size(); i++)
             {
                 if(fileHandles[i].ID == handle)
                 {
@@ -649,7 +650,7 @@ namespace FileSystem
 
             Inode *inode = NULL;
 
-            for(uint64_t i = 0; i < fileHandles.length(); i++)
+            for(uint64_t i = 0; i < fileHandles.size(); i++)
             {
                 if(fileHandles[i].ID == handle)
                 {
@@ -699,7 +700,7 @@ namespace FileSystem
 
             Inode *inode = NULL;
 
-            for(uint64_t i = 0; i < fileHandles.length(); i++)
+            for(uint64_t i = 0; i < fileHandles.size(); i++)
             {
                 if(fileHandles[i].ID == handle)
                 {

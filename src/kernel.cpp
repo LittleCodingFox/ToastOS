@@ -47,9 +47,9 @@ extern "C" void _start(stivale2_struct *stivale2Struct)
 {
     InitializeKernel(stivale2Struct);
 
-    FILE_HANDLE handle = vfs.OpenFile("/bin/test");
+    FILE_HANDLE handle = vfs->OpenFile("/bin/test");
 
-    uint64_t length = vfs.FileLength(handle);
+    uint64_t length = vfs->FileLength(handle);
 
     if(length > 0)
     {
@@ -59,8 +59,10 @@ extern "C" void _start(stivale2_struct *stivale2Struct)
 
         memset(buffer, 0, length);
 
-        if(vfs.ReadFile(handle, buffer, length) == length)
+        if(vfs->ReadFile(handle, buffer, length) == length)
         {
+            vfs->CloseFile(handle);
+
             DEBUG_OUT("%s", "Executing elf");
 
             const char *argv[1] { NULL };

@@ -38,7 +38,10 @@ void SwitchProcess(InterruptStack *stack)
 
 ProcessManager::ProcessManager(IScheduler *scheduler) : scheduler(scheduler)
 {
-    timer.RegisterHandler(::SwitchProcess);
+    if(timer)
+    {
+        timer->RegisterHandler(::SwitchProcess);
+    }
 }
 
 bool ProcessManager::IsLocked()
@@ -331,9 +334,9 @@ ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, cons
         {
             DEBUG_OUT("Found LD for process: %s", ldPath);
 
-            FILE_HANDLE ldHandle = vfs.OpenFile(ldPath);
+            FILE_HANDLE ldHandle = vfs->OpenFile(ldPath);
 
-            if(vfs.FileType(ldHandle) != FILE_HANDLE_FILE)
+            if(vfs->FileType(ldHandle) != FILE_HANDLE_FILE)
             {
                 DEBUG_OUT("Failed to load ld binary at %s", ldPath);
 
@@ -345,13 +348,13 @@ ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, cons
             }
             else
             {
-                uint64_t fileSize = vfs.FileLength(ldHandle);
+                uint64_t fileSize = vfs->FileLength(ldHandle);
 
                 DEBUG_OUT("Loading LD with size %llu", fileSize);
 
                 uint8_t *ldImage = new uint8_t[fileSize];
 
-                if(vfs.ReadFile(ldHandle, ldImage, fileSize) != fileSize)
+                if(vfs->ReadFile(ldHandle, ldImage, fileSize) != fileSize)
                 {
                     DEBUG_OUT("Failed to load ld binary at %s: I/O Error", ldPath);
 

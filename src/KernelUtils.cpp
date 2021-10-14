@@ -15,6 +15,8 @@
 #include "../klibc/sys/syscall.h"
 #include "process/Process.hpp"
 #include "schedulers/RoundRobinScheduler.hpp"
+#include "partitionmanager/PartitionManager.hpp"
+#include "filesystems/VFS.hpp"
 
 PageTableManager pageTableManager;
 
@@ -177,7 +179,9 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
 
     PCI::EnumeratePCI(mcfg);
 
-    FileSystem::globalPartitionManager.Initialize();
+    FileSystem::vfs.initialize();
+    FileSystem::globalPartitionManager.initialize();
+    FileSystem::globalPartitionManager->Initialize();
 }
 
 FramebufferRenderer r = FramebufferRenderer(NULL, NULL);
@@ -284,19 +288,23 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     console = vtconsole(consoleWidth, consoleHeight, PaintHandler, CursorHandler);
 
-    timer.Initialize();
+    timer.initialize();
 
-    timer.RegisterHandler(RefreshFramebuffer);
+    timer->Initialize();
+
+    timer->RegisterHandler(RefreshFramebuffer);
 
     InitializeACPI(rsdp);
 
-    uint64_t MBSize = 1024 * 1024;
+    printf("Initializing syscalls\n");
 
     InitializeSyscalls();
 
     globalProcessManager = new ProcessManager(new RoundRobinScheduler());
 
     DEBUG_OUT("%s", "Finished initializing the kernel");
+
+    uint64_t MBSize = 1024 * 1024;
 
     DEBUG_OUT("Memory Stats: Free: %lluMB; Used: %lluMB; Reserved: %lluMB", globalAllocator.GetFreeRAM() / MBSize,
         globalAllocator.GetUsedRAM() / MBSize, globalAllocator.GetReservedRAM() / MBSize);

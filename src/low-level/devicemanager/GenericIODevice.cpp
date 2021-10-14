@@ -1,5 +1,6 @@
 #include "GenericIODevice.hpp"
 #include "debug.hpp"
+#include <string.h>
 
 namespace Devices
 {

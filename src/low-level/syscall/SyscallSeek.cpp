@@ -21,7 +21,7 @@ int64_t SyscallSeek(InterruptStack *stack)
 
     FILE_HANDLE handle = fd - 3;
 
-    if(vfs.FileType(handle) == FILE_HANDLE_UNKNOWN)
+    if(vfs->FileType(handle) == FILE_HANDLE_UNKNOWN)
     {
         return -EBADF;
     }
@@ -30,26 +30,26 @@ int64_t SyscallSeek(InterruptStack *stack)
     {
         case SEEK_SET:
 
-            if(offset > vfs.FileLength(handle))
+            if(offset > vfs->FileLength(handle))
             {
                 return -EINVAL;
             }
 
-            return vfs.SeekFile(handle, offset);
+            return vfs->SeekFile(handle, offset);
 
         case SEEK_CUR:
 
-            if(vfs.FileOffset(handle) + offset > vfs.FileLength(handle))
+            if(vfs->FileOffset(handle) + offset > vfs->FileLength(handle))
             {
                 return -EINVAL;
             }
 
-            return vfs.SeekFile(handle, vfs.FileOffset(handle) + offset);
+            return vfs->SeekFile(handle, vfs->FileOffset(handle) + offset);
 
         case SEEK_END:
 
-            return vfs.SeekFileEnd(handle);
+            return vfs->SeekFileEnd(handle);
     }
 
-    return vfs.FileOffset(handle);
+    return vfs->FileOffset(handle);
 }

@@ -4,13 +4,16 @@
 #include "debug.hpp"
 #include "errno.h"
 
-#define MAP_FILE        0
-#define MAP_FIXED       0x10
-#define MAP_ANONYMOUS   0x20
+#define PROT_NONE       0x00
+#define PROT_READ       0x01
+#define PROT_WRITE      0x02
+#define PROT_EXEC       0x04
 
-#define PROT_READ       0x1
-#define PROT_WRITE      0x2
-#define PROT_EXEC       0x4
+#define MAP_PRIVATE     0x01
+#define MAP_SHARED      0x02
+#define MAP_FIXED       0x04
+#define MAP_ANON        0x08
+#define MAP_ANONYMOUS   0x08
 
 int64_t SyscallVMMap(InterruptStack *stack)
 {
@@ -22,7 +25,7 @@ int64_t SyscallVMMap(InterruptStack *stack)
     int flags = (int)stack->r8;
     int fd = (int)stack->r9;
 
-    DEBUG_OUT("VMMap: Hint: %p; size: %llu; prot: %i; flags: %i; fd: %i", hint, size, prot, flags, fd);
+    DEBUG_OUT("VMMap: Hint: %p; size: %llu; prot: 0x%x; flags: 0x%x; fd: %i", hint, size, prot, flags, fd);
 
     uint64_t pages = size / 0x1000 + 1;
 
@@ -41,35 +44,31 @@ int64_t SyscallVMMap(InterruptStack *stack)
         pagingFlags |= PAGING_FLAG_NO_EXECUTE;
     }
 
-    if(hint != NULL)
+    if(flags & MAP_ANONYMOUS)
     {
-        for(uint64_t i = 0; i < pages; i++)
+        if(flags & MAP_FIXED)
         {
-            userManager.IdentityMap((void *)((uint64_t)hint + i * 0x1000), pagingFlags);
+            
         }
-
-        DEBUG_OUT("Returning Hint: %p (%p-%p)", hint, hint, (uint64_t)hint + pages * 0x1000);
-
-        return (int64_t)hint;
-    }
-    else
-    {
-        uint64_t ptr = (uint64_t)new uint8_t[size];
-
-        if(ptr != 0)
+        else
         {
-            for(uint64_t i = 0; i < pages; i++)
+            uint64_t ptr = (uint64_t)new uint8_t[size];
+
+            if(ptr != 0)
             {
-                userManager.IdentityMap((void *)(TranslateToPhysicalMemoryAddress(ptr + i * 0x1000)), pagingFlags);
+                for(uint64_t i = 0; i < pages; i++)
+                {
+                    userManager.IdentityMap((void *)(TranslateToPhysicalMemoryAddress(ptr + i * 0x1000)), pagingFlags);
+                }
+
+                DEBUG_OUT("Identity Mapping %p-%p (%p-%p)", ptr, ptr + pages * 0x1000,
+                    TranslateToPhysicalMemoryAddress(ptr), TranslateToPhysicalMemoryAddress(ptr + pages * 0x1000));
+
+                return TranslateToPhysicalMemoryAddress(ptr);
             }
 
-            DEBUG_OUT("Identity Mapping %p-%p (%p-%p)", ptr, ptr + pages * 0x1000,
-                TranslateToPhysicalMemoryAddress(ptr), TranslateToPhysicalMemoryAddress(ptr + pages * 0x1000));
-
-            return TranslateToPhysicalMemoryAddress(ptr);
+            DEBUG_OUT("Failed to identity map for size %llu", size);
         }
-
-        DEBUG_OUT("Failed to identity map for size %llu", size);
     }
 
     return 0;

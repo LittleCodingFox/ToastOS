@@ -1,5 +1,6 @@
 #pragma once
 
+#include <frg/manual_box.hpp>
 #include "gpt/GPT.hpp"
 #include "filesystems/FileSystem.hpp"
 
@@ -17,10 +18,10 @@ namespace FileSystem
             DiskInfo() : device(NULL), table(NULL), fileSystem(NULL) {}
         };
 
-        DynamicArray<DiskInfo> disks;    
+        frg::vector<DiskInfo, frg_allocator> disks;    
     public:
         void Initialize();
     };
 
-    extern PartitionManager globalPartitionManager;
+    extern frg::manual_box<PartitionManager> globalPartitionManager;
 }

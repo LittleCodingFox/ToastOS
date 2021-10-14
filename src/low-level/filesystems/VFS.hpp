@@ -3,7 +3,9 @@
 #include <stdint.h>
 
 #include "FileSystem.hpp"
-#include "dynamicarray.hpp"
+#include <frg/manual_box.hpp>
+#include <frg/vector.hpp>
+#include <frg_allocator.hpp>
 
 namespace FileSystem
 {
@@ -32,8 +34,8 @@ namespace FileSystem
             uint64_t ID;
         };
 
-        DynamicArray<MountPoint> mountPoints;
-        DynamicArray<FileHandle> fileHandles;
+        frg::vector<MountPoint, frg_allocator> mountPoints;
+        frg::vector<FileHandle, frg_allocator> fileHandles;
         uint64_t fileHandleCounter;
 
         FileHandle *GetFileHandle(FILE_HANDLE handle);
@@ -56,5 +58,5 @@ namespace FileSystem
         uint64_t SeekFileEnd(FILE_HANDLE handle);
     };
 
-    extern VFS vfs;
+    extern frg::manual_box<VFS> vfs;
 }

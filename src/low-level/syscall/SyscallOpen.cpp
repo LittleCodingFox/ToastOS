@@ -12,7 +12,7 @@ int64_t SyscallOpen(InterruptStack *stack)
     const char *path = (const char *)stack->rsi;
     uint32_t flags = (uint32_t)stack->rdx;
 
-    FILE_HANDLE handle = vfs.OpenFile(path);
+    FILE_HANDLE handle = vfs->OpenFile(path);
 
     if(handle == INVALID_FILE_HANDLE)
     {
