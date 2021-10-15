@@ -106,6 +106,7 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
         current->rsp = stack->stackPointer;
         current->rip = stack->instructionPointer;
         current->rflags = stack->cpuFlags;
+        current->fsBase = current->process->fsBase;
 
         asm volatile(" fxsave %0" :: "m"(current->FXSAVE));
 
@@ -153,6 +154,8 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
     }
 
     asm volatile(" fxrstor %0" : : "m"(next->FXSAVE));
+
+    LoadFSBase(next->fsBase);
 
     lock.Unlock();
 
@@ -490,4 +493,33 @@ ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, cons
     lock.Unlock();
 
     return newProcess;
+}
+
+void ProcessManager::LoadFSBase(uint64_t base)
+{
+    Registers::WriteMSR(0xC0000100, base);
+}
+
+void ProcessManager::Sigaction(int signum, sigaction *act, sigaction *oldact)
+{
+    if(signum < 0 || signum >= sizeof(ProcessInfo::sigHandlers) / sizeof(void *))
+    {
+        return;
+    }
+
+    ProcessInfo *currentProcess = CurrentProcess();
+
+    lock.Lock();
+
+    if(act)
+    {
+        currentProcess->sigHandlers[signum] = *act;
+    }
+
+    if(oldact)
+    {
+        *oldact = currentProcess->sigHandlers[signum];
+    }
+
+    lock.Unlock();
 }

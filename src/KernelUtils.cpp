@@ -17,9 +17,45 @@
 #include "schedulers/RoundRobinScheduler.hpp"
 #include "partitionmanager/PartitionManager.hpp"
 #include "filesystems/VFS.hpp"
+#include "filesystems/tarfs/tarfs.hpp"
 #include "sse/sse.hpp"
 
 PageTableManager pageTableManager;
+
+void *Stivale2GetTag(stivale2_struct *stivale2Struct, uint64_t ID)
+{
+    stivale2_tag *current = (stivale2_tag *)stivale2Struct->tags;
+
+    for(;;)
+    {
+        if(current == NULL)
+        {
+            return NULL;
+        }
+
+        if(current->identifier == ID)
+        {
+            return current;
+        }
+
+        current = (stivale2_tag *)current->next;
+    }
+}
+
+stivale2_module *Stivale2GetModule(stivale2_struct_tag_modules *modules, const char *name)
+{
+    for(uint64_t i = 0; i < modules->module_count; i++)
+    {
+        stivale2_module *module = &modules->modules[i];
+
+        if(strncmp(name, module->string, 128) == 0)
+        {
+            return module;
+        }
+    }
+
+    return NULL;
+}
 
 uint64_t GetMemorySize(stivale2_struct_tag_memmap *memmap)
 {
@@ -200,41 +236,6 @@ void CursorHandler (struct vtconsole* vtc, vtcursor_t* cur)
 
 void RefreshFramebuffer(InterruptStack *stack);
 
-void *Stivale2GetTag(stivale2_struct *stivale2Struct, uint64_t ID)
-{
-    stivale2_tag *current = (stivale2_tag *)stivale2Struct->tags;
-
-    for(;;)
-    {
-        if(current == NULL)
-        {
-            return NULL;
-        }
-
-        if(current->identifier == ID)
-        {
-            return current;
-        }
-
-        current = (stivale2_tag *)current->next;
-    }
-}
-
-stivale2_module *Stivale2GetModule(stivale2_struct_tag_modules *modules, const char *name)
-{
-    for(uint64_t i = 0; i < modules->module_count; i++)
-    {
-        stivale2_module *module = &modules->modules[i];
-
-        if(strncmp(name, module->string, 128) == 0)
-        {
-            return module;
-        }
-    }
-
-    return NULL;
-}
-
 void InitializeKernel(stivale2_struct *stivale2Struct)
 {
     InitializeSerial();
@@ -246,6 +247,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     stivale2_module *symbols = Stivale2GetModule(modules, "symbols.map");
     stivale2_module *font = Stivale2GetModule(modules, "font.psf");
+    stivale2_module *initrd = Stivale2GetModule(modules, "initrd");
 
     LoadGDT();
 
@@ -302,6 +304,13 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
     printf("Initializing syscalls\n");
 
     InitializeSyscalls();
+
+    if(initrd != NULL)
+    {
+        FileSystem::tarfs::TarFS *tarfs = new FileSystem::tarfs::TarFS((uint8_t *)initrd->begin);
+
+        FileSystem::vfs->AddMountPoint("/", tarfs);
+    }
 
     globalProcessManager = new ProcessManager(new RoundRobinScheduler());
 

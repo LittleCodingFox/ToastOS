@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <signal.h>
 #include "elf/elf.hpp"
 #include "lock.hpp"
 #include "interrupts/Interrupts.hpp"
@@ -29,6 +30,10 @@ struct ProcessInfo
     uint64_t savedKernelStack;
     uint64_t initialUserStack;
     uint64_t sleepTicks;
+    uint64_t fsBase;
+    //Currently the max signal is SIGCANCEL, might need to adjust if it changes in the mlibc ABI
+    sigaction sigHandlers[SIGCANCEL + 1];
+
     Elf::ElfHeader *elf;
 };
 
@@ -68,6 +73,8 @@ struct ProcessControlBlock
 
     uint64_t stack[PROCESS_STACK_SIZE];
 
+    uint64_t fsBase;
+
     char __attribute__((aligned(16))) FXSAVE[512];
 
     ProcessInfo *process;
@@ -103,6 +110,10 @@ public:
     void SwitchProcess(InterruptStack *stack, bool fromTimer);
 
     bool IsLocked();
+
+    void LoadFSBase(uint64_t base);
+
+    void Sigaction(int signum, sigaction *act, sigaction *oldact);
 };
 
 extern ProcessManager *globalProcessManager;

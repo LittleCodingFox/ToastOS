@@ -57,8 +57,6 @@ extern "C" void _start(stivale2_struct *stivale2Struct)
 
         uint8_t *buffer = new uint8_t[length];
 
-        memset(buffer, 0, length);
-
         if(vfs->ReadFile(handle, buffer, length) == length)
         {
             vfs->CloseFile(handle);

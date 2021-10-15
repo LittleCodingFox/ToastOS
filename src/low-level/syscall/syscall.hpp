@@ -11,6 +11,9 @@
 #define SYSCALL_ANON_FREE   7
 #define SYSCALL_VM_MAP      8
 #define SYSCALL_VM_UNMAP    9
+#define SYSCALL_TCB_SET     10
+#define SYSCALL_SIGACTION   11
+#define SYSCALL_GETPID      12
 
 void InitializeSyscalls();
 

@@ -57,6 +57,7 @@ namespace FileSystem
 
                 printf("\t%s with size: %s, type: %s)\n", partition.GetID().ToString(), partition.SizeString(), partition.GetType().ToString());
 
+/*
                 if(ext2::Ext2FileSystem::IsValidEntry(&partition))
                 {
                     disk.fileSystem = new ext2::Ext2FileSystem(&partition);
@@ -71,6 +72,7 @@ namespace FileSystem
 
                     //disk.fileSystem->DebugListDirectories();
                 }
+*/
             }
         }
     }
