@@ -6,6 +6,11 @@
 typedef int pid_t;
 typedef int uid_t;
 
+typedef int sig_atomic_t;
+
+// Argument for signal()
+typedef void (*__sighandler) (int);
+
 union sigval
 {
 	int sival_int;
@@ -67,6 +72,8 @@ extern "C" {
 #define SIGRTMIN 32
 #define SIGRTMAX 33
 #define SIGCANCEL 34
+
+#define SIGNAL_MAX 35
 
 // TODO: replace this by uint64_t
 typedef long sigset_t;
@@ -131,6 +138,8 @@ struct sigaction
 	int sa_flags;
 	void (*sa_sigaction)(int, siginfo_t *, void *);
 };
+
+const char *signalname(int signal);
 
 #ifdef __cplusplus
 }

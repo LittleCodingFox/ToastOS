@@ -129,3 +129,27 @@ void RoundRobinScheduler::ExitProcess(ProcessInfo *process)
 
     delete remove;
 }
+
+ProcessInfo *RoundRobinScheduler::GetProcess(uint64_t pid)
+{
+    Threading::ScopedLock lock(this->lock);
+
+    ProcessControlBlock *p = processes;
+
+    if(processes == processes->next)
+    {
+        Panic("[RoundRobin] Cyclical error!");
+    }
+
+    while(p->next != processes)
+    {
+        if(p->process->ID == pid)
+        {
+            return p->process;
+        }
+
+        p = p->next;
+    }
+
+    return NULL;
+}

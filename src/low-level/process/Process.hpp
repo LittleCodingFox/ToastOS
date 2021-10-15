@@ -31,8 +31,7 @@ struct ProcessInfo
     uint64_t initialUserStack;
     uint64_t sleepTicks;
     uint64_t fsBase;
-    //Currently the max signal is SIGCANCEL, might need to adjust if it changes in the mlibc ABI
-    sigaction sigHandlers[SIGCANCEL + 1];
+    sigaction sigHandlers[SIGNAL_MAX];
 
     Elf::ElfHeader *elf;
 };
@@ -91,6 +90,7 @@ public:
     virtual void AddProcess(ProcessInfo *process) = 0;
     virtual ProcessControlBlock *NextProcess() = 0;
     virtual void ExitProcess(ProcessInfo *process) = 0;
+    virtual ProcessInfo *GetProcess(uint64_t pid) = 0;
 };
 
 class ProcessManager
@@ -114,6 +114,8 @@ public:
     void LoadFSBase(uint64_t base);
 
     void Sigaction(int signum, sigaction *act, sigaction *oldact);
+
+    void Kill(uint64_t pid, int signal);
 };
 
 extern ProcessManager *globalProcessManager;

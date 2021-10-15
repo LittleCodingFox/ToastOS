@@ -232,6 +232,11 @@ ProcessInfo *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const cha
 
     newProcess->name = strdup(name);
 
+    for(uint64_t i = 0; i < SIGNAL_MAX; i++)
+    {
+        newProcess->sigHandlers[i].sa_handler = SIG_DFL;
+    }
+
     //TODO: proper env
 
     char **env = (char **)calloc(1, sizeof(char *[10]));
@@ -323,6 +328,11 @@ ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, cons
     newProcess->rflags = 0x202;
 
     newProcess->cr3 = (uint64_t)pageTableFrame;
+
+    for(uint64_t i = 0; i < SIGNAL_MAX; i++)
+    {
+        newProcess->sigHandlers[i].sa_handler = SIG_DFL;
+    }
 
     Elf::Auxval auxval;
     char *ldPath = NULL;
@@ -502,7 +512,7 @@ void ProcessManager::LoadFSBase(uint64_t base)
 
 void ProcessManager::Sigaction(int signum, sigaction *act, sigaction *oldact)
 {
-    if(signum < 0 || signum >= sizeof(ProcessInfo::sigHandlers) / sizeof(void *))
+    if(signum < 0 || signum >= SIGNAL_MAX)
     {
         return;
     }
@@ -522,4 +532,56 @@ void ProcessManager::Sigaction(int signum, sigaction *act, sigaction *oldact)
     }
 
     lock.Unlock();
+}
+
+void ProcessManager::Kill(uint64_t pid, int signal)
+{
+    if(signal < 0 || signal >= SIGNAL_MAX)
+    {
+        return;
+    }
+
+    ProcessInfo *process = scheduler->GetProcess(pid);
+
+    if(process == NULL)
+    {
+        return;
+    }
+
+    if(process->sigHandlers[signal].sa_flags & SA_SIGINFO)
+    {
+        //TODO: Support sa_sigaction
+        return;
+    }
+
+    if(signal == SIGKILL)
+    {
+        return;
+    }
+
+    void *handler = (void *)process->sigHandlers[signal].sa_handler;
+
+    if(handler == SIG_IGN)
+    {
+        return;
+    }
+    
+    if(handler == SIG_DFL)
+    {
+        switch(signal)
+        {
+            case SIGSEGV:
+            case SIGTERM:
+            case SIGILL:
+            case SIGFPE:
+            case SIGINT:
+
+                return;
+
+            default:
+                DEBUG_OUT("Unhandled signal: %s", signalname(signal));
+
+                return;
+        }
+    }
 }
