@@ -109,10 +109,12 @@ packages:
         - '@SOURCE_ROOT@/cross_file.txt'
         - '--prefix=/usr'
         - '--libdir=lib'
-        - '--buildtype=debugoptimized'
+        - '--buildtype=debug'
         - '-Dmlibc_no_headers=true'
         - '-Ddisable_iconv_option=true'
         - '-Ddisable_intl_option=true'
+        - '-Ddisable_posix_option=true'
+        - '-Ddisable_linux_option=true'
         - '@THIS_SOURCE_DIR@'
     build:
       - args: ['ninja']

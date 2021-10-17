@@ -1,6 +1,4 @@
 #include <stdio.h>
-#include <fcntl.h>
-#include <unistd.h>
 
 int main(int argc, char **argv)
 {
@@ -10,7 +8,8 @@ int main(int argc, char **argv)
 
     for(;;)
     {
-        size_t count = read(STDIN_FILENO, buffer, 1);
+        size_t count = fread(buffer, 1, 1, stdin);
+        
         printf("you typed the character: %c (count: %llu)\n", buffer[0], count);
     }
 

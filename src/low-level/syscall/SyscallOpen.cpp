@@ -12,10 +12,14 @@ int64_t SyscallOpen(InterruptStack *stack)
     const char *path = (const char *)stack->rsi;
     uint32_t flags = (uint32_t)stack->rdx;
 
+    DEBUG_OUT("Open %s (flags: 0x%x)", path, flags);
+
     FILE_HANDLE handle = vfs->OpenFile(path);
 
     if(handle == INVALID_FILE_HANDLE)
     {
+        DEBUG_OUT("Failed to open %s!", path);
+
         return -ENOENT;
     }
 
