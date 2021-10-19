@@ -38,6 +38,7 @@ int64_t SyscallTCBSet(InterruptStack *stack);
 int64_t SyscallSigaction(InterruptStack *stack);
 int64_t SyscallGetPID(InterruptStack *stack);
 int64_t SyscallKill(InterruptStack *stack);
+int64_t SyscallIsATTY(InterruptStack *stack);
 
 SyscallPointer syscallHandlers[] =
 {
@@ -53,6 +54,7 @@ SyscallPointer syscallHandlers[] =
     [SYSCALL_SIGACTION] = (SyscallPointer)SyscallSigaction,
     [SYSCALL_GETPID] = (SyscallPointer)SyscallGetPID,
     [SYSCALL_KILL] = (SyscallPointer)SyscallKill,
+    [SYSCALL_ISATTY] = (SyscallPointer)SyscallIsATTY,
 };
 
 void SyscallHandler(InterruptStack *stack)

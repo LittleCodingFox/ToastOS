@@ -9,7 +9,7 @@ using namespace FileSystem;
 
 int64_t SyscallRead(InterruptStack *stack)
 {
-    uint64_t fd = stack->rsi;
+    int fd = stack->rsi;
     void *buffer = (void *)stack->rdx;
     size_t count = (size_t)stack->rcx;
 

@@ -15,6 +15,7 @@
 #define SYSCALL_SIGACTION   11
 #define SYSCALL_GETPID      12
 #define SYSCALL_KILL        13
+#define SYSCALL_ISATTY      14
 
 void InitializeSyscalls();
 

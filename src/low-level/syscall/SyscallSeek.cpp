@@ -8,6 +8,8 @@
 
 using namespace FileSystem;
 
+#define	ESPIPE		29
+
 int64_t SyscallSeek(InterruptStack *stack)
 {
     int fd = (int)stack->rsi;
@@ -16,7 +18,7 @@ int64_t SyscallSeek(InterruptStack *stack)
 
     if(fd < 3)
     {
-        return -EPERM;
+        return ESPIPE;
     }
 
     FILE_HANDLE handle = fd - 3;

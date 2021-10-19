@@ -27,7 +27,7 @@ int64_t SyscallVMMap(InterruptStack *stack)
     int flags = (int)stack->r8;
     int fd = (int)stack->r9;
 
-    DEBUG_OUT("VMMap: Hint: %p; size: %llu; prot: 0x%x; flags: 0x%x; fd: %i", hint, size, prot, flags, fd);
+    //DEBUG_OUT("VMMap: Hint: %p; size: %llu; prot: 0x%x; flags: 0x%x; fd: %i", hint, size, prot, flags, fd);
 
     uint64_t pages = size / 0x1000 + 1;
 
@@ -65,7 +65,7 @@ int64_t SyscallVMMap(InterruptStack *stack)
                 globalPageTableManager->UnmapMemory(higher);
             }
 
-            DEBUG_OUT("Mapping %p-%p with paging flags 0x%x", hint, (uint64_t)hint + pages * 0x1000, pagingFlags);
+            //DEBUG_OUT("Mapping %p-%p with paging flags 0x%x", hint, (uint64_t)hint + pages * 0x1000, pagingFlags);
 
             return (uint64_t)hint;
         }
@@ -89,7 +89,7 @@ int64_t SyscallVMMap(InterruptStack *stack)
                     globalPageTableManager->UnmapMemory(higher);
                 }
 
-                DEBUG_OUT("Allocating %p-%p with paging flags 0x%x", physical, (uint64_t)physical + pages * 0x1000, pagingFlags);
+                //DEBUG_OUT("Allocating %p-%p with paging flags 0x%x", physical, (uint64_t)physical + pages * 0x1000, pagingFlags);
 
                 return (uint64_t)physical;
             }

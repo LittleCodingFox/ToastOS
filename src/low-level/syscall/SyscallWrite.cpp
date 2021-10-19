@@ -9,7 +9,7 @@ using namespace FileSystem;
 
 size_t SyscallWrite(InterruptStack *stack)
 {
-    uint64_t fd = stack->rsi;
+    int fd = stack->rsi;
     const void *buffer = (const void *)stack->rdx;
     size_t count = (size_t)stack->rcx;
 
