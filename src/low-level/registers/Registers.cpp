@@ -94,6 +94,15 @@ uint64_t Registers::ReadCR3()
   return outValue;
 }
 
+uint64_t Registers::ReadCR4()
+{
+  uint64_t outValue = 0;
+
+  asm ("mov %%cr4, %0" : "=r"(outValue) : /* no input */);
+
+  return outValue;
+}
+
 void Registers::WriteCR0(uint64_t value)
 {
   asm ("mov %0, %%cr0" : /* no output */ : "r"(value));
@@ -102,6 +111,11 @@ void Registers::WriteCR0(uint64_t value)
 void Registers::WriteCR3(uint64_t value)
 {
   asm ("mov %0, %%cr3" : /* no output */ : "r"(value));
+}
+
+void Registers::WriteCR4(uint64_t value)
+{
+  asm ("mov %0, %%cr4" : /* no output */ : "r"(value));
 }
 
 uint64_t Registers::ReadMSR(uint64_t msr)

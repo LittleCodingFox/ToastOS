@@ -1,8 +1,9 @@
 #pragma once
 #include <stdint.h>
 #include <string.h>
+#include <frg_allocator.hpp>
 #include "printf/printf.h"
-#include "dynamicarray.hpp"
+#include "frg/vector.hpp"
 #include "low-level/devicemanager/GenericIODevice.hpp"
 
 namespace GPT
@@ -90,7 +91,7 @@ namespace GPT
 
     private:
         Devices::GenericIODevice *device;
-        DynamicArray<Partition *> partitions;
+        frg::vector<Partition *, frg_allocator> partitions;
     };
 
     class Partition : public Devices::GenericIODevice

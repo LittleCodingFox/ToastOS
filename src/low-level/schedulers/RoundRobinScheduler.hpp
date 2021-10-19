@@ -14,4 +14,5 @@ public:
     virtual void AddProcess(ProcessInfo *process) override;
     virtual ProcessControlBlock *NextProcess() override;
     virtual void ExitProcess(ProcessInfo *process) override;
+    virtual ProcessInfo *GetProcess(uint64_t pid) override;
 };

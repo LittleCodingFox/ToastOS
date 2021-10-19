@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <signal.h>
 #include "elf/elf.hpp"
 #include "lock.hpp"
 #include "interrupts/Interrupts.hpp"
@@ -29,6 +30,9 @@ struct ProcessInfo
     uint64_t savedKernelStack;
     uint64_t initialUserStack;
     uint64_t sleepTicks;
+    uint64_t fsBase;
+    sigaction sigHandlers[SIGNAL_MAX];
+
     Elf::ElfHeader *elf;
 };
 
@@ -68,6 +72,10 @@ struct ProcessControlBlock
 
     uint64_t stack[PROCESS_STACK_SIZE];
 
+    uint64_t fsBase;
+
+    char __attribute__((aligned(16))) FXSAVE[512];
+
     ProcessInfo *process;
 
     uint64_t state;
@@ -82,27 +90,33 @@ public:
     virtual void AddProcess(ProcessInfo *process) = 0;
     virtual ProcessControlBlock *NextProcess() = 0;
     virtual void ExitProcess(ProcessInfo *process) = 0;
+    virtual ProcessInfo *GetProcess(uint64_t pid) = 0;
 };
 
 class ProcessManager
 {
-public:
+private:
     IScheduler *scheduler;
+public:
     Threading::AtomicLock lock;
 
     ProcessManager(IScheduler *scheduler);
 
-    ProcessInfo *LoadImage(const void *image, const char *name, const char **argv, uint64_t permissionLevel);
+    ProcessInfo *LoadImage(const void *image, const char *name, const char **argv, const char **envp, uint64_t permissionLevel);
     ProcessInfo *CreateFromEntryPoint(uint64_t entryPoint, const char *name, uint64_t permissionLevel);
 
     ProcessInfo *CurrentProcess();
 
     void SwitchProcess(InterruptStack *stack, bool fromTimer);
-};
 
-#define PushToStack(stack, value)\
-    stack = (char *)stack - sizeof(uint64_t);\
-    *((uint64_t *)stack) = (uint64_t)(value);
+    bool IsLocked();
+
+    void LoadFSBase(uint64_t base);
+
+    void Sigaction(int signum, sigaction *act, sigaction *oldact);
+
+    void Kill(uint64_t pid, int signal);
+};
 
 extern ProcessManager *globalProcessManager;
 

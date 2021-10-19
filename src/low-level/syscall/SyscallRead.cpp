@@ -9,7 +9,7 @@ using namespace FileSystem;
 
 int64_t SyscallRead(InterruptStack *stack)
 {
-    uint64_t fd = stack->rsi;
+    int fd = stack->rsi;
     void *buffer = (void *)stack->rdx;
     size_t count = (size_t)stack->rcx;
 
@@ -32,12 +32,14 @@ int64_t SyscallRead(InterruptStack *stack)
     {
         FILE_HANDLE handle = fd - 3;
 
-        if(vfs.FileType(handle) != FILE_HANDLE_FILE)
+        if(vfs->FileType(handle) == FILE_HANDLE_UNKNOWN)
         {
             return -ENOENT;
         }
 
-        return vfs.ReadFile(handle, buffer, count);
+        uint64_t read = vfs->ReadFile(handle, buffer, count);
+        
+        return read;
     }
 
     return 0;

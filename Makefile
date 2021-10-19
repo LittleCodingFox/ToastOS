@@ -4,7 +4,6 @@ LD				= ld
 AR				= x86_64-elf-ar
 STRIP			= x86_64-elf-strip
 READELF			= x86_64-elf-readelf
-OVMFDIR			= OVMFbin
 ASMC			= nasm
 ASC				= x86_64-elf-as
 
@@ -45,7 +44,7 @@ LIBCCOBJECTS	= $(LIBCSRC:$(LIBCSRCDIR)/%.c=$(LIBCOBJDIR)/%.o)
 LIBKCOBJECTS	= $(LIBCSRC:$(LIBCSRCDIR)/%.c=$(LIBKOBJDIR)/%.o)
 LIBCASMOBJECTS	= $(LIBCASMSRC:$(LIBCSRCDIR)/%.asm=$(LIBCOBJDIR)/%_asm.o)
 
-INCLUDEDIRS		= -Isrc -Iklibc -Isrc/include -Isrc/low-level -Iext-libs -Iext-libs/liballoc/
+INCLUDEDIRS		= -Isrc -Iklibc -Isrc/include -Isrc/low-level -Iext-libs -Iext-libs/liballoc/ -Ifrigg/include -Icxxshim/stage2/include
 ASMFLAGS		= -g -F dwarf
 CFLAGS			= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -nostdlib -mno-red-zone -Wall -fpic -O3 -fno-omit-frame-pointer -g \
 	-fno-stack-protector -fno-rtti -fno-exceptions -mno-3dnow -mno-mmx -mno-sse -mno-sse2 -mno-avx
@@ -79,7 +78,7 @@ $(EXTOBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
 
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
 	mkdir -p $(shell dirname $@)
-	$(CPP) $(CFLAGS) $(CFLAGS_INTERNAL) -c $< -o $@
+	$(CPP) $(CFLAGS) $(CFLAGS_INTERNAL) -std=c++20 -c $< -o $@
 
 $(ASMOBJECTS): $(OBJDIR)/%_asm.o : $(SRCDIR)/%.asm
 	mkdir -p $(shell dirname $@)
@@ -112,6 +111,7 @@ libc: makedirs $(LIBCCOBJECTS) $(LIBCASMOBJECTS) $(EXTCOBJECTS)
 	$(AR) rcs "$(LIBCBINDIR)/$@.a" $(LIBCCOBJECTS) $(LIBCASMOBJECTS) $(EXTCOBJECTS)
 	mkdir -p $(DISTDIR)/lib
 	cp toolchain/pkg-builds/mlibc/*.so $(DISTDIR)/lib
+	cp $(DISTDIR)/lib/ld.so $(DISTDIR)/lib/ld64.so.1
 
 iso-linux:
 	sh makebootdir.sh
@@ -133,12 +133,20 @@ run-qemu-linux:
 	-bios /usr/share/qemu/OVMF.fd \
 	-m 256M -cpu qemu64 -machine type=q35 -serial file:./debug.log -net none -d int --no-reboot $(QEMU_FLAGS) 2>qemu.log
 
+debug-qemu-linux:
+	qemu-system-x86_64 -drive file=$(BINDIR)/$(OS_NAME).img,format=raw,index=0,media=disk \
+	-bios /usr/share/qemu/OVMF.fd -s -S \
+	-m 256M -cpu qemu64 -machine type=q35 -serial file:./debug.log -net none -d int --no-reboot $(QEMU_FLAGS) 2>qemu.log
+
 toolchain:
 	rm -Rf toolchain
 	mkdir -p toolchain
 	cd toolchain && xbstrap init ..
 	cd toolchain && xbstrap install-tool --all
 	cd toolchain && xbstrap install mlibc
+
+rebuild-mlibc:
+	cd toolchain && xbstrap build mlibc --reconfigure
 
 clean:
 	rm -Rf $(BINDIR)/*.img
@@ -154,4 +162,4 @@ clean:
 	rm -Rf obj
 	rm -Rf userland/obj
 
-.PHONY: all clean run-linux makedirs debug-linux userland
+.PHONY: all clean run-linux makedirs debug-linux userland frigg

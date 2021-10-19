@@ -27,24 +27,40 @@ void SyscallUnlock()
 }
 
 int64_t KNotImplemented(InterruptStack *stack);
-size_t SyscallWrite(InterruptStack *stack);
-size_t SyscallRead(InterruptStack *stack);
-size_t SyscallClose(InterruptStack *stack);
-size_t SyscallOpen(InterruptStack *stack);
-size_t SyscallSeek(InterruptStack *stack);
+int64_t SyscallWrite(InterruptStack *stack);
+int64_t SyscallRead(InterruptStack *stack);
+int64_t SyscallClose(InterruptStack *stack);
+int64_t SyscallOpen(InterruptStack *stack);
+int64_t SyscallSeek(InterruptStack *stack);
+int64_t SyscallAnonAlloc(InterruptStack *stack);
+int64_t SyscallVMMap(InterruptStack *stack);
+int64_t SyscallTCBSet(InterruptStack *stack);
+int64_t SyscallSigaction(InterruptStack *stack);
+int64_t SyscallGetPID(InterruptStack *stack);
+int64_t SyscallKill(InterruptStack *stack);
+int64_t SyscallIsATTY(InterruptStack *stack);
 
 SyscallPointer syscallHandlers[] =
 {
-    (SyscallPointer)KNotImplemented, // 0
-    (SyscallPointer)SyscallWrite, // 1
-    (SyscallPointer)SyscallRead, // 2
-    (SyscallPointer)SyscallOpen, // 3
-    (SyscallPointer)SyscallClose, // 4
-    (SyscallPointer)SyscallSeek, // 5
+    [0] = (SyscallPointer)KNotImplemented,
+    [SYSCALL_READ] = (SyscallPointer)SyscallRead,
+    [SYSCALL_WRITE] = (SyscallPointer)SyscallWrite,
+    [SYSCALL_OPEN] = (SyscallPointer)SyscallOpen,
+    [SYSCALL_CLOSE] = (SyscallPointer)SyscallClose,
+    [SYSCALL_SEEK] = (SyscallPointer)SyscallSeek,
+    [SYSCALL_ANON_ALLOC] = (SyscallPointer)SyscallAnonAlloc,
+    [SYSCALL_VM_MAP] = (SyscallPointer)SyscallVMMap,
+    [SYSCALL_TCB_SET] = (SyscallPointer)SyscallTCBSet,
+    [SYSCALL_SIGACTION] = (SyscallPointer)SyscallSigaction,
+    [SYSCALL_GETPID] = (SyscallPointer)SyscallGetPID,
+    [SYSCALL_KILL] = (SyscallPointer)SyscallKill,
+    [SYSCALL_ISATTY] = (SyscallPointer)SyscallIsATTY,
 };
 
 void SyscallHandler(InterruptStack *stack)
 {
+    //DEBUG_OUT("SYSCALL %llu", stack->rdi);
+
     if(stack->rdi <= sizeof(syscallHandlers) / sizeof(SyscallPointer) && syscallHandlers[stack->rdi] != NULL)
     {
         ProcessInfo *process = globalProcessManager->CurrentProcess();

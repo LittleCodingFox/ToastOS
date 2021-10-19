@@ -14,19 +14,20 @@
 
 static uint32_t currentTick;
 
-Timer timer;
+frg::manual_box<Timer> timer;
 
 void timerCallback(InterruptStack *stack)
 {
     currentTick++;
 
-    timer.RunHandlers(stack);
+    if(timer)
+    {
+        timer->RunHandlers(stack);
+    }
 }
 
 void Timer::Initialize()
 {
-    handlers = (DynamicArray<void *> *)malloc(sizeof(DynamicArray<void *>));
-
     interrupts.RegisterHandler(IRQ0, timerCallback);
 
     uint32_t divisor = TIMER_QUOTIENT / TIMER_FREQUENCY;
@@ -38,14 +39,9 @@ void Timer::Initialize()
 
 void Timer::RunHandlers(InterruptStack *stack)
 {
-    if(handlers == NULL)
+    for(uint32_t i = 0; i < handlers.size(); i++)
     {
-        return;
-    }
-    
-    for(uint32_t i = 0; i < handlers->length(); i++)
-    {
-        void (*handler)(InterruptStack *) = (void (*)(InterruptStack *))(*handlers)[i];
+        void (*handler)(InterruptStack *) = (void (*)(InterruptStack *))handlers[i];
 
         handler(stack);
     }
@@ -53,22 +49,13 @@ void Timer::RunHandlers(InterruptStack *stack)
 
 void Timer::RegisterHandler(void (*callback)(InterruptStack *))
 {
-    if(handlers == NULL)
-    {
-        return;
-    }
-
-    handlers->add((void *)callback);
+    handlers.push_back((void *)callback);
 }
 
 void Timer::UnregisterHandler(void (*callback)(InterruptStack *))
 {
-    if(handlers == NULL)
-    {
-        return;
-    }
-    
-    handlers->remove((void *)callback);
+    //TODO: Remove
+    //handlers.remove((void *)callback);
 }
 
 uint32_t Timer::GetTicks()

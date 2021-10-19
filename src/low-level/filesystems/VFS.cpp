@@ -3,7 +3,7 @@
 
 namespace FileSystem
 {
-    VFS vfs;
+    frg::manual_box<VFS> vfs;
 
     VFS::VFS() : fileHandleCounter(0) {}
 
@@ -14,7 +14,7 @@ namespace FileSystem
             return NULL;
         }
 
-        for(uint64_t i = 0; i < fileHandles.length(); i++)
+        for(uint64_t i = 0; i < fileHandles.size(); i++)
         {
             if(fileHandles[i].ID == handle && fileHandles[i].isValid)
             {
@@ -27,7 +27,7 @@ namespace FileSystem
 
     VFS::FileHandle *VFS::NewFileHandle()
     {
-        for(uint64_t i = 0; i < fileHandles.length(); i++)
+        for(uint64_t i = 0; i < fileHandles.size(); i++)
         {
             if(fileHandles[i].isValid == false)
             {
@@ -44,14 +44,12 @@ namespace FileSystem
         handle.length = 0;
         handle.isValid = false;
 
-        fileHandles.add(handle);
-
-        return &fileHandles[fileHandles.length() - 1];
+        return &fileHandles.push_back(handle);
     }
 
     void VFS::AddMountPoint(const char *path, FileSystem *fileSystem)
     {
-        for(uint64_t i = 0; i < mountPoints.length(); i++)
+        for(uint64_t i = 0; i < mountPoints.size(); i++)
         {
             if(strcmp(mountPoints[i].path, path) == 0)
             {
@@ -65,18 +63,18 @@ namespace FileSystem
         mountPoint.path = path;
         mountPoint.fileSystem = fileSystem;
 
-        mountPoints.add(mountPoint);
+        mountPoints.push_back(mountPoint);
 
         DEBUG_OUT("[VFS] Added mount point '%s'", path);
     }
 
     void VFS::RemoveMountPoint(const char *path)
     {
-        for(uint64_t i = 0; i < mountPoints.length(); i++)
+        for(uint64_t i = 0; i < mountPoints.size(); i++)
         {
             if(strcmp(mountPoints[i].path, path) == 0)
             {
-                for(uint64_t j = 0; j < fileHandles.length(); j++)
+                for(uint64_t j = 0; j < fileHandles.size(); j++)
                 {
                     if(fileHandles[j].mountPoint == &mountPoints[i])
                     {
@@ -87,7 +85,8 @@ namespace FileSystem
 
                 DEBUG_OUT("[VFS] Removed mount point at '%s'", path);
 
-                mountPoints.remove(i);
+                //TODO: Erase
+                //mountPoints.;
 
                 return;
             }
@@ -98,7 +97,7 @@ namespace FileSystem
     {
         uint64_t pathLen = strlen(path);
 
-        for(uint64_t i = 0; i < mountPoints.length(); i++)
+        for(uint64_t i = 0; i < mountPoints.size(); i++)
         {
             MountPoint *mountPoint = &mountPoints[i];
 
@@ -178,7 +177,7 @@ namespace FileSystem
             return 0;
         }
 
-        if(fileHandle->cursor + length >= fileHandle->length)
+        if(fileHandle->cursor + length > fileHandle->length)
         {
             length = fileHandle->length - fileHandle->cursor;
         }
@@ -186,7 +185,7 @@ namespace FileSystem
         uint64_t cursor = fileHandle->cursor;
 
         fileHandle->cursor += length;
-
+        
         return fileHandle->mountPoint->fileSystem->ReadFile(fileHandle->fsHandle, buffer, cursor, length);
     }
 

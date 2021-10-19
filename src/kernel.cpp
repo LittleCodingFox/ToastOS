@@ -47,9 +47,9 @@ extern "C" void _start(stivale2_struct *stivale2Struct)
 {
     InitializeKernel(stivale2Struct);
 
-    FILE_HANDLE handle = vfs.OpenFile("/bin/test");
+    FILE_HANDLE handle = vfs->OpenFile("/bin/test");
 
-    uint64_t length = vfs.FileLength(handle);
+    uint64_t length = vfs->FileLength(handle);
 
     if(length > 0)
     {
@@ -57,16 +57,17 @@ extern "C" void _start(stivale2_struct *stivale2Struct)
 
         uint8_t *buffer = new uint8_t[length];
 
-        memset(buffer, 0, length);
-
-        if(vfs.ReadFile(handle, buffer, length) == length)
+        if(vfs->ReadFile(handle, buffer, length) == length)
         {
+            vfs->CloseFile(handle);
+
             DEBUG_OUT("%s", "Executing elf");
 
-            const char* argv[1] { NULL };
+            const char *argv[1] { NULL };
+            const char *envp[1] { NULL };
 
             globalProcessManager->CreateFromEntryPoint((uint64_t)KernelTask, "KernelTask", PROCESS_PERMISSION_KERNEL);
-            globalProcessManager->LoadImage(buffer, "elf", argv, PROCESS_PERMISSION_USER);
+            globalProcessManager->LoadImage(buffer, "elf", argv, envp, PROCESS_PERMISSION_USER);
         }
     }
 

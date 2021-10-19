@@ -18,12 +18,12 @@ int64_t SyscallClose(InterruptStack *stack)
 
     FILE_HANDLE handle = fd - 3;
 
-    if(vfs.FileType(handle) == FILE_HANDLE_UNKNOWN)
+    if(vfs->FileType(handle) == FILE_HANDLE_UNKNOWN)
     {
         return -EBADF;
     }
 
-    vfs.CloseFile(handle);
+    vfs->CloseFile(handle);
 
     return 0;
 }

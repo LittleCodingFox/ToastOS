@@ -1,4 +1,7 @@
-CC = clang
+export PATH := $(PATH):../../toolchain/tools/host-binutils/bin:../../toolchain/tools/host-gcc/bin
+
+CC				= x86_64-toast-g++
+LD				= x86_64-toast-ld
 
 PROGRAM_NAME	= test
 BINDIR 			= ../../dist/bin
@@ -11,13 +14,13 @@ CSRC			= $(call rwildcard,$(SRCDIR),*.c)
 
 COBJECTS		= $(CSRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
-INCLUDEDIRS		= -I../../klibc -I../../ext-libs
+INCLUDEDIRS		= -I../../toolchain/system-root/usr/include
 
-CFLAGS			= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -Wall -O0 -fno-omit-frame-pointer \
-	-fno-rtti -fno-exceptions -fno-builtin -fno-pie -fno-stack-protector -fno-rtti -fno-exceptions -mno-3dnow \
+CFLAGS			= $(INCLUDEDIRS) -fshort-wchar -Wall -O0 -g -fno-omit-frame-pointer \
+	-fno-rtti -fno-exceptions -fno-stack-protector -mno-3dnow \
 	-mno-mmx -mno-sse -mno-sse2 -mno-avx
 
-LDFLAGS			= -Ttext-segment=40000000 -nostdlib -no-pie -L../../bin/libc -lc -Map=linker.map 
+LDFLAGS			= -L../../toolchain/pkg-builds/mlibc/ -L../../toolchain/packages/mlibc/usr/lib -lc -Map=linker.map
 
 default: test
 
@@ -26,7 +29,7 @@ makedirs:
 
 test: makedirs $(COBJECTS)
 	mkdir -p $(BINDIR)
-	$(LD) $(COBJECTS) $(LDFLAGS) -o $(BINDIR)/$(PROGRAM_NAME)
+	$(LD) $(COBJECTS) ../../toolchain/packages/mlibc/usr/lib/crt0.o $(LDFLAGS) -o $(BINDIR)/$(PROGRAM_NAME)
 	awk '$$1 ~ /0x[0-9a-f]{16}/ {print substr($$1, 3), $$2}' linker.map > symbols.map
 	rm linker.map
 

@@ -45,9 +45,9 @@ namespace Devices
         return NULL;
     }
 
-    DynamicArray<GenericDevice *> DeviceManager::GetDevices(DeviceType type)
+    frg::vector<GenericDevice *, frg_allocator> DeviceManager::GetDevices(DeviceType type)
     {
-        DynamicArray<GenericDevice *> outValue;
+        frg::vector<GenericDevice *, frg_allocator> outValue;
 
         printf("Getting devices with type %x from %u devices\n", type, deviceCount);
 
@@ -55,7 +55,7 @@ namespace Devices
         {
             if(devices[i] != NULL && devices[i]->type() == type)
             {
-                outValue.add(devices[i]);
+                outValue.push_back(devices[i]);
             }
         }
 

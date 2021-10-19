@@ -226,7 +226,7 @@ namespace FileSystem
             uint64_t blockSize;
             uint64_t offset;
 
-            DynamicArray<FileHandleData> fileHandles;
+            frg::vector<FileHandleData, frg_allocator> fileHandles;
             uint64_t fileHandleCounter;
 
             DiskGroupDescription ReadGroupFromInode(uint64_t inode);

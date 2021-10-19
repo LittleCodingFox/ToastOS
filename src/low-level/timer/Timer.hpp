@@ -1,12 +1,15 @@
 #pragma once
 
+#include <frg/vector.hpp>
+#include <frg/manual_box.hpp>
+#include <frg_allocator.hpp>
+
 #include "interrupts/Interrupts.hpp"
-#include "dynamicarray.hpp"
 
 class Timer
 {
 private:
-    DynamicArray<void *> *handlers;
+    frg::vector<void *, frg_allocator> handlers;
 public:
     void Initialize();
     uint32_t GetTicks();
@@ -15,4 +18,4 @@ public:
     void RunHandlers(InterruptStack *stack);
 };
 
-extern Timer timer;
+extern frg::manual_box<Timer> timer;

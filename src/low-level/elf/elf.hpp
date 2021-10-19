@@ -5,21 +5,28 @@
 
 namespace Elf
 {
-    #define ELF_TYPE_EXECUTABLE 0x2
+    #define ELF_TYPE_EXECUTABLE             0x2
 
-    #define ELF_PROGRAM_TYPE_LOAD 0x1
+    #define ELF_PROGRAM_TYPE_LOAD           0x1
+    #define ELF_PROGRAM_TYPE_INTERP         0x03
+    #define ELF_PROGRAM_TYPE_PHDR           0x06
 
-    #define ELF_SECTION_TYPE_NULL 0x0
-    #define ELF_SECTION_TYPE_PROGBITS 0x1
-    #define ELF_SECTION_TYPE_SYMTAB 0x2
-    #define ELF_SECTION_TYPE_STRTAB 0x3
-    #define ELF_SECTION_TYPE_NOBITS 0x8
+    #define ELF_SECTION_TYPE_NULL           0x0
+    #define ELF_SECTION_TYPE_PROGBITS       0x1
+    #define ELF_SECTION_TYPE_SYMTAB         0x2
+    #define ELF_SECTION_TYPE_STRTAB         0x3
+    #define ELF_SECTION_TYPE_NOBITS         0x8
 
-    #define ELF_PROGRAM_FLAG_EXECUTE 0x1
-    #define ELF_PROGRAM_FLAG_WRITE 0x2
-    #define ELF_PROGRAM_FLAG_READ 0x4
+    #define ELF_PROGRAM_FLAG_EXECUTE        0x1
+    #define ELF_PROGRAM_FLAG_WRITE          0x2
+    #define ELF_PROGRAM_FLAG_READ           0x4
 
-    #define ELF_SECTION_FLAG_ALLOC 0x2
+    #define ELF_SECTION_FLAG_ALLOC          0x2
+
+    #define AT_ENTRY                        10
+    #define AT_PHDR                         20
+    #define AT_PHENT                        21
+    #define AT_PHNUM                        22
 
     struct __attribute__((packed)) ElfHeader
     {
@@ -65,7 +72,15 @@ namespace Elf
         uint64_t entrySize;
     };
 
-    ElfHeader *LoadElf(const void *data);
+    struct Auxval
+    {
+        uint64_t entry;
+        uint64_t phdr;
+        uint64_t programHeaderSize;
+        uint64_t phNum;
+    };
+
+    ElfHeader *LoadElf(const void *data, uint64_t base, Auxval *auxval);
     void UnloadElf(ElfHeader *header);
-    void MapElfSegments(ElfHeader *header, PageTableManager *pageTableManager);
+    void MapElfSegments(ElfHeader *header, PageTableManager *pageTableManager, uint64_t base, Auxval *auxval, char **ldPath);
 };

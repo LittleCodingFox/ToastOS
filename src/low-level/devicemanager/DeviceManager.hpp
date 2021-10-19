@@ -1,6 +1,8 @@
 #pragma once
 #include <stdint.h>
-#include <dynamicarray.hpp>
+#include <new>
+#include <frg/vector.hpp>
+#include <frg_allocator.hpp>
 
 namespace Devices
 {
@@ -30,7 +32,7 @@ namespace Devices
         DeviceManager();
         void AddDevice(GenericDevice *device);
         uint32_t DeviceCount() const;
-        DynamicArray<GenericDevice *> GetDevices(DeviceType type);
+        frg::vector<GenericDevice *, frg_allocator> GetDevices(DeviceType type);
         GenericDevice *GetDevice(uint32_t ID) const;
     };
 
