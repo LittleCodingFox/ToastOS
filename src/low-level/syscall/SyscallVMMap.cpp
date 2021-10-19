@@ -1,3 +1,4 @@
+#include <string.h>
 #include "syscall.hpp"
 #include "keyboard/Keyboard.hpp"
 #include "process/Process.hpp"
@@ -53,8 +54,15 @@ int64_t SyscallVMMap(InterruptStack *stack)
             for(uint64_t i = 0; i < pages; i++)
             {
                 void *physicalMemory = globalAllocator.RequestPage();
+                void *higher = (void *)TranslateToHighHalfMemoryAddress((uint64_t)physicalMemory);
 
                 userManager.MapMemory((void *)((uint64_t)hint + i * 0x1000), physicalMemory, pagingFlags);
+                globalPageTableManager->MapMemory(higher, physicalMemory,
+                    PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+
+                memset(higher, 0, 0x1000);
+
+                globalPageTableManager->UnmapMemory(higher);
             }
 
             DEBUG_OUT("Mapping %p-%p with paging flags 0x%x", hint, (uint64_t)hint + pages * 0x1000, pagingFlags);
@@ -69,7 +77,16 @@ int64_t SyscallVMMap(InterruptStack *stack)
             {
                 for(uint64_t i = 0; i < pages; i++)
                 {
+                    void *higher = (void *)TranslateToHighHalfMemoryAddress((uint64_t)physical + i * 0x1000);
+
                     userManager.IdentityMap((void *)((uint64_t)physical + i * 0x1000), pagingFlags);
+
+                    globalPageTableManager->MapMemory(higher, (void *)((uint64_t)physical + i * 0x1000),
+                        PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+
+                    memset(higher, 0, 0x1000);
+
+                    globalPageTableManager->UnmapMemory(higher);
                 }
 
                 DEBUG_OUT("Allocating %p-%p with paging flags 0x%x", physical, (uint64_t)physical + pages * 0x1000, pagingFlags);

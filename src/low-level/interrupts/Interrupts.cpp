@@ -7,6 +7,7 @@
 #include "printf/printf.h"
 #include "registers/Registers.hpp"
 #include "keyboard/Keyboard.hpp"
+#include "process/Process.hpp"
 #include "debug.hpp"
 
 Interrupts interrupts;
@@ -341,6 +342,27 @@ void PageFaultHandler(InterruptStack* stack)
     uint8_t is_user = (error_code >> 2) & 1;
     uint8_t is_reserved_write = (error_code >> 3) & 1;
     uint8_t is_instruction_fetch = (error_code >> 4) & 1;
+
+    //Enable/Disable this to dump process info
+    if(globalProcessManager != NULL)
+    {
+        ProcessInfo *process = globalProcessManager->CurrentProcess();
+
+        if(process != NULL)
+        {
+            DEBUG_OUT("Dumping current process stack", 0);
+
+            uint64_t start = stack->stackPointer;
+            uint64_t offset = (start - (uint64_t)process->stack) / sizeof(uint64_t);
+
+            DEBUG_OUT("stacK: %p; page fault stack pointer: %p; offset: %llu (%p)", process->stack, start, offset, process->stack + offset);
+
+            for(int64_t i = offset; i < PROCESS_STACK_SIZE; i++)
+            {
+                DEBUG_OUT("%lli: 0x%016llx", i, process->stack[i]);
+            }
+        }
+    }
 
     Panic("Exception: PAGE FAULT\n"
             "  accessed address    = %p\n"
