@@ -47,7 +47,7 @@ extern "C" void _start(stivale2_struct *stivale2Struct)
 {
     InitializeKernel(stivale2Struct);
 
-    FILE_HANDLE handle = vfs->OpenFile("/bin/test");
+    FILE_HANDLE handle = vfs->OpenFile("/usr/bin/bash");
 
     uint64_t length = vfs->FileLength(handle);
 

@@ -1,0 +1,44 @@
+packages:
+  - name: bash
+    source:
+      subdir: 'ports'
+      git: 'https://git.savannah.gnu.org/git/bash.git'
+      # Checkout bash 5.1 patch 8
+      branch: 'master'
+      commit: 'ce23728687ce9e584333367075c9deef413553fa'
+      version: '5.1.8'
+      tools_required:
+        - host-autoconf-v2.69
+        - host-automake-v1.15
+      regenerate:
+        - args: ['autoconf']
+    tools_required:
+      - host-autoconf-v2.69
+      - host-automake-v1.15
+      - host-gcc
+    pkgs_required:
+      - mlibc
+      - ncurses
+      - readline
+    configure:
+      - args:
+        - '@THIS_SOURCE_DIR@/configure'
+        - '--host=x86_64-toast'
+        - '--prefix=/usr'
+        - '--without-bash-malloc'
+        - '--disable-nls'
+        - '--with-installed-readline=$SYSROOT_DIR$/usr'
+        environ:
+          ac_cv_func_wcswidth: 'no'
+    build:
+      - args: ['make', '-j@PARALLELISM@']
+      - args: ['make', 'DESTDIR=@THIS_COLLECT_DIR@', 'install']
+        quiet: true
+      - args: ['mkdir', '-p', '@THIS_COLLECT_DIR@/root/']
+      - args: ['mkdir', '-p', '@THIS_COLLECT_DIR@/home/toast/']
+      - args: ['mkdir', '-p', '@THIS_COLLECT_DIR@/etc/']
+      - args: ['cp', '@SOURCE_ROOT@/extrafiles/.bashrc', '@THIS_COLLECT_DIR@/root']
+      - args: ['cp', '@SOURCE_ROOT@/extrafiles/.bashrc', '@THIS_COLLECT_DIR@/home/toast']
+      - args: ['cp', '@SOURCE_ROOT@/extrafiles/profile', '@THIS_COLLECT_DIR@/etc']
+      - args: ['cp', '@SOURCE_ROOT@/extrafiles/bash.bashrc', '@THIS_COLLECT_DIR@/etc']
+      - args: ['ln', '-sf', 'bash', '@THIS_COLLECT_DIR@/usr/bin/sh']

@@ -23,3 +23,5 @@ dist/lib/libpthread.so
 dist/lib/libresolv.so
 dist/lib/librt.so
 dist/lib/libutil.so
+ports
+dist

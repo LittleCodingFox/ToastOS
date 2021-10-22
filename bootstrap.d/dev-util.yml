@@ -1,0 +1,31 @@
+sources:
+  - name: 'pkg-config'
+    subdir: 'ports'
+    git: 'https://gitlab.freedesktop.org/pkg-config/pkg-config.git'
+    tag: 'pkg-config-0.29.2'
+    version: '0.29.2'
+    tools_required:
+      - host-autoconf-v2.69
+      - host-automake-v1.11
+      - host-libtool
+    regenerate:
+      - args: ['./autogen.sh']
+        environ:
+          'NOCONFIGURE': 'yes'
+
+tools:
+  # We could run an external pkg-config; however, we need the aclocal files.
+  # The easiest way to ensure that they are available is to just install pkg-config.
+  - name: host-pkg-config
+    architecture: noarch
+    exports_aclocal: true
+    from_source: pkg-config
+    configure:
+      - args:
+        - '@THIS_SOURCE_DIR@/configure'
+        - '--prefix=@PREFIX@'
+        - '--with-internal-glib'
+    compile:
+      - args: ['make', '-j@PARALLELISM@']
+    install:
+      - args: ['make', 'install']

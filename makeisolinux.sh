@@ -11,15 +11,16 @@ dd if=/dev/zero of=$BINDIR/$OS_NAME.img bs=1M count=500
 echo n p
 echo 1
 echo 2048
-echo +8M
+echo +100M
 echo t
 echo 1
 echo n
 echo 2
-echo 18432
+echo 206848
 echo 1023966
 echo p
-echo w) | fdisk -u -C500 -S63 -H16 $BINDIR/$OS_NAME.img
+echo w) | 
+fdisk -u -C500 -S63 -H16 $BINDIR/$OS_NAME.img
 
 git clone https://github.com/limine-bootloader/limine.git --branch=v2.0-branch-binary --depth=1
 
@@ -39,6 +40,8 @@ sudo mount -tvfat /dev/loop0 /mnt/osdev
 
 sudo cp -R boot/* /mnt/osdev
 
+sudo mkdir -p /mnt/osdev/EFI/BOOT/
+
 sudo cp limine.cfg limine/limine.sys /mnt/osdev
 
 sudo cp limine/BOOTX64.EFI /mnt/osdev/EFI/BOOT/
@@ -51,7 +54,7 @@ sudo umount /dev/loop0
 
 sudo losetup -d /dev/loop0
 
-sudo losetup -o9437184 /dev/loop0 $BINDIR/$OS_NAME.img
+sudo losetup -o105906176 /dev/loop0 $BINDIR/$OS_NAME.img
 
 sudo mke2fs -b1024 /dev/loop0 -L "Main Volume"
 

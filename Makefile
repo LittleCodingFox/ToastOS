@@ -62,7 +62,6 @@ makedirs:
 	mkdir -p obj
 	mkdir -p $(LIBCOBJDIR)
 	mkdir -p dist/bin
-	mkdir -p dist/system
 
 $(COBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
 	mkdir -p $(shell dirname $@)
@@ -109,7 +108,8 @@ kernel: makedirs $(OBJECTS) $(COBJECTS) $(LIBKCOBJECTS) $(EXTOBJECTS) $(EXTCOBJE
 
 libc: makedirs $(LIBCCOBJECTS) $(LIBCASMOBJECTS) $(EXTCOBJECTS)
 	$(AR) rcs "$(LIBCBINDIR)/$@.a" $(LIBCCOBJECTS) $(LIBCASMOBJECTS) $(EXTCOBJECTS)
-	mkdir -p $(DISTDIR)/lib
+	mkdir -p $(DISTDIR)/lib/x86_64-toast/
+	cp toolchain/pkg-builds/mlibc/*.so $(DISTDIR)/lib/x86_64-toast
 	cp toolchain/pkg-builds/mlibc/*.so $(DISTDIR)/lib
 	cp $(DISTDIR)/lib/ld.so $(DISTDIR)/lib/ld64.so.1
 
@@ -138,12 +138,17 @@ debug-qemu-linux:
 	-bios /usr/share/qemu/OVMF.fd -s -S \
 	-m 256M -cpu qemu64 -machine type=q35 -serial file:./debug.log -net none -d int --no-reboot $(QEMU_FLAGS) 2>qemu.log
 
-toolchain:
-	rm -Rf toolchain
-	mkdir -p toolchain
+bootstrap:
+	@mkdir -p toolchain
+	@mkdir -p ports
 	cd toolchain && xbstrap init ..
 	cd toolchain && xbstrap install-tool --all
 	cd toolchain && xbstrap install mlibc
+	cd toolchain && xbstrap install -u --all
+
+clean-bootstrap:
+	rm -Rf toolchain
+	rm -Rf ports
 
 rebuild-mlibc:
 	cd toolchain && xbstrap build mlibc --reconfigure
@@ -162,4 +167,4 @@ clean:
 	rm -Rf obj
 	rm -Rf userland/obj
 
-.PHONY: all clean run-linux makedirs debug-linux userland frigg
+.PHONY: all clean run-linux makedirs debug-linux userland frigg bootstrap clean-bootstreap

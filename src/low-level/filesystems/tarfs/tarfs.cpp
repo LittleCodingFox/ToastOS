@@ -71,15 +71,55 @@ namespace FileSystem
             {
                 if(strcmp(header->name, path) == 0)
                 {
-                    FileHandleData data;
+                    if(header->type == TAR_SYMLINK)
+                    {
+                        DEBUG_OUT("tarfs: file %s is a symlink to %s", header->name, header->link);
 
-                    data.ID = ++fileHandleCounter;
-                    data.header = header;
-                    data.length = OctToInt(header->size);
+                        char *targetPath = header->link;
+                        char *newPath = NULL;
 
-                    fileHandles.push_back(data);
+                        if(targetPath[0] != '/')
+                        {
+                            char *ptr = strrchr(header->name, '/');
 
-                    return data.ID;
+                            if(ptr != NULL)
+                            {
+                                int length = (int)(ptr - header->name) + 1;
+
+                                newPath = new char[length + strlen(header->link) + 1];
+
+                                memcpy(newPath, header->name, length);
+                                memcpy(newPath + length, header->link, strlen(header->link));
+
+                                newPath[length + strlen(header->link)] = '\0';
+
+                                targetPath = newPath;
+
+                                DEBUG_OUT("tarfs: resolved to %s", targetPath);
+                            }
+                        }
+
+                        auto handle = GetFileHandle(targetPath);
+
+                        if(newPath != NULL)
+                        {
+                            delete [] newPath;
+                        }
+
+                        return handle;
+                    }
+                    else
+                    {
+                        FileHandleData data;
+
+                        data.ID = ++fileHandleCounter;
+                        data.header = header;
+                        data.length = OctToInt(header->size);
+
+                        fileHandles.push_back(data);
+
+                        return data.ID;
+                    }
                 }
             }
 

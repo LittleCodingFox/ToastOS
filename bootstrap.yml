@@ -1,21 +1,38 @@
+imports:
+  - file: bootstrap.d/apps-shells.yml
+  - file: bootstrap.d/dev-util.yml
+  - file: bootstrap.d/sys-devel.yml
+  - file: bootstrap.d/sys-libs.yml
+
 general:
   everything_by_default: true
 
 sources:
   - name: binutils
     subdir: toolchain
-    git: 'https://sourceware.org/git/binutils-gdb.git'
-    tag: 'binutils-2_37'
-    version: '2.37'
+    git: 'git://sourceware.org/git/binutils-gdb.git'
+    tag: 'binutils-2_32'
+    version: '2.32'
+    tools_required:
+      - host-autoconf-v2.69
+      - host-automake-v1.15
+    regenerate:
+      - args: ['autoreconf']
+        workdir: '@THIS_SOURCE_DIR@/ld'
 
   - name: gcc
     subdir: toolchain
     git: 'https://gcc.gnu.org/git/gcc.git'
-    tag: 'releases/gcc-11.2.0'
-    version: '11.2.0'
+    tag: 'releases/gcc-11.1.0'
+    version: '11.1.0'
+    tools_required:
+      - host-autoconf-v2.69
+      - host-automake-v1.11
     regenerate:
       - args: ['autoconf']
         workdir: '@THIS_SOURCE_DIR@/gcc'
+      - args: ['autoconf']
+        workdir: '@THIS_SOURCE_DIR@/libstdc++-v3'
 
   - name: mlibc
     subdir: 'toolchain'
@@ -25,6 +42,109 @@ sources:
     version: '0.0pl@ROLLING_ID@'
 
 tools:
+  - name: host-autoconf-v2.64
+    architecture: noarch
+    source:
+      name: autoconf-v2.64
+      subdir: 'ports'
+      url: 'https://ftp.gnu.org/gnu/autoconf/autoconf-2.64.tar.xz'
+      format: 'tar.xz'
+      extract_path: 'autoconf-2.64'
+      version: '2.64'
+    configure:
+      # Despite its efforts to be POSIX-compatible, autoconf 2.64 fails to configure on dash
+      # (as it assumes that echo does not evaluate backslash escapes).
+      # It *also* fails when setting CONFIG_SHELL to /bin/bash.
+      # The manual (in section "Defining Variables") mentions this bug and the following
+      # workaround: We set *both* CONFIG_SHELL *and* execute the script using /bin/bash.
+      - args: ['/bin/bash', '@THIS_SOURCE_DIR@/configure', '--prefix=@PREFIX@']
+        environ:
+          'CONFIG_SHELL': '/bin/bash'
+    compile:
+      - args: ['make', '-j@PARALLELISM@']
+    install:
+      - args: ['make', 'install']
+
+  - name: host-autoconf-v2.69
+    architecture: noarch
+    source:
+      name: autoconf-v2.69
+      subdir: 'ports'
+      url: 'https://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.xz'
+      format: 'tar.xz'
+      extract_path: 'autoconf-2.69'
+      version: '2.69'
+    configure:
+      - args: ['@THIS_SOURCE_DIR@/configure', '--prefix=@PREFIX@']
+    compile:
+      - args: ['make', '-j@PARALLELISM@']
+    install:
+      - args: ['make', 'install']
+
+  - name: host-automake-v1.11
+    architecture: noarch
+    source:
+      name: automake-v1.11
+      subdir: 'ports'
+      git: 'https://git.savannah.gnu.org/git/automake.git'
+      tag: 'v1.11.6'
+      version: '1.11.6'
+      tools_required:
+        - host-autoconf-v2.69
+      regenerate:
+        - args: ['./bootstrap']
+    tools_required:
+      - host-autoconf-v2.69
+    configure:
+      - args:
+        - '@THIS_SOURCE_DIR@/configure'
+        - '--prefix=@PREFIX@'
+        - 'MAKEINFO=/bin/true'
+    compile:
+      - args: ['make', '-j@PARALLELISM@']
+    install:
+      - args: ['make', 'install']
+      # Stop aclocal from complaining.
+      - args: ['ln', '-sf', '@PREFIX@/share/aclocal-1.11', '@PREFIX@/share/aclocal']
+
+  - name: host-autoconf-archive
+    architecture: noarch
+    exports_aclocal: true
+    source:
+      subdir: 'ports'
+      git: 'https://github.com/autoconf-archive/autoconf-archive.git'
+      tag: 'v2019.01.06'
+      version: '2019.01.06'
+    install:
+      - args: ['mkdir', '-p', '@BUILD_ROOT@/tools/host-autoconf-archive/share/']
+      - args: ['cp', '-r', '@THIS_SOURCE_DIR@/m4', '@BUILD_ROOT@/tools/host-autoconf-archive/share/aclocal']
+
+  - name: host-automake-v1.15
+    architecture: noarch
+    source:
+      name: automake-v1.15
+      subdir: 'ports'
+      git: 'https://git.savannah.gnu.org/git/automake.git'
+      tag: 'v1.15.1'
+      version: '1.15.1'
+      tools_required:
+        - host-autoconf-v2.69
+      regenerate:
+        - args: ['./bootstrap']
+    tools_required:
+      - host-autoconf-v2.69
+    configure:
+      - args:
+        - '@THIS_SOURCE_DIR@/configure'
+        - '--prefix=@PREFIX@'
+        - 'MAKEINFO=/bin/true'
+    compile:
+      - args: ['make', '-j@PARALLELISM@']
+    install:
+      - args: ['make', 'install']
+      # Stop aclocal from complaining.
+      - args: ['ln', '-sf', '@PREFIX@/share/aclocal-1.15', '@PREFIX@/share/aclocal']
+  
   - name: host-binutils
     from_source: binutils
     configure:
@@ -36,11 +156,16 @@ tools:
         - '--disable-werror'
         - '--enable-shared'
         - '--enable-targets=x86_64-elf,x86_64-pe'
-        - 'CFLAGS=-O2 -pipe'
+        - 'CFLAGS=-O2'
     compile:
       - args: ['make', '-j@PARALLELISM@', 'all-binutils', 'all-gas', 'all-ld']
     install:
-      - args: ['make', 'install-strip-binutils', 'install-strip-gas', 'install-strip-ld']
+      - args: ['make', 'install-binutils', 'install-gas', 'install-ld']
+      - args: |
+          for f in @PREFIX@/bin/x86_64-toast-*; do
+            tf=$(basename $f | sed 's/x86_64-toast/x86_64-toast-kernel/')
+            ln -sf $(basename $f) @PREFIX@/bin/$tf
+          done
 
   - name: host-gcc
     from_source: gcc
@@ -57,14 +182,17 @@ tools:
         - '--enable-shared'
         - '--disable-multilib'
         - '--enable-initfini-array'
-        - 'CFLAGS=-O2 -pipe'
-        - 'CXXFLAGS=-O2 -pipe'
+        - '--enable-libstdcxx-filesystem-ts'
+        - 'CFLAGS=-O2'
+        - 'CXXFLAGS=-O2'
     stages:
       - name: compiler
         pkgs_required:
           - mlibc-headers
         compile:
+          - args: ['mkdir', '-p', '@SYSROOT_DIR@/usr/include']
           - args: ['make', '-j@PARALLELISM@', 'all-gcc']
+        install:
           - args: ['make', 'install-gcc']
           - args: ['mkdir', '-p', '@PREFIX@/x86_64-toast/bin']
           - args: ['ln', '-sf', '../../../host-binutils/x86_64-toast/bin/as',
@@ -72,7 +200,89 @@ tools:
           - args: ['ln', '-sf', '../../../host-binutils/x86_64-toast/bin/ld',
                                 '@PREFIX@/x86_64-toast/bin/ld']
 
+      - name: libgcc
+        tools_required:
+          - tool: host-gcc
+            stage_dependencies: [compiler]
+        pkgs_required:
+          - mlibc
+        compile:
+          - args: ['make', '-j@PARALLELISM@', 'all-target-libgcc']
+        install:
+          - args: ['make', 'install-target-libgcc']
+
+      - name: libstdc++
+        tools_required:
+          - tool: host-gcc
+            stage_dependencies: [libgcc]
+        compile:
+          - args: ['make', '-j@PARALLELISM@', 'all-target-libstdc++-v3']
+        install:
+          - args: ['make', 'install-target-libstdc++-v3']
+  
+  - name: host-libtool
+    architecture: noarch
+    exports_aclocal: true
+    source:
+      name: libtool
+      subdir: 'ports'
+      git: 'https://git.savannah.gnu.org/git/libtool.git'
+      tag: 'v2.4.6'
+      version: '2.4.6'
+      tools_required:
+        - host-autoconf-v2.69
+        - host-automake-v1.15
+      regenerate:
+        # libtool's ./bootstrap does a shallow clone with insufficient depth.
+        - args: ['git', 'submodule', 'update', '--init']
+        - args: ['./bootstrap']
+    tools_required:
+      - host-autoconf-v2.69
+      - host-automake-v1.15
+    configure:
+      - args:
+        - '@THIS_SOURCE_DIR@/configure'
+        - '--prefix=@PREFIX@'
+    compile:
+      - args: ['make', '-j@PARALLELISM@']
+    install:
+      - args: ['make', 'install']
+
 packages:
+  - name: binutils
+    metadata:
+      summary: Tools necessary to build programs
+      description: This package provides various tools commonly used during package development, including the GNU linker and the GNU assembler. This package also includes libbfd and libopcodes.
+      spdx: 'GPL-3.0-or-later'
+      website: 'https://www.gnu.org/software/binutils/'
+      maintainer: "Dennis Bonke <dennis@managarm.org>"
+      categories: ['sys-devel']
+    from_source: binutils
+    tools_required:
+      - tool: host-gcc
+    pkgs_required:
+      - mlibc
+    revision: 2
+    configure:
+      - args:
+        - '@THIS_SOURCE_DIR@/configure'
+        - '--host=x86_64-toast'
+        - '--prefix=/usr'
+        - '--target=x86_64-toast'
+        - '--with-sysroot=/'
+        - '--disable-nls'
+        # On recent compilers, binutils 2.26 causes implicit-fallthrough warnings, among others.
+        - '--disable-werror'
+        # -g blows up the binary size.
+        - 'CFLAGS=-O2'
+    build:
+      #- args: ['make', '-j@PARALLELISM@', 'all-binutils', 'all-gas', 'all-ld']
+      - args: ['make', 'all-binutils', 'all-gas', 'all-ld']
+      - args: ['make', 'install-binutils', 'install-gas', 'install-ld']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+        quiet: true
+  
   - name: mlibc-headers
     from_source: mlibc
     revision: 2
@@ -84,7 +294,7 @@ packages:
         - '@SOURCE_ROOT@/cross_file.txt'
         - '--prefix=/usr'
         - '-Dheaders_only=true'
-        - '-Ddisable_iconv_option=true'
+        #- '-Ddisable_iconv_option=true'
         - '-Ddisable_intl_option=true'
         - '@THIS_SOURCE_DIR@'
     build:
@@ -109,9 +319,9 @@ packages:
         - '@SOURCE_ROOT@/cross_file.txt'
         - '--prefix=/usr'
         - '--libdir=lib'
-        - '--buildtype=debug'
+        - '--buildtype=debugoptimized'
         - '-Dmlibc_no_headers=true'
-        - '-Ddisable_iconv_option=true'
+        #- '-Ddisable_iconv_option=true'
         - '-Ddisable_intl_option=true'
         - '@THIS_SOURCE_DIR@'
     build:
@@ -119,3 +329,63 @@ packages:
       - args: ['ninja', 'install']
         environ:
           DESTDIR: '@THIS_COLLECT_DIR@'
+      - args: ['ln', '-sf', 'crt0.o', '@THIS_COLLECT_DIR@/usr/lib/crt1.o']
+  
+  - name: zlib
+    metadata:
+      summary: Standard (de)compression library
+      description: This package provides some common compression and decompression functions used by various programs.
+      spdx: 'Zlib'
+      website: 'https://zlib.net'
+      maintainer: "Dennis Bonke <dennis@managarm.org>"
+      categories: ['sys-libs']
+    source:
+      subdir: 'ports'
+      git: 'https://github.com/madler/zlib.git'
+      tag: 'v1.2.11'
+      version: '1.2.11'
+    tools_required:
+      - host-gcc
+    pkgs_required:
+      - mlibc
+    configure:
+      - args:
+        - '@THIS_SOURCE_DIR@/configure'
+        environ:
+          CHOST: 'x86_64-toast'
+          prefix: '/usr'
+    build:
+      - args: ['make', '-j@PARALLELISM@']
+      - args: ['make', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+        quiet: true
+
+  - name: lua
+    source:
+      subdir: ports
+      url: 'https://www.lua.org/ftp/lua-5.3.5.tar.gz'
+      format: 'tar.gz'
+      extract_path: 'lua-5.3.5'
+      version: '5.3.5'
+    tools_required:
+      - host-gcc
+    pkgs_required:
+      - mlibc
+    configure:
+      - args: ['cp', '-r', '@THIS_SOURCE_DIR@/.', '@THIS_BUILD_DIR@']
+      - args:
+        - 'sed'
+        - '-i'
+        - 's|^#define LUA_ROOT "/usr/local/"$|#define LUA_ROOT "/usr/"|'
+        - 'src/luaconf.h'
+    build:
+      - args:
+        - 'make'
+        - 'generic'
+        - 'CC=x86_64-toast-gcc'
+        - 'AR=x86_64-toast-ar rcu'
+        - 'RANLIB=x86_64-toast-ranlib'
+        - '-j@PARALLELISM@'
+      - args: ['make', 'install', 'INSTALL_TOP=@THIS_COLLECT_DIR@/usr']
+        quiet: true
