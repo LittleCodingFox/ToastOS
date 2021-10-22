@@ -25,7 +25,9 @@ size_t SyscallWrite(InterruptStack *stack)
     }
     else if(fd == 2) //stderr
     {
-        //TODO
+        printf("%.*s", count, buffer);
+
+        return count;
     }
     else if(fd >= 3) //actual files
     {

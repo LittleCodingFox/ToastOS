@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include <sys/types.h>
 #include "lock.hpp"
 #include "devicemanager/GenericIODevice.hpp"
 #include "gpt/GPT.hpp"
@@ -26,6 +27,20 @@ namespace FileSystem
     };
 
     typedef uint64_t FileSystemHandle;
+
+    struct FileSystemStat
+    {
+        dev_t dev;
+        ino_t ino;
+        mode_t mode;
+        nlink_t nlink;
+        uid_t uid;
+        gid_t gid;
+        dev_t rdev;
+        off_t size;
+        blksize_t blksize;
+        blkcnt_t blocks;
+    };
 
     class FileSystem
     {
@@ -55,5 +70,7 @@ namespace FileSystem
         virtual bool Exists(const char *path) = 0;
 
         virtual void DebugListDirectories() = 0;
+
+        virtual FileSystemStat Stat(FileSystemHandle handle) = 0;
     };
 }

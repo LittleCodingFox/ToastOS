@@ -1,3 +1,4 @@
+#include <sys/stat.h>
 #include "tarfs.hpp"
 
 namespace FileSystem
@@ -55,6 +56,49 @@ namespace FileSystem
             }
 
             return false;
+        }
+
+        ::FileSystem::FileSystemStat TarFS::Stat(FileSystemHandle handle)
+        {
+            ::FileSystem::FileSystemStat stat = {0};
+
+            for(auto &file: fileHandles)
+            {
+                if(file.ID == handle)
+                {
+                    stat.uid = OctToInt(file.header->uid);
+                    stat.gid = OctToInt(file.header->gid);
+                    stat.nlink = 1;
+                    stat.size = file.length;
+                    stat.blksize = 512;
+                    stat.blocks = stat.size / stat.blksize + 1;
+
+                    switch(file.header->type)
+                    {
+                        case TAR_SYMLINK:
+
+                            stat.mode = S_IFLNK | S_IRWXU;
+
+                            break;
+
+                        case TAR_FILE:
+
+                            stat.mode = S_IFMT | S_IRWXU;
+
+                            break;
+
+                        case TAR_DIRECTORY:
+
+                            stat.mode = S_IFDIR | S_IRWXU;
+
+                            break;
+                    }
+
+                    return stat;
+                }
+            }
+
+            return stat;
         }
 
         FileSystemHandle TarFS::GetFileHandle(const char *path)

@@ -82,6 +82,7 @@ namespace FileSystem
 
             virtual const char *VolumeName() override;
 
+            virtual ::FileSystem::FileSystemStat Stat(FileSystemHandle handle) override;
         };
     }
 }

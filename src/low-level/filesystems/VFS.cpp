@@ -121,6 +121,7 @@ namespace FileSystem
                     handle->cursor = 0;
                     handle->length = mountPoints[i].fileSystem->FileLength(handle->fsHandle);
                     handle->isValid = true;
+                    handle->stat = mountPoint->fileSystem->Stat(handle->fsHandle);
 
                     return handle->ID;
                 }
@@ -262,5 +263,17 @@ namespace FileSystem
         }
 
         return fileHandle->length;
+    }
+
+    ::FileSystem::FileSystemStat VFS::Stat(FILE_HANDLE handle)
+    {
+        FileHandle *fileHandle = GetFileHandle(handle);
+
+        if(fileHandle == NULL || fileHandle->isValid == false)
+        {
+            return {0};
+        }
+
+        return fileHandle->stat;
     }
 }

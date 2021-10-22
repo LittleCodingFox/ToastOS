@@ -32,6 +32,7 @@ namespace FileSystem
             bool isValid;
             ::FileSystem::FileHandleType fileType;
             uint64_t ID;
+            FileSystemStat stat;
         };
 
         frg::vector<MountPoint, frg_allocator> mountPoints;
@@ -56,6 +57,8 @@ namespace FileSystem
         uint64_t SeekFile(FILE_HANDLE handle, uint64_t cursor);
         uint64_t SeekFileBegin(FILE_HANDLE handle);
         uint64_t SeekFileEnd(FILE_HANDLE handle);
+
+        ::FileSystem::FileSystemStat Stat(FILE_HANDLE handle);
     };
 
     extern frg::manual_box<VFS> vfs;

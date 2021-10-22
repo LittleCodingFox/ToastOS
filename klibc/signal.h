@@ -2,9 +2,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
-
-typedef int pid_t;
-typedef int uid_t;
+#include <sys/types.h>
 
 typedef int sig_atomic_t;
 
