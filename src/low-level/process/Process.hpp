@@ -5,6 +5,8 @@
 #include "elf/elf.hpp"
 #include "lock.hpp"
 #include "interrupts/Interrupts.hpp"
+#include "frg_allocator.hpp"
+#include "frg/string.hpp"
 
 #define PROCESS_STACK_SIZE 1024
 
@@ -32,6 +34,8 @@ struct ProcessInfo
     uint64_t sleepTicks;
     uint64_t fsBase;
     sigaction sigHandlers[SIGNAL_MAX];
+
+    frg::string<frg_allocator> cwd;
 
     Elf::ElfHeader *elf;
 };
@@ -102,8 +106,8 @@ public:
 
     ProcessManager(IScheduler *scheduler);
 
-    ProcessInfo *LoadImage(const void *image, const char *name, const char **argv, const char **envp, uint64_t permissionLevel);
-    ProcessInfo *CreateFromEntryPoint(uint64_t entryPoint, const char *name, uint64_t permissionLevel);
+    ProcessInfo *LoadImage(const void *image, const char *name, const char **argv, const char **envp, const char *cwd, uint64_t permissionLevel);
+    ProcessInfo *CreateFromEntryPoint(uint64_t entryPoint, const char *name, const char *cwd, uint64_t permissionLevel);
 
     ProcessInfo *CurrentProcess();
 

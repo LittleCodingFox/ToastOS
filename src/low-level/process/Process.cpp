@@ -173,7 +173,7 @@ ProcessInfo *ProcessManager::CurrentProcess()
     return current;
 }
 
-ProcessInfo *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const char *name, uint64_t permissionLevel)
+ProcessInfo *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const char *name, const char *cwd, uint64_t permissionLevel)
 {
     lock.Lock();
 
@@ -229,6 +229,7 @@ ProcessInfo *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const cha
     memset(newProcess, 0, sizeof(ProcessInfo));
     newProcess->ID = ++processIDCounter;
     newProcess->permissionLevel = permissionLevel;
+    newProcess->cwd = cwd;
 
     newProcess->name = strdup(name);
 
@@ -266,7 +267,7 @@ ProcessInfo *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const cha
     return newProcess;
 }
 
-ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, const char **argv, const char **envp, uint64_t permissionLevel)
+ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, const char **argv, const char **envp, const char *cwd, uint64_t permissionLevel)
 {
     lock.Lock();
 
@@ -322,6 +323,7 @@ ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, cons
     memset(newProcess, 0, sizeof(ProcessInfo));
     newProcess->ID = ++processIDCounter;
     newProcess->permissionLevel = permissionLevel;
+    newProcess->cwd = cwd;
 
     newProcess->name = strdup(name);
 

@@ -1,5 +1,8 @@
+#include <sys/stat.h>
 #include "VFS.hpp"
+#include "process/Process.hpp"
 #include "debug.hpp"
+#include "frg/string.hpp"
 
 namespace FileSystem
 {
@@ -95,18 +98,108 @@ namespace FileSystem
 
     FILE_HANDLE VFS::OpenFile(const char *path)
     {
-        uint64_t pathLen = strlen(path);
+        frg::string<frg_allocator> targetPath = path;
+
+        if(targetPath.size() == 0)
+        {
+            return INVALID_FILE_HANDLE;
+        }
+
+        if(targetPath[0] != '/')
+        {
+            ProcessInfo *process = globalProcessManager->CurrentProcess();
+
+            if(targetPath == ".")
+            {
+                return OpenFile(process->cwd.data());
+            }
+
+            if(targetPath == "..")
+            {
+                frg::string<frg_allocator> cwd = process->cwd;
+
+                bool needsSlash = cwd[cwd.size() - 1] == '/';
+
+                if(needsSlash)
+                {
+                    char *buffer = new char[cwd.size()];
+
+                    memcpy(buffer, cwd.data(), cwd.size() - 1);
+
+                    buffer[cwd.size() - 1] = '\0';
+
+                    cwd = buffer;
+
+                    delete [] buffer;
+                }
+
+                char *ptr = strrchr(cwd.data(), '/');
+
+                if(ptr == NULL || ptr == cwd.data())
+                {
+                    return INVALID_FILE_HANDLE;
+                }
+
+                uint64_t length = ((uint64_t)ptr - (uint64_t)&cwd[0]) + (needsSlash ? 1 : 0);
+
+                char *buffer = new char[length + 1];
+
+                memcpy(buffer, cwd.data(), length - (needsSlash ? 1 : 0));
+
+                if(needsSlash)
+                {
+                    buffer[length - 1] = '/';
+                }
+
+                buffer[length] = '\0';
+
+                FILE_HANDLE handle = OpenFile(buffer);
+
+                delete [] buffer;
+
+                return handle;
+            }
+
+            targetPath = process->cwd + (process->cwd[process->cwd.size() - 1] != '/' ? "/" : "") + targetPath;
+        }
+
+        DEBUG_OUT("open path for %s", &targetPath[0]);
+
+        uint64_t pathLen = strlen(&targetPath[0]);
 
         for(uint64_t i = 0; i < mountPoints.size(); i++)
         {
             MountPoint *mountPoint = &mountPoints[i];
 
-            if(strstr(path, mountPoint->path))
+            if(targetPath == mountPoint->path) //Virtual directory
+            {
+                FileHandle *handle = NewFileHandle();
+
+                handle->path = "";
+                handle->fsHandle = INVALID_FILE_HANDLE;
+                handle->mountPoint = mountPoint;
+                handle->fileType = FILE_HANDLE_DIRECTORY;
+                handle->cursor = 0;
+                handle->length = 0;
+                handle->isValid = true;
+
+                FileSystemStat stat = {0};
+
+                stat.blksize = 512;
+                stat.mode = S_IFDIR | S_IRWXU;
+                stat.nlink = 1;
+
+                handle->stat = stat;
+
+                return handle->ID;
+            }
+
+            if(strstr(&targetPath[0], mountPoint->path))
             {
                 uint64_t mountPointLen = strlen(mountPoint->path);
                 char *innerPath = (char *)malloc(pathLen - mountPointLen + 1);
 
-                memcpy(innerPath, &path[strlen(mountPoint->path)], pathLen - mountPointLen);
+                memcpy(innerPath, &targetPath[strlen(mountPoint->path)], pathLen - mountPointLen);
 
                 innerPath[pathLen - mountPointLen] = '\0';
 

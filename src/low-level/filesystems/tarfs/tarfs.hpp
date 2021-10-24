@@ -59,6 +59,8 @@ namespace FileSystem
 
             frg::vector<FileHandleData, frg_allocator> fileHandles;
             frg::vector<TarHeader *, frg_allocator> headers;
+
+            uint64_t GetHeaderIndex(TarHeader *header);
         public:
             TarFS(uint8_t *data) : FileSystem(NULL), fileHandleCounter(0), data(data)
             {

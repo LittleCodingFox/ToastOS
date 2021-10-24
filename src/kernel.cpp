@@ -66,8 +66,8 @@ extern "C" void _start(stivale2_struct *stivale2Struct)
             const char *argv[1] { NULL };
             const char *envp[1] { NULL };
 
-            globalProcessManager->CreateFromEntryPoint((uint64_t)KernelTask, "KernelTask", PROCESS_PERMISSION_KERNEL);
-            globalProcessManager->LoadImage(buffer, "elf", argv, envp, PROCESS_PERMISSION_USER);
+            globalProcessManager->CreateFromEntryPoint((uint64_t)KernelTask, "KernelTask", "/home/toast/", PROCESS_PERMISSION_KERNEL);
+            globalProcessManager->LoadImage(buffer, "elf", argv, envp, "/home/toast/", PROCESS_PERMISSION_USER);
         }
     }
 

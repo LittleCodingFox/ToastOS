@@ -17,6 +17,23 @@ namespace FileSystem
             return size;
         }
 
+        uint64_t TarFS::GetHeaderIndex(TarHeader *target)
+        {
+            uint64_t counter = 0;
+
+            for(auto &header : headers)
+            {
+                counter++;
+
+                if(header == target)
+                {
+                    return counter;
+                }
+            }
+
+            return counter;
+        }
+
         void TarFS::Initialize(uint64_t sector, uint64_t sectorCount)
         {
             uint8_t *ptr = data;
@@ -72,6 +89,7 @@ namespace FileSystem
                     stat.size = file.length;
                     stat.blksize = 512;
                     stat.blocks = stat.size / stat.blksize + 1;
+                    stat.ino = GetHeaderIndex(file.header);
 
                     switch(file.header->type)
                     {
