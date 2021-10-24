@@ -52,6 +52,9 @@ namespace FileSystem
                 uint64_t ID;
                 TarHeader *header;
                 uint64_t length;
+
+                int currentEntry = 0;
+                frg::vector<dirent, frg_allocator> entries;
             };
 
             uint64_t fileHandleCounter;
@@ -61,6 +64,7 @@ namespace FileSystem
             frg::vector<TarHeader *, frg_allocator> headers;
 
             uint64_t GetHeaderIndex(TarHeader *header);
+            FileHandleData *GetHandle(FileSystemHandle handle);
         public:
             TarFS(uint8_t *data) : FileSystem(NULL), fileHandleCounter(0), data(data)
             {
@@ -85,6 +89,10 @@ namespace FileSystem
             virtual const char *VolumeName() override;
 
             virtual ::FileSystem::FileSystemStat Stat(FileSystemHandle handle) override;
+
+            virtual dirent *ReadEntries(FileSystemHandle handle) override;
+
+            virtual void CloseDir(FileSystemHandle handle) override;
         };
     }
 }

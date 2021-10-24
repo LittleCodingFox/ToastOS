@@ -41,6 +41,8 @@ namespace FileSystem
 
         FileHandle *GetFileHandle(FILE_HANDLE handle);
         FileHandle *NewFileHandle();
+
+        static frg::string<frg_allocator> ResolvePath(const frg::string<frg_allocator> &path);
     public:
         VFS();
         void AddMountPoint(const char *path, FileSystem *fileSystem);
@@ -57,6 +59,9 @@ namespace FileSystem
         uint64_t SeekFile(FILE_HANDLE handle, uint64_t cursor);
         uint64_t SeekFileBegin(FILE_HANDLE handle);
         uint64_t SeekFileEnd(FILE_HANDLE handle);
+
+        dirent *ReadEntries(FILE_HANDLE handle);
+        void CloseDir(FILE_HANDLE handle);
 
         ::FileSystem::FileSystemStat Stat(FILE_HANDLE handle);
     };

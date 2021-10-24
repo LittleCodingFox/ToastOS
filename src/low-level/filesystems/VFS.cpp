@@ -2,13 +2,63 @@
 #include "VFS.hpp"
 #include "process/Process.hpp"
 #include "debug.hpp"
-#include "frg/string.hpp"
+#include "string/stringutils.hpp"
 
 namespace FileSystem
 {
     frg::manual_box<VFS> vfs;
 
     VFS::VFS() : fileHandleCounter(0) {}
+
+    frg::string<frg_allocator> VFS::ResolvePath(const frg::string<frg_allocator> &path)
+    {
+        if(path == "." || path == "..")
+        {
+            return path;
+        }
+
+        frg::vector<frg::string<frg_allocator>, frg_allocator> parts = SplitString(path, '/');
+
+        //TODO: Erase impl in frg vector
+        frg::vector<frg::string<frg_allocator>, frg_allocator> validParts;
+
+        for(int64_t i = parts.size() - 1; i >= 0; i--)
+        {
+            if(parts[i] == ".." && i > 0)
+            {
+                i--;
+
+                continue;
+            }
+            else if(parts[i] == ".")
+            {
+                continue;
+            }
+
+            validParts.push_back(parts[i]);
+        }
+
+        parts.clear();
+
+        for(uint64_t i = 0; i < validParts.size(); i++)
+        {
+            if(i > 0)
+            {
+                parts.push_back("/");
+            }
+
+            parts.push_back(validParts[i]);
+        }
+
+        frg::string<frg_allocator> outValue;
+
+        for(int64_t i = parts.size() - 1; i >= 0; i--)
+        {
+            outValue += parts[i];
+        }
+
+        return outValue;
+    }
 
     VFS::FileHandle *VFS::GetFileHandle(FILE_HANDLE handle)
     {
@@ -96,9 +146,33 @@ namespace FileSystem
         }
     }
 
+    dirent *VFS::ReadEntries(FILE_HANDLE handle)
+    {
+        FileHandle *fileHandle = GetFileHandle(handle);
+
+        if(fileHandle == NULL)
+        {
+            return NULL;
+        }
+
+        return fileHandle->mountPoint->fileSystem->ReadEntries(fileHandle->fsHandle);
+    }
+
+    void VFS::CloseDir(FILE_HANDLE handle)
+    {
+        FileHandle *fileHandle = GetFileHandle(handle);
+
+        if(fileHandle == NULL)
+        {
+            return;
+        }
+
+        fileHandle->mountPoint->fileSystem->CloseDir(fileHandle->fsHandle);
+    }
+
     FILE_HANDLE VFS::OpenFile(const char *path)
     {
-        frg::string<frg_allocator> targetPath = path;
+        frg::string<frg_allocator> targetPath = ResolvePath(path);
 
         if(targetPath.size() == 0)
         {
@@ -223,6 +297,13 @@ namespace FileSystem
                     free(innerPath);
                 }
             }
+        }
+
+        if(targetPath.size() > 0 && targetPath[targetPath.size() - 1] != '/')
+        {
+            targetPath += "/";
+
+            return OpenFile(targetPath.data());
         }
 
         return INVALID_FILE_HANDLE;

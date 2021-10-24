@@ -1,24 +1,15 @@
 #pragma once
 #include <stdint.h>
+#include <dirent.h>
 #include <sys/types.h>
 #include "lock.hpp"
 #include "devicemanager/GenericIODevice.hpp"
 #include "gpt/GPT.hpp"
+#include "frg/string.hpp"
+#include "frg_allocator.hpp"
 
 namespace FileSystem
 {
-    class File
-    {
-    public:
-        virtual const char *Path() = 0;
-        virtual uint64_t Sie() = 0;
-
-    protected:
-        uint64_t fileID;
-        uint64_t address;
-        const char *path;
-    };
-
     enum FileHandleType
     {
         FILE_HANDLE_UNKNOWN,
@@ -72,5 +63,9 @@ namespace FileSystem
         virtual void DebugListDirectories() = 0;
 
         virtual FileSystemStat Stat(FileSystemHandle handle) = 0;
+
+        virtual dirent *ReadEntries(FileSystemHandle handle) = 0;
+
+        virtual void CloseDir(FileSystemHandle handle) = 0;
     };
 }

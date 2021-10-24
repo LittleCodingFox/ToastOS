@@ -285,6 +285,13 @@ namespace FileSystem
                 return {0};
             }
 
+            virtual dirent *ReadEntries(FileSystemHandle handle) override {
+
+                return NULL;
+            }
+
+            virtual void CloseDir(FileSystemHandle handle) override {}
+
             static bool IsValidEntry(GPT::Partition *partition);
         };
     }
