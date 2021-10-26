@@ -310,6 +310,8 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
         FileSystem::tarfs::TarFS *tarfs = new FileSystem::tarfs::TarFS((uint8_t *)initrd->begin);
 
         FileSystem::vfs->AddMountPoint("/", tarfs);
+
+        //tarfs->DebugListDirectories();
     }
 
     globalProcessManager = new ProcessManager(new RoundRobinScheduler());

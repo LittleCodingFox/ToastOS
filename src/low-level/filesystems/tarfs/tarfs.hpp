@@ -57,14 +57,28 @@ namespace FileSystem
                 frg::vector<dirent, frg_allocator> entries;
             };
 
+            struct Inode
+            {
+                frg::string<frg_allocator> name;
+                TarHeader *header;
+                Inode *parent;
+                frg::vector<Inode *, frg_allocator> children;
+            };
+
             uint64_t fileHandleCounter;
             uint8_t *data;
 
             frg::vector<FileHandleData, frg_allocator> fileHandles;
             frg::vector<TarHeader *, frg_allocator> headers;
+            frg::vector<Inode *, frg_allocator> inodes;
 
             uint64_t GetHeaderIndex(TarHeader *header);
             FileHandleData *GetHandle(FileSystemHandle handle);
+            void AddInode(TarHeader *header, Inode *parent);
+            void ScanInodes(Inode *inode);
+            Inode *FindInode(const char *path);
+            void ListSubdirs(Inode *inode, uint32_t indentation);
+            frg::string<frg_allocator> ResolveLink(TarHeader *header);
         public:
             TarFS(uint8_t *data) : FileSystem(NULL), fileHandleCounter(0), data(data)
             {
