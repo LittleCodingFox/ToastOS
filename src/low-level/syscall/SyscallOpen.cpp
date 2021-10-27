@@ -14,7 +14,7 @@ int64_t SyscallOpen(InterruptStack *stack)
 
     DEBUG_OUT("Open %s (flags: 0x%x)", path, flags);
 
-    FILE_HANDLE handle = vfs->OpenFile(path);
+    FILE_HANDLE handle = vfs->OpenFile(path, globalProcessManager->CurrentProcess());
 
     if(handle == INVALID_FILE_HANDLE)
     {

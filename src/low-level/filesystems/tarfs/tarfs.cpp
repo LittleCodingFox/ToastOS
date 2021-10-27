@@ -217,23 +217,30 @@ namespace FileSystem
 
         bool TarFS::Exists(const char *path)
         {
-            return FindInode(path) != NULL;
+            Inode *inode;
+
+            return FindInode(path, &inode);
         }
 
-        TarFS::Inode *TarFS::FindInode(const char *path)
+        bool TarFS::FindInode(const char *path, TarFS::Inode **inode)
         {
             auto pieces = SplitString(path, '/');
             Inode *target = NULL;
+            bool isValid = false;
 
             for(uint64_t i = 0; i < pieces.size(); i++)
             {
                 if(pieces[i].size() == 0) //is a '/'
                 {
+                    isValid = true;
+
                     continue;
                 }
 
                 if(pieces[i] == ".")
                 {
+                    isValid = true;
+
                     continue;
                 }
 
@@ -244,12 +251,14 @@ namespace FileSystem
                         target = target->parent;
                     }
 
+                    isValid = true;
+
                     continue;
                 }
 
                 bool found = false;
 
-                if(i == 0)
+                if(i == 0 || target == NULL)
                 {
                     for(auto &inode : inodes)
                     {
@@ -285,11 +294,17 @@ namespace FileSystem
 
                 if(!found)
                 {
-                    return NULL;
+                    isValid = false;
+
+                    return false;
                 }
+
+                isValid = true;
             }
 
-            return target;
+            *inode = target;
+
+            return isValid;
         }
 
         ::FileSystem::FileSystemStat TarFS::Stat(FileSystemHandle handle)
@@ -303,44 +318,122 @@ namespace FileSystem
                 return stat;
             }
 
-            stat.uid = OctToInt(file->header->uid);
-            stat.gid = OctToInt(file->header->gid);
+            if(file->header != NULL)
+            {
+                stat.uid = OctToInt(file->header->uid);
+                stat.gid = OctToInt(file->header->gid);
+                stat.ino = GetHeaderIndex(file->header);
+
+                switch(file->header->type)
+                {
+                    case TAR_SYMLINK:
+
+                        stat.mode = S_IFLNK | S_IRWXU;
+
+                        break;
+
+                    case TAR_FILE:
+
+                        stat.mode = S_IFMT | S_IRWXU;
+
+                        break;
+
+                    case TAR_DIRECTORY:
+
+                        stat.mode = S_IFDIR | S_IRWXU;
+
+                        break;
+                }
+            }
+            else //Virtual root
+            {
+                stat.ino = headers.size();
+                stat.mode = S_IFDIR | S_IRWXU;
+            }
+
             stat.nlink = 1;
             stat.size = file->length;
             stat.blksize = 512;
             stat.blocks = stat.size / stat.blksize + 1;
-            stat.ino = GetHeaderIndex(file->header);
-
-            switch(file->header->type)
-            {
-                case TAR_SYMLINK:
-
-                    stat.mode = S_IFLNK | S_IRWXU;
-
-                    break;
-
-                case TAR_FILE:
-
-                    stat.mode = S_IFMT | S_IRWXU;
-
-                    break;
-
-                case TAR_DIRECTORY:
-
-                    stat.mode = S_IFDIR | S_IRWXU;
-
-                    break;
-            }
 
             return stat;
         }
 
         FileSystemHandle TarFS::GetFileHandle(const char *path)
         {
-            auto inode = FindInode(path);
+            Inode *inode = NULL;
+            bool found = FindInode(path, &inode);
 
             if(inode == NULL)
             {
+                if(found) //Virtual Root Dir
+                {
+                    FileHandleData data;
+
+                    data.ID = ++fileHandleCounter;
+                    data.header = NULL;
+                    data.length = 0;
+                    data.currentEntry = 0;
+
+                    dirent current = {0};
+
+                    current.d_ino = headers.size();
+                    current.d_reclen = sizeof(dirent);
+                    strcpy(current.d_name, ".");
+                    current.d_type = DT_DIR;
+
+                    data.entries.push_back(current);
+
+                    dirent previous = {0};
+
+                    previous.d_ino = headers.size();
+                    previous.d_reclen = sizeof(dirent);
+                    strcpy(previous.d_name, "..");
+                    previous.d_type = DT_DIR;
+
+                    data.entries.push_back(previous);
+
+                    for(auto &child : inodes)
+                    {
+                        auto childHeader = child->header;
+                        dirent entry = {0};
+
+                        entry.d_ino = GetHeaderIndex(childHeader);
+                        entry.d_reclen = sizeof(dirent);
+
+                        memcpy(entry.d_name, child->name.data(), child->name.size());
+
+                        entry.d_name[child->name.size()] = '\0';
+
+                        switch(childHeader->type)
+                        {
+                            case TAR_FILE:
+
+                                entry.d_type = DT_REG;
+
+                                break;
+
+                            case TAR_SYMLINK:
+
+                                entry.d_type = DT_LNK;
+
+                                break;
+
+                            case TAR_DIRECTORY:
+
+                                entry.d_type = DT_DIR;
+
+                                break;
+                        }
+
+                        data.entries.push_back(entry);
+                    }
+
+                    fileHandles.push_back(data);
+
+                    return data.ID;
+                }
+
                 return 0;
             }
 
@@ -423,7 +516,7 @@ namespace FileSystem
 
                     entry.d_name[child->name.size()] = '\0';
 
-                    switch(header->type)
+                    switch(childHeader->type)
                     {
                         case TAR_FILE:
 
@@ -465,6 +558,11 @@ namespace FileSystem
             if(file == NULL)
             {
                 return FILE_HANDLE_UNKNOWN;
+            }
+
+            if(file->header == NULL)
+            {
+                return FILE_HANDLE_DIRECTORY;
             }
 
             switch(file->header->type)
@@ -522,7 +620,7 @@ namespace FileSystem
         {
             auto file = GetHandle(handle);
 
-            if(file == NULL)
+            if(file == NULL || file->header == NULL)
             {
                 return 0;
             }
@@ -547,7 +645,7 @@ namespace FileSystem
         {
             auto file = GetHandle(handle);
 
-            if(file == NULL)
+            if(file == NULL || file->header == NULL)
             {
                 return 0;
             }

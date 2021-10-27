@@ -166,7 +166,12 @@ ProcessInfo *ProcessManager::CurrentProcess()
 {
     lock.Lock();
 
-    ProcessInfo *current = scheduler->CurrentProcess()->process;
+    ProcessInfo *current = NULL;
+
+    if(scheduler != NULL && scheduler->CurrentProcess() != NULL)
+    {
+        current = scheduler->CurrentProcess()->process;
+    }
 
     lock.Unlock();
 
@@ -353,7 +358,7 @@ ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, cons
         {
             DEBUG_OUT("Found LD for process: %s", ldPath);
 
-            FILE_HANDLE ldHandle = vfs->OpenFile(ldPath);
+            FILE_HANDLE ldHandle = vfs->OpenFile(ldPath, newProcess);
 
             if(vfs->FileType(ldHandle) != FILE_HANDLE_FILE)
             {

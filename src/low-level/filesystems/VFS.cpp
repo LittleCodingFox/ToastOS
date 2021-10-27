@@ -10,56 +10,6 @@ namespace FileSystem
 
     VFS::VFS() : fileHandleCounter(0) {}
 
-    frg::string<frg_allocator> VFS::ResolvePath(const frg::string<frg_allocator> &path)
-    {
-        if(path == "." || path == "..")
-        {
-            return path;
-        }
-
-        frg::vector<frg::string<frg_allocator>, frg_allocator> parts = SplitString(path, '/');
-
-        //TODO: Erase impl in frg vector
-        frg::vector<frg::string<frg_allocator>, frg_allocator> validParts;
-
-        for(int64_t i = parts.size() - 1; i >= 0; i--)
-        {
-            if(parts[i] == ".." && i > 0)
-            {
-                i--;
-
-                continue;
-            }
-            else if(parts[i] == ".")
-            {
-                continue;
-            }
-
-            validParts.push_back(parts[i]);
-        }
-
-        parts.clear();
-
-        for(uint64_t i = 0; i < validParts.size(); i++)
-        {
-            if(i > 0)
-            {
-                parts.push_back("/");
-            }
-
-            parts.push_back(validParts[i]);
-        }
-
-        frg::string<frg_allocator> outValue;
-
-        for(int64_t i = parts.size() - 1; i >= 0; i--)
-        {
-            outValue += parts[i];
-        }
-
-        return outValue;
-    }
-
     VFS::FileHandle *VFS::GetFileHandle(FILE_HANDLE handle)
     {
         if(handle == INVALID_FILE_HANDLE || handle >= fileHandleCounter)
@@ -93,7 +43,6 @@ namespace FileSystem
         handle.cursor = 0;
         handle.fsHandle = 0;
         handle.mountPoint = NULL;
-        handle.path = NULL;
         handle.length = 0;
         handle.isValid = false;
 
@@ -170,88 +119,29 @@ namespace FileSystem
         fileHandle->mountPoint->fileSystem->CloseDir(fileHandle->fsHandle);
     }
 
-    FILE_HANDLE VFS::OpenFile(const char *path)
+    FILE_HANDLE VFS::OpenFile(const char *path, ProcessInfo *currentProcess)
     {
-        frg::string<frg_allocator> targetPath = ResolvePath(path);
+        frg::string<frg_allocator> targetPath = path;
+
+        if(targetPath.size() > 0 && targetPath[0] != '/' && currentProcess != NULL)
+        {
+            targetPath = currentProcess->cwd + targetPath;
+        }
 
         if(targetPath.size() == 0)
         {
             return INVALID_FILE_HANDLE;
         }
 
-        if(targetPath[0] != '/')
+        for(auto &mountPoint : mountPoints)
         {
-            ProcessInfo *process = globalProcessManager->CurrentProcess();
-
-            if(targetPath == ".")
-            {
-                return OpenFile(process->cwd.data());
-            }
-
-            if(targetPath == "..")
-            {
-                frg::string<frg_allocator> cwd = process->cwd;
-
-                bool needsSlash = cwd[cwd.size() - 1] == '/';
-
-                if(needsSlash)
-                {
-                    char *buffer = new char[cwd.size()];
-
-                    memcpy(buffer, cwd.data(), cwd.size() - 1);
-
-                    buffer[cwd.size() - 1] = '\0';
-
-                    cwd = buffer;
-
-                    delete [] buffer;
-                }
-
-                char *ptr = strrchr(cwd.data(), '/');
-
-                if(ptr == NULL || ptr == cwd.data())
-                {
-                    return INVALID_FILE_HANDLE;
-                }
-
-                uint64_t length = ((uint64_t)ptr - (uint64_t)&cwd[0]) + (needsSlash ? 1 : 0);
-
-                char *buffer = new char[length + 1];
-
-                memcpy(buffer, cwd.data(), length - (needsSlash ? 1 : 0));
-
-                if(needsSlash)
-                {
-                    buffer[length - 1] = '/';
-                }
-
-                buffer[length] = '\0';
-
-                FILE_HANDLE handle = OpenFile(buffer);
-
-                delete [] buffer;
-
-                return handle;
-            }
-
-            targetPath = process->cwd + (process->cwd[process->cwd.size() - 1] != '/' ? "/" : "") + targetPath;
-        }
-
-        DEBUG_OUT("open path for %s", &targetPath[0]);
-
-        uint64_t pathLen = strlen(&targetPath[0]);
-
-        for(uint64_t i = 0; i < mountPoints.size(); i++)
-        {
-            MountPoint *mountPoint = &mountPoints[i];
-
-            if(targetPath == mountPoint->path) //Virtual directory
+            if(targetPath == mountPoint.path) //Virtual directory
             {
                 FileHandle *handle = NewFileHandle();
 
                 handle->path = "";
                 handle->fsHandle = INVALID_FILE_HANDLE;
-                handle->mountPoint = mountPoint;
+                handle->mountPoint = &mountPoint;
                 handle->fileType = FILE_HANDLE_DIRECTORY;
                 handle->cursor = 0;
                 handle->length = 0;
@@ -268,34 +158,37 @@ namespace FileSystem
                 return handle->ID;
             }
 
-            if(strstr(&targetPath[0], mountPoint->path))
+            if(strstr(targetPath.data(), mountPoint.path) == targetPath.data())
             {
-                uint64_t mountPointLen = strlen(mountPoint->path);
-                char *innerPath = (char *)malloc(pathLen - mountPointLen + 1);
+                uint64_t length = targetPath.size() - strlen(mountPoint.path);
 
-                memcpy(innerPath, &targetPath[strlen(mountPoint->path)], pathLen - mountPointLen);
+                char *buffer = new char[length + 1];
 
-                innerPath[pathLen - mountPointLen] = '\0';
+                memcpy(buffer, targetPath.data() + strlen(mountPoint.path), length);
 
-                if(mountPoint->fileSystem->Exists(innerPath))
+                buffer[length] = '\0';
+
+                auto mountHandle = mountPoint.fileSystem->GetFileHandle(buffer);
+
+                if(mountHandle != 0)
                 {
                     FileHandle *handle = NewFileHandle();
 
-                    handle->path = innerPath;
-                    handle->fsHandle = mountPoint->fileSystem->GetFileHandle(innerPath);
-                    handle->mountPoint = mountPoint;
-                    handle->fileType = mountPoint->fileSystem->FileHandleType(handle->fsHandle);
+                    handle->path = buffer;
+                    handle->fsHandle = mountHandle;
+                    handle->mountPoint = &mountPoint;
+                    handle->fileType = mountPoint.fileSystem->FileHandleType(handle->fsHandle);
                     handle->cursor = 0;
-                    handle->length = mountPoints[i].fileSystem->FileLength(handle->fsHandle);
+                    handle->length = mountPoint.fileSystem->FileLength(handle->fsHandle);
                     handle->isValid = true;
-                    handle->stat = mountPoint->fileSystem->Stat(handle->fsHandle);
+                    handle->stat = mountPoint.fileSystem->Stat(handle->fsHandle);
+
+                    delete [] buffer;
 
                     return handle->ID;
                 }
-                else
-                {
-                    free(innerPath);
-                }
+
+                delete [] buffer;
             }
         }
 
@@ -303,7 +196,7 @@ namespace FileSystem
         {
             targetPath += "/";
 
-            return OpenFile(targetPath.data());
+            return OpenFile(targetPath.data(), currentProcess);
         }
 
         return INVALID_FILE_HANDLE;

@@ -6,6 +6,7 @@
 #include <frg/manual_box.hpp>
 #include <frg/vector.hpp>
 #include <frg_allocator.hpp>
+#include "process/Process.hpp"
 
 namespace FileSystem
 {
@@ -25,7 +26,7 @@ namespace FileSystem
         struct FileHandle
         {
             MountPoint *mountPoint;
-            const char *path;
+            frg::string<frg_allocator> path;
             FileSystemHandle fsHandle;
             uint64_t length;
             uint64_t cursor;
@@ -41,14 +42,12 @@ namespace FileSystem
 
         FileHandle *GetFileHandle(FILE_HANDLE handle);
         FileHandle *NewFileHandle();
-
-        static frg::string<frg_allocator> ResolvePath(const frg::string<frg_allocator> &path);
     public:
         VFS();
         void AddMountPoint(const char *path, FileSystem *fileSystem);
         void RemoveMountPoint(const char *path);
 
-        FILE_HANDLE OpenFile(const char *path);
+        FILE_HANDLE OpenFile(const char *path, ProcessInfo *currentProcess);
         void CloseFile(FILE_HANDLE handle);
         ::FileSystem::FileHandleType FileType(FILE_HANDLE handle);
 

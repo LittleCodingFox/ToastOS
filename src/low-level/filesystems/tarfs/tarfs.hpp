@@ -76,7 +76,7 @@ namespace FileSystem
             FileHandleData *GetHandle(FileSystemHandle handle);
             void AddInode(TarHeader *header, Inode *parent);
             void ScanInodes(Inode *inode);
-            Inode *FindInode(const char *path);
+            bool FindInode(const char *path, Inode **inode);
             void ListSubdirs(Inode *inode, uint32_t indentation);
             frg::string<frg_allocator> ResolveLink(TarHeader *header);
         public:
