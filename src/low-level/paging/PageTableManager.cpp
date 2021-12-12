@@ -4,10 +4,11 @@
 #include <string.h>
 #include "PageFrameAllocator.hpp"
 #include "debug.hpp"
+#include "registers/Registers.hpp"
 
 PageTableManager *globalPageTableManager = NULL;
 
-static inline PageTable *GetOrAllocEntry(PageTable *table, uint64_t offset, uint64_t flags)
+static inline PageTable *GetOrAllocEntry(PageTable *table, uint64_t offset, uint64_t flags, PageTableManager *self)
 {
     uint64_t address = table->entries[offset];
 
@@ -21,6 +22,15 @@ static inline PageTable *GetOrAllocEntry(PageTable *table, uint64_t offset, uint
         }
 
         table->entries[offset] |= flags | PAGING_FLAG_PRESENT;
+
+        //Ensure we have the address mapped when accessing it. If we don't, we need to make it usable in the current P4
+        if((uint64_t)self->p4 != Registers::ReadCR3() && globalPageTableManager != NULL)
+        {
+            PageTableManager temp;
+            temp.p4 = (PageTable *)Registers::ReadCR3();
+
+            temp.MapMemory((void *)TranslateToHighHalfMemoryAddress(address), (void *)address, flags);
+        }
 
         memset((void *)TranslateToHighHalfMemoryAddress(address), 0, 0x1000);
     }
@@ -56,9 +66,10 @@ void PageTableManager::MapMemory(void *virtualMemory, void *physicalMemory, uint
     PageTableOffset offset = VirtualAddressToOffsets(virtualMemory);
 
     PageTable *p4Virtual = (PageTable *)TranslateToHighHalfMemoryAddress((uint64_t)p4);
-    PageTable *pdp = GetOrAllocEntry(p4Virtual, offset.p4Offset, higherPermissions);
-    PageTable *pd = GetOrAllocEntry(pdp, offset.pdpOffset, higherPermissions);
-    PageTable *pt = GetOrAllocEntry(pd, offset.pdOffset, higherPermissions);
+
+    PageTable *pdp = GetOrAllocEntry(p4Virtual, offset.p4Offset, higherPermissions, this);
+    PageTable *pd = GetOrAllocEntry(pdp, offset.pdpOffset, higherPermissions, this);
+    PageTable *pt = GetOrAllocEntry(pd, offset.pdOffset, higherPermissions, this);
 
     pt->entries[offset.ptOffset] = (uint64_t)physicalMemory | flags | PAGING_FLAG_PRESENT;
 }

@@ -120,6 +120,8 @@ public:
     void Sigaction(int signum, sigaction *act, sigaction *oldact);
 
     void Kill(uint64_t pid, int signal);
+
+    void Exit(int exitCode);
 };
 
 extern ProcessManager *globalProcessManager;

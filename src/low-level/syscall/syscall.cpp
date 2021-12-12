@@ -43,6 +43,7 @@ int64_t SyscallStat(InterruptStack *stack);
 int64_t SyscallFStat(InterruptStack *stack);
 int64_t SyscallPanic(InterruptStack *stack);
 int64_t SyscallReadEntries(InterruptStack *stack);
+int64_t SyscallExit(InterruptStack *stack);
 
 SyscallPointer syscallHandlers[] =
 {
@@ -63,6 +64,7 @@ SyscallPointer syscallHandlers[] =
     [SYSCALL_FSTAT] = (SyscallPointer)SyscallFStat,
     [SYSCALL_PANIC] = (SyscallPointer)SyscallPanic,
     [SYSCALL_READ_ENTRIES] = (SyscallPointer)SyscallReadEntries,
+    [SYSCALL_EXIT] = (SyscallPointer)SyscallExit,
 };
 
 void SyscallHandler(InterruptStack *stack)

@@ -20,6 +20,7 @@
 #define SYSCALL_STAT            16
 #define SYSCALL_PANIC           17
 #define SYSCALL_READ_ENTRIES    18
+#define SYSCALL_EXIT            19
 
 void InitializeSyscalls();
 

@@ -107,6 +107,18 @@ namespace FileSystem
         return fileHandle->mountPoint->fileSystem->ReadEntries(fileHandle->fsHandle);
     }
 
+    frg::string<frg_allocator> VFS::GetFilePath(FILE_HANDLE handle)
+    {
+        FileHandle *fileHandle = GetFileHandle(handle);
+
+        if(fileHandle == NULL)
+        {
+            return "";
+        }
+
+        return fileHandle->path;
+    }
+
     void VFS::CloseDir(FILE_HANDLE handle)
     {
         FileHandle *fileHandle = GetFileHandle(handle);

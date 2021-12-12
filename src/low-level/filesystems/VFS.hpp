@@ -59,6 +59,8 @@ namespace FileSystem
         uint64_t SeekFileBegin(FILE_HANDLE handle);
         uint64_t SeekFileEnd(FILE_HANDLE handle);
 
+        frg::string<frg_allocator> GetFilePath(FILE_HANDLE handle);
+
         dirent *ReadEntries(FILE_HANDLE handle);
         void CloseDir(FILE_HANDLE handle);
 

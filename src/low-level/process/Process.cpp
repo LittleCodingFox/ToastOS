@@ -517,6 +517,22 @@ void ProcessManager::LoadFSBase(uint64_t base)
     Registers::WriteMSR(0xC0000100, base);
 }
 
+void ProcessManager::Exit(int exitCode)
+{
+    lock.Lock();
+
+    if(scheduler != NULL && scheduler->CurrentProcess() != NULL)
+    {
+        scheduler->ExitProcess(scheduler->CurrentProcess()->process);
+    }
+
+    lock.Unlock();
+
+    //TODO: ExitCode
+
+    SwitchTasks(scheduler->CurrentProcess());
+}
+
 void ProcessManager::Sigaction(int signum, sigaction *act, sigaction *oldact)
 {
     if(signum < 0 || signum >= SIGNAL_MAX)
