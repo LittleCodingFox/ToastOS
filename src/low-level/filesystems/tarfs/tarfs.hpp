@@ -60,6 +60,7 @@ namespace FileSystem
             struct Inode
             {
                 frg::string<frg_allocator> name;
+                frg::string<frg_allocator> link;
                 TarHeader *header;
                 Inode *parent;
                 frg::vector<Inode *, frg_allocator> children;
@@ -94,6 +95,7 @@ namespace FileSystem
             virtual ::FileSystem::FileHandleType FileHandleType(FileSystemHandle handle) override;
 
             virtual uint64_t FileLength(FileSystemHandle handle) override;
+            virtual frg::string<frg_allocator> FileLink(FileSystemHandle handle) override;
 
             virtual uint64_t ReadFile(FileSystemHandle handle, void *buffer, uint64_t cursor, uint64_t size) override;
             virtual uint64_t WriteFile(FileSystemHandle handle, const void *buffer, uint64_t cursor, uint64_t size) override;

@@ -184,6 +184,42 @@ namespace FileSystem
 
                 if(mountHandle != 0)
                 {
+                    if(mountPoint.fileSystem->FileHandleType(mountHandle) == FILE_HANDLE_SYMLINK)
+                    {
+                        auto path = mountPoint.fileSystem->FileLink(mountHandle);
+
+                        if(path.size() > 0 && path[0] == '/')
+                        {
+                            return OpenFile(path.data(), currentProcess);
+                        }
+                        else
+                        {
+                            char *newPath = NULL;
+                            char *ptr = strrchr(buffer, '/');
+                            frg::string<frg_allocator> linkPath;
+
+                            if(ptr != NULL)
+                            {
+                                int length = (int)(ptr - buffer) + 1;
+
+                                newPath = new char[length + strlen(buffer) + 1];
+
+                                memcpy(newPath, buffer, length);
+                                memcpy(newPath + length, path.data(), strlen(path.data()));
+
+                                newPath[length + strlen(path.data())] = '\0';
+
+                                linkPath = newPath;
+
+                                delete [] newPath;
+                            }
+
+                            auto nextPath = frg::string<frg_allocator>(mountPoint.path) + linkPath;
+
+                            return OpenFile(nextPath.data(), currentProcess);
+                        }
+                    }
+
                     FileHandle *handle = NewFileHandle();
 
                     handle->path = buffer;
@@ -342,6 +378,30 @@ namespace FileSystem
         }
 
         return fileHandle->length;
+    }
+
+    VFS::FileHandle *VFS::ResolveSymlink(FileHandle *original)
+    {
+        if(original->fileType != FILE_HANDLE_SYMLINK)
+        {
+            return original;
+        }
+
+        while(original->fileType == FILE_HANDLE_SYMLINK)
+        {
+            auto path = original->mountPoint->fileSystem->FileLink(original->fsHandle);
+
+            auto handle = OpenFile(path.data(), globalProcessManager->CurrentProcess());
+
+            if(handle == INVALID_FILE_HANDLE)
+            {
+                return NULL;
+            }
+
+            original = GetFileHandle(handle);
+        }
+
+        return original;
     }
 
     ::FileSystem::FileSystemStat VFS::Stat(FILE_HANDLE handle)

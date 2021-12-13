@@ -44,6 +44,7 @@ int64_t SyscallFStat(InterruptStack *stack);
 int64_t SyscallPanic(InterruptStack *stack);
 int64_t SyscallReadEntries(InterruptStack *stack);
 int64_t SyscallExit(InterruptStack *stack);
+int64_t SyscallClock(InterruptStack *stack);
 
 SyscallPointer syscallHandlers[] =
 {
@@ -65,12 +66,11 @@ SyscallPointer syscallHandlers[] =
     [SYSCALL_PANIC] = (SyscallPointer)SyscallPanic,
     [SYSCALL_READ_ENTRIES] = (SyscallPointer)SyscallReadEntries,
     [SYSCALL_EXIT] = (SyscallPointer)SyscallExit,
+    [SYSCALL_CLOCK] = (SyscallPointer)SyscallClock,
 };
 
 void SyscallHandler(InterruptStack *stack)
 {
-    //DEBUG_OUT("SYSCALL %llu", stack->rdi);
-
     if(stack->rdi <= sizeof(syscallHandlers) / sizeof(SyscallPointer) && syscallHandlers[stack->rdi] != NULL)
     {
         ProcessInfo *process = globalProcessManager->CurrentProcess();

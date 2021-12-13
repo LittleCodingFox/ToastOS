@@ -11,7 +11,8 @@ namespace Devices
     enum DeviceType
     {
         DEVICE_TYPE_UNKNOWN,
-        DEVICE_TYPE_DISK
+        DEVICE_TYPE_DISK,
+        DEVICE_TYPE_NETWORK
     };
 
     class GenericDevice

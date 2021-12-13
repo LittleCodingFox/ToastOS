@@ -19,6 +19,7 @@
 #include "filesystems/VFS.hpp"
 #include "filesystems/tarfs/tarfs.hpp"
 #include "sse/sse.hpp"
+#include "cmos/cmos.hpp"
 
 PageTableManager pageTableManager;
 
@@ -165,13 +166,6 @@ void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_fr
     DEBUG_OUT("%s", "Initialized memory");
 }
 
-void InitializeInterrupts()
-{
-    printf("Initializing Interrupts\n");
-
-    interrupts.Init();
-}
-
 void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
 {
     printf("Initializing ACPI\n");
@@ -279,7 +273,9 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     InitializeMemory(memmap, framebuffer);
 
-    InitializeInterrupts();
+    printf("Initializing Interrupts\n");
+
+    interrupts.Init();
 
     if(symbols != NULL)
     {
@@ -329,6 +325,10 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
     printf("Initializing syscalls\n");
 
     InitializeSyscalls();
+
+    printf("Initializing cmos\n");
+
+    cmos.Initialize();
 
     if(initrd != NULL)
     {

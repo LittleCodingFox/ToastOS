@@ -359,6 +359,18 @@ namespace FileSystem
             return stat;
         }
 
+        frg::string<frg_allocator> TarFS::FileLink(FileSystemHandle handle)
+        {
+            auto file = GetHandle(handle);
+
+            if(file == NULL || file->header->type != TAR_SYMLINK)
+            {
+                return "";
+            }
+
+            return file->header->link;
+        }
+
         FileSystemHandle TarFS::GetFileHandle(const char *path)
         {
             Inode *inode = NULL;
@@ -577,7 +589,7 @@ namespace FileSystem
 
                 case TAR_SYMLINK:
 
-                    return FILE_HANDLE_FILE;
+                    return FILE_HANDLE_SYMLINK;
             }
 
             return FILE_HANDLE_UNKNOWN;

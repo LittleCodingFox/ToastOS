@@ -15,6 +15,7 @@ namespace FileSystem
         FILE_HANDLE_UNKNOWN,
         FILE_HANDLE_DIRECTORY,
         FILE_HANDLE_FILE,
+        FILE_HANDLE_SYMLINK,
     };
 
     typedef uint64_t FileSystemHandle;
@@ -53,6 +54,8 @@ namespace FileSystem
         virtual FileHandleType FileHandleType(FileSystemHandle handle) = 0;
 
         virtual uint64_t FileLength(FileSystemHandle handle) = 0;
+
+        virtual frg::string<frg_allocator> FileLink(FileSystemHandle handle) = 0;
 
         virtual uint64_t ReadFile(FileSystemHandle handle, void *buffer, uint64_t cursor, uint64_t size) = 0;
 

@@ -12,8 +12,6 @@ int64_t SyscallFStat(InterruptStack *stack)
     FileSystemStat *stat = (FileSystemStat *)stack->rsi;
     int fd = (int)stack->rdx;
 
-    DEBUG_OUT("fstat for %i", fd);
-
     if(fd < 3)
     {
         return -1;

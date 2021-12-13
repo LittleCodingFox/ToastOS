@@ -42,6 +42,7 @@ namespace FileSystem
 
         FileHandle *GetFileHandle(FILE_HANDLE handle);
         FileHandle *NewFileHandle();
+        FileHandle *ResolveSymlink(FileHandle *original);
     public:
         VFS();
         void AddMountPoint(const char *path, FileSystem *fileSystem);

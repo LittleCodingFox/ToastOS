@@ -26,6 +26,7 @@ extern "C"
 #define SYSCALL_PANIC           17
 #define SYSCALL_READ_ENTRIES    18
 #define SYSCALL_EXIT            19
+#define SYSCALL_CLOCK           20
 
 extern int64_t syscall(uint64_t id, ...);
 
