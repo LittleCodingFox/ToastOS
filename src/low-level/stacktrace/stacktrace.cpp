@@ -14,13 +14,13 @@ typedef struct stack_frame
 static char *symbolData = NULL;
 static size_t symbolDataSize = 0;
 
-void kernelInitStacktrace(char *symbols, size_t size)
+void KernelInitStacktrace(char *symbols, size_t size)
 {
   symbolData = symbols;
   symbolDataSize = size;
 }
 
-char* symbolForAddress(uintptr_t* address)
+char* SymbolForAddress(uintptr_t* address)
 {
   uintptr_t last = 0;
   uintptr_t current = 0;
@@ -55,7 +55,7 @@ char* symbolForAddress(uintptr_t* address)
   return NULL;
 }
 
-void kernelDumpStacktrace()
+void KernelDumpStacktrace()
 {
   DEBUG_OUT("%s", "kernel stacktrace:");
 
@@ -67,7 +67,7 @@ void kernelDumpStacktrace()
   {
     uint64_t address = stackframe->rip;
 
-    char *symbol = symbolForAddress(&address);
+    char *symbol = SymbolForAddress(&address);
     char *end = strchr(symbol, '\n');
 
     *end = '\0';

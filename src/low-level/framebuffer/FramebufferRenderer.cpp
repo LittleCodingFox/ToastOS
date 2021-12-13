@@ -9,7 +9,7 @@ FramebufferRenderer* globalRenderer;
 
 void RefreshFramebuffer(InterruptStack *stack)
 {
-    globalRenderer->swapBuffers();
+    globalRenderer->SwapBuffers();
 }
 
 FramebufferRenderer::FramebufferRenderer(Framebuffer* targetFramebuffer, psf2_font_t* font) : lockedCount(0),
@@ -21,7 +21,7 @@ FramebufferRenderer::FramebufferRenderer(Framebuffer* targetFramebuffer, psf2_fo
     framebufferPixelCount = targetFramebuffer->width * targetFramebuffer->height;
 }
 
-void FramebufferRenderer::initialize()
+void FramebufferRenderer::Initialize()
 {
     if(initialized)
     {
@@ -34,15 +34,15 @@ void FramebufferRenderer::initialize()
 
     doubleBuffer = (uint32_t *)malloc(doubleBufferSize);
 
-    clear(0);
+    Clear(0);
 }
 
-void FramebufferRenderer::lock()
+void FramebufferRenderer::Lock()
 {
     lockedCount++;
 }
 
-void FramebufferRenderer::unlock()
+void FramebufferRenderer::Unlock()
 {
     if(lockedCount == 0)
     {
@@ -54,7 +54,7 @@ void FramebufferRenderer::unlock()
     lockedCount--;
 }
 
-void FramebufferRenderer::swapBuffers()
+void FramebufferRenderer::SwapBuffers()
 {
     if(doubleBuffer != NULL && lockedCount == 0)
     {
@@ -62,7 +62,7 @@ void FramebufferRenderer::swapBuffers()
     }
 }
 
-void FramebufferRenderer::clear(uint32_t colour)
+void FramebufferRenderer::Clear(uint32_t colour)
 {
     backgroundColor = colour;
 
@@ -72,17 +72,17 @@ void FramebufferRenderer::clear(uint32_t colour)
     }
 }
 
-void FramebufferRenderer::putChar(char chr, unsigned int xOff, unsigned int yOff)
+void FramebufferRenderer::PutChar(char chr, unsigned int xOff, unsigned int yOff, uint32_t color)
 {
     if(font == NULL)
     {
         return;
     }
 
-    psf2PutChar(xOff, yOff, chr, font, 0xFFFFFFFF, this);
+    psf2PutChar(xOff, yOff, chr, font, color, this);
 }
 
-FramebufferArea FramebufferRenderer::frameBufferAreaAt(int x, int y, int width, int height)
+FramebufferArea FramebufferRenderer::FrameBufferAreaAt(int x, int y, int width, int height)
 {
     FramebufferArea outArea
     {

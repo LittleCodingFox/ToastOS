@@ -1,7 +1,8 @@
+#include <vtconsole/vtconsole.h>
 #include "Keyboard.hpp"
+#include "debug.hpp"
 #include "layouts/QWERTYKeyboard.hpp"
 #include "framebuffer/FramebufferRenderer.hpp"
-#include <vtconsole/vtconsole.h>
 
 bool isLeftShiftPressed;
 bool isRightShiftPressed;

@@ -59,15 +59,15 @@ public:
     uint32_t backgroundColor;
 
     FramebufferRenderer(Framebuffer* targetFramebuffer, psf2_font_t* font);
-    void initialize();
-    void clear(uint32_t color);
-    void putChar(char chr, unsigned int xOff, unsigned int yOff);
-    FramebufferArea frameBufferAreaAt(int x, int y, int width, int height);
-    void swapBuffers();
-    void lock();
-    void unlock();
+    void Initialize();
+    void Clear(uint32_t color);
+    void PutChar(char chr, unsigned int xOff, unsigned int yOff, uint32_t color = 0xFFFFFFFF);
+    FramebufferArea FrameBufferAreaAt(int x, int y, int width, int height);
+    void SwapBuffers();
+    void Lock();
+    void Unlock();
 
-    inline int width() const
+    inline int Width() const
     {
         if(targetFramebuffer != NULL)
         {
@@ -77,7 +77,7 @@ public:
         return 0;
     }
 
-    inline int height() const
+    inline int Height() const
     {
         if(targetFramebuffer != NULL)
         {
@@ -87,7 +87,7 @@ public:
         return 0;
     }
 
-    inline int fontWidth() const
+    inline int FontWidth() const
     {
         if(font != NULL)
         {
@@ -97,7 +97,7 @@ public:
         return 0;
     }
 
-    inline int fontHeight() const
+    inline int FontHeight() const
     {
         if(font != NULL)
         {
@@ -107,7 +107,7 @@ public:
         return 0;
     }
 
-    inline psf2_font_t *getFont() const
+    inline psf2_font_t *GetFont() const
     {
         return font;
     }

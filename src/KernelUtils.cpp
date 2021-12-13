@@ -225,12 +225,38 @@ FramebufferRenderer r = FramebufferRenderer(NULL, NULL);
 
 vtconsole_t *console = NULL;
 
+static uint32_t colors[] =
+{
+  [VTCOLOR_BLACK] = 0x00000000,
+  [VTCOLOR_RED] = 0xFFFF0000,
+  [VTCOLOR_GREEN] = 0xFF008000,
+  [VTCOLOR_YELLOW] = 0xFFA52A2A,
+  [VTCOLOR_BLUE] = 0xFF0000FF,
+  [VTCOLOR_MAGENTA] = 0xFFFF00FF,
+  [VTCOLOR_CYAN] = 0xFF00FFFF,
+  [VTCOLOR_GREY] = 0xFFD3D3D3,
+};
+
+static uint32_t brightcolors[] =
+{
+  [VTCOLOR_BLACK] = 0xFFA9A9A9,
+  [VTCOLOR_RED] = 0xFFFFCCCB,
+  [VTCOLOR_GREEN] = 0xFF90EE90,
+  [VTCOLOR_YELLOW] = 0xFFFFFF99,
+  [VTCOLOR_BLUE] = 0xFFADD8E6,
+  [VTCOLOR_MAGENTA] = 0xFFE78BE7,
+  [VTCOLOR_CYAN] = 0xFFE0FFFF,
+  [VTCOLOR_GREY] = 0xFFFFFF,
+};
+
 void PaintHandler(struct vtconsole* vtc, vtcell_t* cell, int x, int y)
 {
-    globalRenderer->putChar(cell->c, x * globalRenderer->fontWidth(), y * globalRenderer->fontHeight());
+    uint32_t color = cell->attr.bright ? brightcolors[cell->attr.fg] : colors[cell->attr.fg];
+
+    globalRenderer->PutChar(cell->c, x * globalRenderer->FontWidth(), y * globalRenderer->FontHeight(), color);
 }
 
-void CursorHandler (struct vtconsole* vtc, vtcursor_t* cur)
+void CursorHandler(struct vtconsole* vtc, vtcursor_t* cur)
 {
 }
 
@@ -258,7 +284,8 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
     if(symbols != NULL)
     {
         DEBUG_OUT("Initializing kernel symbols from size %llu", symbols->end - symbols->begin);
-        kernelInitStacktrace((char *)symbols->begin, symbols->end - symbols->begin);
+
+        KernelInitStacktrace((char *)symbols->begin, symbols->end - symbols->begin);
     }
 
     EnableSSE();
@@ -268,8 +295,6 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
     if(font != NULL)
     {
         psf2Font = psf2Load((void *)font->begin);
-
-        DEBUG_OUT("Font: %p", psf2Font);
     }
 
     Framebuffer *framebufferStruct = (Framebuffer *)malloc(sizeof(Framebuffer));
@@ -284,10 +309,10 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     globalRenderer = &r;
 
-    globalRenderer->initialize();
+    globalRenderer->Initialize();
 
-    int consoleWidth = globalRenderer->width() / globalRenderer->fontWidth();
-    int consoleHeight = globalRenderer->height() / globalRenderer->fontHeight();
+    int consoleWidth = globalRenderer->Width() / globalRenderer->FontWidth();
+    int consoleHeight = globalRenderer->Height() / globalRenderer->FontHeight();
 
     DEBUG_OUT("creating console: width: %d; height: %d;", consoleWidth, consoleHeight);
 

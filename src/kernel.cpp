@@ -16,6 +16,8 @@ using namespace FileSystem;
 
 static uint8_t stack[0x100000];
 
+const char *startAppPath = "/usr/bin/bash";
+
 static stivale2_header_tag_framebuffer framebufferTag = {
     .tag = {
         .identifier = STIVALE2_HEADER_TAG_FRAMEBUFFER_ID,
@@ -47,28 +49,34 @@ extern "C" void _start(stivale2_struct *stivale2Struct)
 {
     InitializeKernel(stivale2Struct);
 
-    FILE_HANDLE handle = vfs->OpenFile("/usr/bin/bash", NULL);
+    printf("Starting app at %s", startAppPath);
+
+    FILE_HANDLE handle = vfs->OpenFile(startAppPath, NULL);
 
     uint64_t length = vfs->FileLength(handle);
 
     if(length > 0)
     {
-        DEBUG_OUT("File Length: %llu", length);
-
         uint8_t *buffer = new uint8_t[length];
 
         if(vfs->ReadFile(handle, buffer, length) == length)
         {
             vfs->CloseFile(handle);
 
-            DEBUG_OUT("%s", "Executing elf");
-
-            const char *argv[] { "/usr/bin/bash", NULL };
+            const char *argv[] { startAppPath, NULL };
             const char *envp[1] { NULL };
 
             globalProcessManager->CreateFromEntryPoint((uint64_t)KernelTask, "KernelTask", "/home/toast/", PROCESS_PERMISSION_KERNEL);
             globalProcessManager->LoadImage(buffer, "elf", argv, envp, "/home/toast/", PROCESS_PERMISSION_USER);
         }
+        else
+        {
+            printf("Failed to open app at %s: Failed to read file", startAppPath);
+        }
+    }
+    else
+    {
+        printf("Failed to open app at %s: File not found or empty", startAppPath);
     }
 
     for(;;);

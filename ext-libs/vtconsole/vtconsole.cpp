@@ -291,6 +291,14 @@ void vtconsole_csi_sgr(vtconsole_t *vtc, vtansi_arg_t *stack, int count)
             {
                 vtc->attr.bg = (vtcolor_t)(attr - 40);
             }
+            else if(attr == 39) // Set default foreground attrs
+            {
+                vtc->attr.fg = VTC_DEFAULT_FOREGROUND;
+            }
+            else if(attr == 49) // Set default background attrs
+            {
+                vtc->attr.bg = VTC_DEFAULT_BACKGROUND;
+            }
         }
     }
 }

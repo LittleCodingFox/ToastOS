@@ -20,11 +20,7 @@ psf2_font_t *psf2Load(void *buffer)
 
 	uint64_t glyphBufferSize = header->numGlyph * header->bytesPerGlyph;
 
-	DEBUG_OUT("Allocating %llu glyph buffer", glyphBufferSize);
-
 	void *glyphBuffer = malloc(glyphBufferSize);
-
-	DEBUG_OUT("%s", "Copying glyph buffer data");
 
 	memcpy(glyphBuffer, (uint8_t *)buffer + header->headerSize, glyphBufferSize);
 
@@ -83,7 +79,7 @@ void psf2PutChar(int x, int y, char c, psf2_font_t *font, uint32_t color, Frameb
 		return;
 	}
 
-	FramebufferArea area = renderer->frameBufferAreaAt(x, y, font->header->width, font->header->height);
+	FramebufferArea area = renderer->FrameBufferAreaAt(x, y, font->header->width, font->header->height);
 
 	if(!area.IsValid())
 	{

@@ -4,6 +4,7 @@
 #include "filesystems/VFS.hpp"
 #include "debug.hpp"
 #include "errno.h"
+#include "ctype.h"
 
 using namespace FileSystem;
 
@@ -25,6 +26,8 @@ int64_t SyscallRead(InterruptStack *stack)
         uint8_t *ptr = (uint8_t *)buffer;
 
         *ptr = keyboardInput;
+
+        printf("%c", keyboardInput);
 
         return 1;
     }
