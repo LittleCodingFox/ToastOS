@@ -3,6 +3,7 @@
 #include <string.h>
 #include "Process.hpp"
 #include "debug.hpp"
+#include "fcntl.h"
 #include "gdt/gdt.hpp"
 #include "paging/PageFrameAllocator.hpp"
 #include "paging/PageTableManager.hpp"
@@ -358,7 +359,7 @@ ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, cons
         {
             DEBUG_OUT("Found LD for process: %s", ldPath);
 
-            FILE_HANDLE ldHandle = vfs->OpenFile(ldPath, newProcess);
+            FILE_HANDLE ldHandle = vfs->OpenFile(ldPath, O_RDONLY, newProcess);
 
             if(vfs->FileType(ldHandle) != FILE_HANDLE_FILE)
             {
@@ -557,8 +558,66 @@ void ProcessManager::Sigaction(int signum, sigaction *act, sigaction *oldact)
     lock.Unlock();
 }
 
+void ProcessManager::SetUID(uint64_t pid, uid_t uid)
+{
+    Threading::ScopedLock Lock(lock);
+
+    ProcessInfo *process = scheduler->GetProcess(pid);
+
+    if(process == NULL)
+    {
+        return;
+    }
+
+    process->uid = uid;
+}
+
+uid_t ProcessManager::GetUID(uint64_t pid)
+{
+    Threading::ScopedLock Lock(lock);
+
+    ProcessInfo *process = scheduler->GetProcess(pid);
+
+    if(process == NULL)
+    {
+        return 0;
+    }
+
+    return process->uid;
+}
+
+void ProcessManager::SetGID(uint64_t pid, gid_t gid)
+{
+    Threading::ScopedLock Lock(lock);
+
+    ProcessInfo *process = scheduler->GetProcess(pid);
+
+    if(process == NULL)
+    {
+        return;
+    }
+
+    process->gid = gid;
+}
+
+uid_t ProcessManager::GetGID(uint64_t pid)
+{
+    Threading::ScopedLock Lock(lock);
+
+    ProcessInfo *process = scheduler->GetProcess(pid);
+
+    if(process == NULL)
+    {
+        return 0;
+    }
+
+    return process->gid;
+}
+
 void ProcessManager::Kill(uint64_t pid, int signal)
 {
+    Threading::ScopedLock Lock(lock);
+
     if(signal < 0 || signal >= SIGNAL_MAX)
     {
         return;

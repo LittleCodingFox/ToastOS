@@ -14,6 +14,20 @@ namespace FileSystem
 
     #define INVALID_FILE_HANDLE 0xFFFFFFFFFFFFFFFF
 
+    struct VirtualFile
+    {
+        frg::string<frg_allocator> path;
+        FileHandleType type;
+
+        uint64_t (*length)();
+        uint64_t (*read)(void *buffer, uint64_t cursor, uint64_t size);
+        uint64_t (*write)(const void *buffer, uint64_t cursor, uint64_t size);
+
+        uint64_t Length() const;
+        uint64_t Read(void *buffer, uint64_t cursor, uint64_t size);
+        uint64_t Write(const void *buffer, uint64_t cursor, uint64_t size);
+    };
+
     class VFS
     {
     private:
@@ -31,26 +45,34 @@ namespace FileSystem
             uint64_t length;
             uint64_t cursor;
             bool isValid;
+            uint32_t flags;
             ::FileSystem::FileHandleType fileType;
             uint64_t ID;
             FileSystemStat stat;
+            VirtualFile *virtualFile;
         };
 
-        frg::vector<MountPoint, frg_allocator> mountPoints;
+        frg::vector<MountPoint *, frg_allocator> mountPoints;
         frg::vector<FileHandle, frg_allocator> fileHandles;
+        frg::vector<VirtualFile *, frg_allocator> virtualFiles;
         uint64_t fileHandleCounter;
 
         FileHandle *GetFileHandle(FILE_HANDLE handle);
         FileHandle *NewFileHandle();
-        FileHandle *ResolveSymlink(FileHandle *original);
+        FileHandle *ResolveSymlink(FileHandle *original, uint32_t flags);
     public:
         VFS();
         void AddMountPoint(const char *path, FileSystem *fileSystem);
         void RemoveMountPoint(const char *path);
 
-        FILE_HANDLE OpenFile(const char *path, ProcessInfo *currentProcess);
+        void AddVirtualFile(const VirtualFile &file);
+        void RemoveVirtualFile(const frg::string<frg_allocator> &path);
+
+        FILE_HANDLE OpenFile(const char *path, uint32_t flags, ProcessInfo *currentProcess);
         void CloseFile(FILE_HANDLE handle);
         ::FileSystem::FileHandleType FileType(FILE_HANDLE handle);
+        uint32_t FileFlags(FILE_HANDLE handle);
+        void SetFileFlags(FILE_HANDLE handle, uint32_t flags);
 
         uint64_t FileLength(FILE_HANDLE handle);
         uint64_t FileOffset(FILE_HANDLE handle);
@@ -69,4 +91,6 @@ namespace FileSystem
     };
 
     extern frg::manual_box<VFS> vfs;
+
+    void InitializeVirtualFiles();
 }

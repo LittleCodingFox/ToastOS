@@ -16,6 +16,7 @@ namespace FileSystem
         FILE_HANDLE_DIRECTORY,
         FILE_HANDLE_FILE,
         FILE_HANDLE_SYMLINK,
+        FILE_HANDLE_CHARDEVICE
     };
 
     typedef uint64_t FileSystemHandle;

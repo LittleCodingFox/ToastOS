@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <stivale2.h>
+#include "fcntl.h"
 #include "liballoc/liballoc.h"
 #include "printf/printf.h"
 #include "vtconsole/vtconsole.h"
@@ -49,9 +50,9 @@ extern "C" void _start(stivale2_struct *stivale2Struct)
 {
     InitializeKernel(stivale2Struct);
 
-    printf("Starting app at %s", startAppPath);
+    printf("Starting app at %s\n", startAppPath);
 
-    FILE_HANDLE handle = vfs->OpenFile(startAppPath, NULL);
+    FILE_HANDLE handle = vfs->OpenFile(startAppPath, O_RDONLY, NULL);
 
     uint64_t length = vfs->FileLength(handle);
 
@@ -63,20 +64,20 @@ extern "C" void _start(stivale2_struct *stivale2Struct)
         {
             vfs->CloseFile(handle);
 
-            const char *argv[] { startAppPath, NULL };
-            const char *envp[1] { NULL };
+            const char *argv[] { startAppPath, "-i", "-l", NULL };
+            const char *envp[] { "HOME=/home/toast", NULL };
 
             globalProcessManager->CreateFromEntryPoint((uint64_t)KernelTask, "KernelTask", "/home/toast/", PROCESS_PERMISSION_KERNEL);
             globalProcessManager->LoadImage(buffer, "elf", argv, envp, "/home/toast/", PROCESS_PERMISSION_USER);
         }
         else
         {
-            printf("Failed to open app at %s: Failed to read file", startAppPath);
+            printf("Failed to open app at %s: Failed to read file\n", startAppPath);
         }
     }
     else
     {
-        printf("Failed to open app at %s: File not found or empty", startAppPath);
+        printf("Failed to open app at %s: File not found or empty\n", startAppPath);
     }
 
     for(;;);

@@ -347,7 +347,6 @@ namespace FileSystem
             }
             else //Virtual root
             {
-                stat.ino = headers.size();
                 stat.mode = S_IFDIR | S_IRWXU;
             }
 
@@ -389,7 +388,7 @@ namespace FileSystem
 
                     dirent current = {0};
 
-                    current.d_ino = headers.size();
+                    current.d_ino = 0;
                     current.d_reclen = sizeof(dirent);
                     strcpy(current.d_name, ".");
                     current.d_type = DT_DIR;
@@ -398,7 +397,7 @@ namespace FileSystem
 
                     dirent previous = {0};
 
-                    previous.d_ino = headers.size();
+                    previous.d_ino = 0;
                     previous.d_reclen = sizeof(dirent);
                     strcpy(previous.d_name, "..");
                     previous.d_type = DT_DIR;
@@ -410,7 +409,7 @@ namespace FileSystem
                         auto childHeader = child->header;
                         dirent entry = {0};
 
-                        entry.d_ino = GetHeaderIndex(childHeader);
+                        entry.d_ino = GetHeaderIndex(childHeader) + 1;
                         entry.d_reclen = sizeof(dirent);
 
                         memcpy(entry.d_name, child->name.data(), child->name.size());
@@ -463,7 +462,7 @@ namespace FileSystem
 
                 dirent current = {0};
 
-                current.d_ino = GetHeaderIndex(header);
+                current.d_ino = GetHeaderIndex(header) + 1;
                 current.d_reclen = sizeof(dirent);
                 strcpy(current.d_name, ".");
                 current.d_type = DT_DIR;
@@ -492,7 +491,7 @@ namespace FileSystem
 
                                 dirent previous = {0};
 
-                                previous.d_ino = GetHeaderIndex(previousHeader);
+                                previous.d_ino = GetHeaderIndex(previousHeader) + 1;
                                 previous.d_reclen = sizeof(dirent);
 
                                 strcpy(previous.d_name, "..");
@@ -521,7 +520,7 @@ namespace FileSystem
                     auto childHeader = child->header;
                     dirent entry = {0};
 
-                    entry.d_ino = GetHeaderIndex(childHeader);
+                    entry.d_ino = GetHeaderIndex(childHeader) + 1;
                     entry.d_reclen = sizeof(dirent);
 
                     memcpy(entry.d_name, child->name.data(), child->name.size());

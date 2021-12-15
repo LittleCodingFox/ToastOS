@@ -34,6 +34,9 @@ struct ProcessInfo
     uint64_t sleepTicks;
     uint64_t fsBase;
     sigaction sigHandlers[SIGNAL_MAX];
+    uid_t uid;
+    gid_t gid;
+    sigset_t sigprocmask;
 
     frg::string<frg_allocator> cwd;
 
@@ -122,6 +125,14 @@ public:
     void Kill(uint64_t pid, int signal);
 
     void Exit(int exitCode);
+
+    void SetUID(uint64_t pid, uid_t uid);
+
+    uid_t GetUID(uint64_t pid);
+
+    void SetGID(uint64_t pid, gid_t gid);
+
+    gid_t GetGID(uint64_t pid);
 };
 
 extern ProcessManager *globalProcessManager;

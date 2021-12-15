@@ -4,6 +4,7 @@
 #include "filesystems/VFS.hpp"
 #include "debug.hpp"
 #include "errno.h"
+#include "fcntl.h"
 
 using namespace FileSystem;
 
@@ -14,7 +15,7 @@ int64_t SyscallStat(InterruptStack *stack)
 
     DEBUG_OUT("Stat for %s", path);
 
-    FILE_HANDLE handle = vfs->OpenFile(path, globalProcessManager->CurrentProcess());
+    FILE_HANDLE handle = vfs->OpenFile(path, O_RDONLY, globalProcessManager->CurrentProcess());
 
     if(vfs->FileType(handle) == FILE_HANDLE_UNKNOWN)
     {

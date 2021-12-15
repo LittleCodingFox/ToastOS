@@ -339,6 +339,8 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
         //tarfs->DebugListDirectories();
     }
 
+    FileSystem::InitializeVirtualFiles();
+
     globalProcessManager = new ProcessManager(new RoundRobinScheduler());
 
     DEBUG_OUT("%s", "Finished initializing the kernel");
