@@ -23,7 +23,7 @@ namespace FileSystem
 
     uint64_t WriteDevTTY(const void *buffer, uint64_t cursor, uint64_t length)
     {
-        printf("%.s", buffer, length);
+        printf("%.*s", length, buffer);
 
         return length;
     }

@@ -50,6 +50,7 @@ int64_t SyscallSetUID(InterruptStack *stack);
 int64_t SyscallGetGID(InterruptStack *stack);
 int64_t SyscallSigprocMask(InterruptStack *stack);
 int64_t SyscallFcntl(InterruptStack *stack);
+int64_t SyscallLog(InterruptStack *stack);
 
 SyscallPointer syscallHandlers[] =
 {
@@ -66,8 +67,8 @@ SyscallPointer syscallHandlers[] =
     [SYSCALL_GETPID] = (SyscallPointer)SyscallGetPID,
     [SYSCALL_KILL] = (SyscallPointer)SyscallKill,
     [SYSCALL_ISATTY] = (SyscallPointer)SyscallIsATTY,
-    [SYSCALL_STAT] = (SyscallPointer)SyscallStat,
     [SYSCALL_FSTAT] = (SyscallPointer)SyscallFStat,
+    [SYSCALL_STAT] = (SyscallPointer)SyscallStat,
     [SYSCALL_PANIC] = (SyscallPointer)SyscallPanic,
     [SYSCALL_READ_ENTRIES] = (SyscallPointer)SyscallReadEntries,
     [SYSCALL_EXIT] = (SyscallPointer)SyscallExit,
@@ -77,19 +78,13 @@ SyscallPointer syscallHandlers[] =
     [SYSCALL_GETGID] = (SyscallPointer)SyscallGetGID,
     [SYSCALL_SIGPROCMASK] = (SyscallPointer)SyscallSigprocMask,
     [SYSCALL_FCNTL] = (SyscallPointer)SyscallFcntl,
+    [SYSCALL_LOG] = (SyscallPointer)SyscallLog,
 };
 
 void SyscallHandler(InterruptStack *stack)
 {
     if(stack->rdi <= sizeof(syscallHandlers) / sizeof(SyscallPointer) && syscallHandlers[stack->rdi] != NULL)
     {
-        auto handler = syscallHandlers[stack->rdi];
-
-        if(handler == NULL)
-        {
-            return;
-        }
-
         ProcessInfo *process = globalProcessManager->CurrentProcess();
 
         bool needsPermissionChange = process->permissionLevel == PROCESS_PERMISSION_USER;
@@ -99,6 +94,7 @@ void SyscallHandler(InterruptStack *stack)
             process->permissionLevel = PROCESS_PERMISSION_KERNEL;
         }
 
+        auto handler = syscallHandlers[stack->rdi];
         auto result = handler(stack);
 
         stack->rax = result;
