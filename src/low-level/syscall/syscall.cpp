@@ -51,6 +51,8 @@ int64_t SyscallGetGID(InterruptStack *stack);
 int64_t SyscallSigprocMask(InterruptStack *stack);
 int64_t SyscallFcntl(InterruptStack *stack);
 int64_t SyscallLog(InterruptStack *stack);
+int64_t SyscallFork(InterruptStack *stack);
+int64_t SyscallWaitPID(InterruptStack *stack);
 
 SyscallPointer syscallHandlers[] =
 {
@@ -79,6 +81,8 @@ SyscallPointer syscallHandlers[] =
     [SYSCALL_SIGPROCMASK] = (SyscallPointer)SyscallSigprocMask,
     [SYSCALL_FCNTL] = (SyscallPointer)SyscallFcntl,
     [SYSCALL_LOG] = (SyscallPointer)SyscallLog,
+    [SYSCALL_FORK] = (SyscallPointer)SyscallFork,
+    [SYSCALL_WAITPID] = (SyscallPointer)SyscallWaitPID,
 };
 
 void SyscallHandler(InterruptStack *stack)

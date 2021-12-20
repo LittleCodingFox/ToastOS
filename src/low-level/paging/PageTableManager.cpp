@@ -5,6 +5,7 @@
 #include "PageFrameAllocator.hpp"
 #include "debug.hpp"
 #include "registers/Registers.hpp"
+#include "stacktrace/stacktrace.hpp"
 
 PageTableManager *globalPageTableManager = NULL;
 
@@ -48,6 +49,34 @@ static inline PageTable *GetOrNullifyEntry(PageTable *table, uint64_t offset)
     }
 
     return (PageTable *)TranslateToHighHalfMemoryAddress(address & PAGE_ADDRESS_MASK);
+}
+
+static inline uint64_t DuplicateRecursive(PageTableManager *self, uint64_t entry, uint64_t level)
+{
+    const uint64_t flags = PAGING_FLAG_PRESENT | PAGING_FLAG_USER_ACCESSIBLE | PAGING_FLAG_WRITABLE;
+
+    uint64_t *virt = (uint64_t *)TranslateToHighHalfMemoryAddress((entry & ~PAGE_FLAG_MASK));
+    uint64_t newPage = (uint64_t)globalAllocator.RequestPage();
+    uint64_t *newVirtual = (uint64_t *)TranslateToHighHalfMemoryAddress(newPage);
+
+    if(level == 0)
+    {
+        self->MapMemory(newVirtual, (void *)newPage, flags);
+
+        memcpy(newVirtual, (void *)virt, 0x1000);
+    }
+    else
+    {
+        for(uint64_t i = 0; i < 512; i++)
+        {
+            if(virt[i] & PAGING_FLAG_PRESENT)
+            {
+                newVirtual[i] = DuplicateRecursive(self, virt[i], level - 1);
+            }
+        }
+    }
+
+    return newPage | (entry & PAGE_FLAG_MASK);
 }
 
 PageTableManager::PageTableManager() : p4(NULL)
@@ -101,4 +130,24 @@ void PageTableManager::UnmapMemory(void *virtualMemory)
     }
 
     pt->entries[offset.ptOffset] = 0;
+}
+
+void PageTableManager::Duplicate(PageTable *newTable)
+{
+    PageTable *p4Virtual = (PageTable *)TranslateToHighHalfMemoryAddress((uint64_t)p4);
+
+    for(uint64_t i = 0; i < 256; i++)
+    {
+        uint64_t entry = p4Virtual->entries[i];
+
+        if(entry & PAGING_FLAG_PRESENT)
+        {
+            newTable->entries[i] = DuplicateRecursive(this, entry, 3);
+        }
+    }
+
+    for(uint64_t i = 256; i < 512; i++)
+    {
+        newTable->entries[i] = p4Virtual->entries[i];
+    }
 }

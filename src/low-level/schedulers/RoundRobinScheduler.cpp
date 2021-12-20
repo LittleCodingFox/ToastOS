@@ -17,7 +17,7 @@ ProcessControlBlock *RoundRobinScheduler::CurrentProcess()
     return NULL;
 }
 
-void RoundRobinScheduler::AddProcess(ProcessInfo *process)
+ProcessControlBlock *RoundRobinScheduler::AddProcess(ProcessInfo *process)
 {
     Threading::ScopedLock lock(this->lock);
     
@@ -55,6 +55,8 @@ void RoundRobinScheduler::AddProcess(ProcessInfo *process)
         processes->next = node;
         node->next = next;
     }
+
+    return node;
 }
 
 ProcessControlBlock *RoundRobinScheduler::NextProcess()
@@ -130,7 +132,7 @@ void RoundRobinScheduler::ExitProcess(ProcessInfo *process)
     delete remove;
 }
 
-ProcessInfo *RoundRobinScheduler::GetProcess(uint64_t pid)
+ProcessInfo *RoundRobinScheduler::GetProcess(pid_t pid)
 {
     Threading::ScopedLock lock(this->lock);
 
@@ -152,4 +154,27 @@ ProcessInfo *RoundRobinScheduler::GetProcess(uint64_t pid)
     }
 
     return NULL;
+}
+
+frg::vector<ProcessInfo *, frg_allocator> RoundRobinScheduler::AllProcesses()
+{
+    frg::vector<ProcessInfo *, frg_allocator> outValue;
+
+    ProcessControlBlock *p = processes;
+
+    if(processes == processes->next)
+    {
+        outValue.push_back(p->process);
+
+        return outValue;
+    }
+
+    while(p->next != processes)
+    {
+        outValue.push_back(p->process);
+
+        p = p->next;
+    }
+
+    return outValue;
 }

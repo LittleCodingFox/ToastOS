@@ -29,6 +29,8 @@
 #define SYSCALL_SIGPROCMASK     24
 #define SYSCALL_FCNTL           25
 #define SYSCALL_LOG             26
+#define SYSCALL_FORK            27
+#define SYSCALL_WAITPID         28
 
 void InitializeSyscalls();
 

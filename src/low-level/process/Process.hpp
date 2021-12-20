@@ -7,8 +7,9 @@
 #include "interrupts/Interrupts.hpp"
 #include "frg_allocator.hpp"
 #include "frg/string.hpp"
+#include "frg/vector.hpp"
 
-#define PROCESS_STACK_SIZE 1024
+#define PROCESS_STACK_SIZE 0x4000
 
 enum ProcessPermissionLevel
 {
@@ -36,7 +37,9 @@ struct ProcessInfo
     sigaction sigHandlers[SIGNAL_MAX];
     uid_t uid;
     gid_t gid;
+    pid_t ppid;
     sigset_t sigprocmask;
+    uint64_t state;
 
     frg::string<frg_allocator> cwd;
 
@@ -94,10 +97,11 @@ class IScheduler
 {
 public:
     virtual ProcessControlBlock *CurrentProcess() = 0;
-    virtual void AddProcess(ProcessInfo *process) = 0;
+    virtual ProcessControlBlock *AddProcess(ProcessInfo *process) = 0;
     virtual ProcessControlBlock *NextProcess() = 0;
     virtual void ExitProcess(ProcessInfo *process) = 0;
-    virtual ProcessInfo *GetProcess(uint64_t pid) = 0;
+    virtual ProcessInfo *GetProcess(pid_t pid) = 0;
+    virtual frg::vector<ProcessInfo *, frg_allocator> AllProcesses() = 0;
 };
 
 class ProcessManager
@@ -113,6 +117,8 @@ public:
     ProcessInfo *CreateFromEntryPoint(uint64_t entryPoint, const char *name, const char *cwd, uint64_t permissionLevel);
 
     ProcessInfo *CurrentProcess();
+    ProcessInfo *GetProcess(pid_t pid);
+    frg::vector<ProcessInfo *, frg_allocator> GetChildProcesses(pid_t ppid);
 
     void SwitchProcess(InterruptStack *stack, bool fromTimer);
 
@@ -122,17 +128,19 @@ public:
 
     void Sigaction(int signum, sigaction *act, sigaction *oldact);
 
-    void Kill(uint64_t pid, int signal);
+    void Kill(pid_t pid, int signal);
 
     void Exit(int exitCode);
 
-    void SetUID(uint64_t pid, uid_t uid);
+    void SetUID(pid_t pid, uid_t uid);
 
-    uid_t GetUID(uint64_t pid);
+    uid_t GetUID(pid_t pid);
 
-    void SetGID(uint64_t pid, gid_t gid);
+    void SetGID(pid_t pid, gid_t gid);
 
-    gid_t GetGID(uint64_t pid);
+    gid_t GetGID(pid_t pid);
+
+    int32_t Fork(InterruptStack *interruptStack, pid_t *child);
 };
 
 extern ProcessManager *globalProcessManager;

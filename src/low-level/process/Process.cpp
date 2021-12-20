@@ -236,6 +236,7 @@ ProcessInfo *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const cha
     newProcess->ID = ++processIDCounter;
     newProcess->permissionLevel = permissionLevel;
     newProcess->cwd = cwd;
+    newProcess->state = PROCESS_STATE_NEEDS_INIT;
 
     newProcess->name = strdup(name);
 
@@ -253,12 +254,6 @@ ProcessInfo *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const cha
     uint64_t *stack = (uint64_t *)&newProcess->stack[PROCESS_STACK_SIZE];
 
     push(stack, entryPoint);
-
-    /*
-    push(stack, env);
-    push(stack, _argv);
-    push(stack, argc);
-    */
 
     newProcess->rsp = (uint64_t)stack;
     newProcess->rip = entryPoint;
@@ -278,8 +273,11 @@ ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, cons
     lock.Lock();
 
     PageTable *pageTableFrame = (PageTable *)globalAllocator.RequestPage();
+    PageTable *currentTable = (PageTable *)Registers::ReadCR3();
+    PageTableManager currentPageManager;
+    currentPageManager.p4 = currentTable;
 
-    globalPageTableManager->MapMemory((void *)TranslateToHighHalfMemoryAddress((uint64_t)pageTableFrame), pageTableFrame,
+    currentPageManager.MapMemory((void *)TranslateToHighHalfMemoryAddress((uint64_t)pageTableFrame), pageTableFrame,
         PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
 
     PageTable *higherPageTableFrame = (PageTable *)TranslateToHighHalfMemoryAddress((uint64_t)pageTableFrame);
@@ -288,7 +286,7 @@ ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, cons
     
     for(uint64_t i = 256; i < 512; i++)
     {
-        higherPageTableFrame->entries[i] = globalPageTableManager->p4->entries[i];
+        higherPageTableFrame->entries[i] = currentPageManager.p4->entries[i];
     }
 
     PageTableManager userPageManager;
@@ -303,7 +301,7 @@ ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, cons
 
     for(uint64_t i = 0; i < pageCount; i++)
     {
-        globalPageTableManager->MapMemory((void *)((uint64_t)TranslateToHighHalfMemoryAddress((page + i) * 0x1000)),
+        currentPageManager.MapMemory((void *)((uint64_t)TranslateToHighHalfMemoryAddress((page + i) * 0x1000)),
             (void *)((uint64_t)(page + i) * 0x1000),
             PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
     }
@@ -316,20 +314,24 @@ ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, cons
 
     for(uint64_t i = 0; i < pageCount; i++)
     {
-        globalPageTableManager->MapMemory((void *)(uint64_t)((page + i) * 0x1000),
+        currentPageManager.MapMemory((void *)(uint64_t)((page + i) * 0x1000),
             (void *)((uint64_t)TranslateToPhysicalMemoryAddress((page + i) * 0x1000)),
             PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
 
-        //Do the same for the user
-        userPageManager.MapMemory((void *)(uint64_t)((page + i) * 0x1000),
-            (void *)((uint64_t)TranslateToPhysicalMemoryAddress((page + i) * 0x1000)),
+        //Map as identity for the process page table
+        userPageManager.IdentityMap((void *)(uint64_t)TranslateToPhysicalMemoryAddress((page + i) * 0x1000),
             PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
     }
 
+    userPageManager.MapMemory((void *)TranslateToHighHalfMemoryAddress((uint64_t)pageTableFrame), pageTableFrame,
+        PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
+
     memset(newProcess, 0, sizeof(ProcessInfo));
+
     newProcess->ID = ++processIDCounter;
     newProcess->permissionLevel = permissionLevel;
     newProcess->cwd = cwd;
+    newProcess->state = PROCESS_STATE_NEEDS_INIT;
 
     newProcess->name = strdup(name);
 
@@ -501,10 +503,10 @@ ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, cons
 
     push(stack, argc);
 
-    newProcess->rsp = (uint64_t)stack;
+    newProcess->rsp = TranslateToPhysicalMemoryAddress((uint64_t)stack);
     newProcess->rip = rip;
 
-    DEBUG_OUT("Initializing process at RIP %p auxval entry: %p", rip, auxval.entry);
+    DEBUG_OUT("Initializing process at RIP %p auxval entry: %p RSP: %p", rip, auxval.entry, newProcess->rsp);
 
     scheduler->AddProcess(newProcess);
 
@@ -558,7 +560,7 @@ void ProcessManager::Sigaction(int signum, sigaction *act, sigaction *oldact)
     lock.Unlock();
 }
 
-void ProcessManager::SetUID(uint64_t pid, uid_t uid)
+void ProcessManager::SetUID(pid_t pid, uid_t uid)
 {
     Threading::ScopedLock Lock(lock);
 
@@ -572,7 +574,7 @@ void ProcessManager::SetUID(uint64_t pid, uid_t uid)
     process->uid = uid;
 }
 
-uid_t ProcessManager::GetUID(uint64_t pid)
+uid_t ProcessManager::GetUID(pid_t pid)
 {
     Threading::ScopedLock Lock(lock);
 
@@ -586,7 +588,7 @@ uid_t ProcessManager::GetUID(uint64_t pid)
     return process->uid;
 }
 
-void ProcessManager::SetGID(uint64_t pid, gid_t gid)
+void ProcessManager::SetGID(pid_t pid, gid_t gid)
 {
     Threading::ScopedLock Lock(lock);
 
@@ -600,7 +602,7 @@ void ProcessManager::SetGID(uint64_t pid, gid_t gid)
     process->gid = gid;
 }
 
-uid_t ProcessManager::GetGID(uint64_t pid)
+uid_t ProcessManager::GetGID(pid_t pid)
 {
     Threading::ScopedLock Lock(lock);
 
@@ -614,7 +616,166 @@ uid_t ProcessManager::GetGID(uint64_t pid)
     return process->gid;
 }
 
-void ProcessManager::Kill(uint64_t pid, int signal)
+int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
+{
+    lock.Lock();
+
+    auto current = scheduler->CurrentProcess();
+
+    PageTable *pageTableFrame = (PageTable *)globalAllocator.RequestPage();
+    PageTable *currentTable = (PageTable *)Registers::ReadCR3();
+    PageTable *higherCurrentTable = (PageTable *)TranslateToHighHalfMemoryAddress((uint64_t)currentTable);
+    PageTableManager currentPageManager;
+    currentPageManager.p4 = currentTable;
+
+    currentPageManager.MapMemory((void *)TranslateToHighHalfMemoryAddress((uint64_t)pageTableFrame), pageTableFrame,
+        PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
+
+    PageTable *higherPageTableFrame = (PageTable *)TranslateToHighHalfMemoryAddress((uint64_t)pageTableFrame);
+
+    memset(higherPageTableFrame, 0, sizeof(PageTable));
+
+    for(uint64_t i = 0; i < 512; i++)
+    {
+        higherPageTableFrame->entries[i] = higherCurrentTable->entries[i];
+    }
+
+    PageTableManager userPageManager;
+    userPageManager.p4 = pageTableFrame;
+
+    ProcessInfo *newProcess = (ProcessInfo *)globalAllocator.RequestPages(sizeof(ProcessInfo) / 0x1000 + 1);
+
+    uint64_t page = (uint64_t)newProcess / 0x1000;
+    uint64_t offset = (uint64_t)newProcess % 0x1000;
+
+    uint64_t pageCount = (sizeof(ProcessInfo) + offset) / 0x1000 + 1;
+
+    for(uint64_t i = 0; i < pageCount; i++)
+    {
+        currentPageManager.MapMemory((void *)((uint64_t)TranslateToHighHalfMemoryAddress((page + i) * 0x1000)),
+            (void *)((uint64_t)(page + i) * 0x1000),
+            PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+    }
+
+    newProcess = (ProcessInfo *)TranslateToHighHalfMemoryAddress((uint64_t)newProcess);
+
+    page = (uint64_t)newProcess->stack / 0x1000;
+    offset = (uint64_t)newProcess->stack % 0x1000;
+    pageCount = (sizeof(newProcess->stack) + offset) / 0x1000 + 1;
+
+    for(uint64_t i = 0; i < pageCount; i++)
+    {
+        currentPageManager.MapMemory((void *)(uint64_t)((page + i) * 0x1000),
+            (void *)((uint64_t)TranslateToPhysicalMemoryAddress((page + i) * 0x1000)),
+            PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
+
+        //Do the same for the user
+        userPageManager.MapMemory((void *)(uint64_t)((page + i) * 0x1000),
+            (void *)((uint64_t)TranslateToPhysicalMemoryAddress((page + i) * 0x1000)),
+            PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
+    }
+
+    memset(newProcess, 0, sizeof(ProcessInfo));
+
+    newProcess->ID = ++processIDCounter;
+    newProcess->permissionLevel = current->process->permissionLevel;
+    newProcess->cwd = current->process->cwd;
+    newProcess->rflags = 0x202;
+    newProcess->cr3 = (uint64_t)pageTableFrame;
+
+    if(current->process->name != NULL)
+    {
+        newProcess->name = strdup(current->process->name);
+    }
+    else
+    {
+        newProcess->name = "(null)";
+    }
+
+    for(uint64_t i = 0; i < SIGNAL_MAX; i++)
+    {
+        newProcess->sigHandlers[i].sa_handler = current->process->sigHandlers[i].sa_handler;
+    }
+
+    newProcess->rsp = interruptStack->stackPointer;
+
+    if(IsHigherHalf(newProcess->rsp))
+    {
+        newProcess->rsp = TranslateToPhysicalMemoryAddress(newProcess->rsp);
+    }
+
+    newProcess->rip = interruptStack->instructionPointer;
+    newProcess->gid = current->process->gid;
+    newProcess->uid = current->process->uid;
+    newProcess->sigprocmask = current->process->sigprocmask;
+    newProcess->ppid = current->process->ID;
+
+    auto pcb = scheduler->AddProcess(newProcess);
+
+    memcpy(pcb->FXSAVE, current->FXSAVE, sizeof(pcb->FXSAVE));
+
+    pcb->fsBase = current->fsBase;
+    pcb->r10 = interruptStack->r10;
+    pcb->r11 = interruptStack->r11;
+    pcb->r12 = interruptStack->r12;
+    pcb->r13 = interruptStack->r13;
+    pcb->r14 = interruptStack->r14;
+    pcb->r15 = interruptStack->r15;
+    pcb->r8 = interruptStack->r8;
+    pcb->r9 = interruptStack->r9;
+    pcb->rax = interruptStack->rax;
+    pcb->rbp = interruptStack->rbp;
+    pcb->rbx = interruptStack->rbx;
+    pcb->rcx = interruptStack->rcx;
+    pcb->rdi = interruptStack->rdi;
+    pcb->rdx = interruptStack->rdx;
+    pcb->rip = newProcess->rip;
+    pcb->rsi = interruptStack->rsi;
+    pcb->rflags = current->rflags;
+    pcb->state = newProcess->state = PROCESS_STATE_RUNNING;
+    pcb->ss = current->ss;
+    pcb->cs = current->cs;
+    pcb->cr3 = newProcess->cr3;
+    pcb->rsp = newProcess->rsp;
+
+    currentPageManager.Duplicate(higherPageTableFrame);
+
+    lock.Unlock();
+
+    *child = newProcess->ID;
+
+    DEBUG_OUT("Forking process %llu (%llu)", current->process->ID, newProcess->ID);
+
+    return 0;
+}
+
+ProcessInfo *ProcessManager::GetProcess(pid_t pid)
+{
+    Threading::ScopedLock Lock(lock);
+
+    return scheduler->GetProcess(pid);
+}
+
+frg::vector<ProcessInfo *, frg_allocator> ProcessManager::GetChildProcesses(pid_t ppid)
+{
+    Threading::ScopedLock Lock(lock);
+
+    auto processes = scheduler->AllProcesses();
+
+    frg::vector<ProcessInfo *, frg_allocator> outValue;
+
+    for(auto &process : processes)
+    {
+        if(process->ppid == ppid)
+        {
+            outValue.push_back(process);
+        }
+    }
+
+    return outValue;
+}
+
+void ProcessManager::Kill(pid_t pid, int signal)
 {
     Threading::ScopedLock Lock(lock);
 
