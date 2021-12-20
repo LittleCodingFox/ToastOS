@@ -139,7 +139,7 @@ tools:
         - '--prefix=@PREFIX@'
         - 'MAKEINFO=/bin/true'
     compile:
-      - args: ['make', '-j@PARALLELISM@']
+      - args: ['make']
     install:
       - args: ['make', 'install']
       # Stop aclocal from complaining.
