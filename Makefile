@@ -122,7 +122,9 @@ userland: libc
 		$(MAKE) -C $$path; \
 	done
 
-run-linux: kernel userland iso-linux run-qemu-linux
+linux: kernel userland iso-linux
+
+run-linux: linux run-qemu-linux
 
 debug-linux: CFLAGS += -DKERNEL_DEBUG=1 #-O0
 debug-linux: QEMU_FLAGS += -s -S
