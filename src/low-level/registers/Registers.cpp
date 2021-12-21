@@ -38,6 +38,7 @@ uint64_t Registers::ReadCS()
 
   return outValue;
 }
+
 uint64_t Registers::ReadSS()
 {
   uint64_t outValue = 0;

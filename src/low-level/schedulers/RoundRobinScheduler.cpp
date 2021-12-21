@@ -129,5 +129,5 @@ void RoundRobinScheduler::ExitProcess(ProcessInfo *process)
 
     processes = p;
 
-    delete remove;
+    //delete remove;
 }

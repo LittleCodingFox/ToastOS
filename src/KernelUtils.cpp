@@ -159,7 +159,7 @@ void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_fr
 
     Registers::WriteCR3((uint64_t)pageTableManager.p4);
 
-    DEBUG_OUT("%s", "Wrote CR3");
+    DEBUG_OUT("Wrote CR3 (%p)", pageTableManager.p4);
 
     globalPageTableManager = &pageTableManager;
 

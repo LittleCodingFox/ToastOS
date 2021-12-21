@@ -142,11 +142,11 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
         return;
     }
 
-    /*
+/*
     DEBUG_OUT("Switching tasks:\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%x\n\tss: 0x%x\nnext:\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%x\n\tss: 0x%x",
         current->rsp, current->rip, current->cr3, current->cs, current->ss,
         next->rsp, next->rip, next->cr3, next->cs, next->ss);
-    */
+*/
 
     if(fromTimer)
     {
@@ -264,6 +264,8 @@ ProcessInfo *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const cha
     scheduler->AddProcess(newProcess);
 
     processes.push_back(newProcess);
+
+    DEBUG_OUT("Initializing entry point process at RIP %p; RSP: %p; CR3: %p", newProcess->rip, newProcess->rsp, newProcess->cr3);
 
     lock.Unlock();
 
@@ -508,7 +510,7 @@ ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, cons
     newProcess->rsp = TranslateToPhysicalMemoryAddress((uint64_t)stack);
     newProcess->rip = rip;
 
-    DEBUG_OUT("Initializing process at RIP %p auxval entry: %p RSP: %p", rip, auxval.entry, newProcess->rsp);
+    DEBUG_OUT("Initializing process at RIP %p auxval entry: %p RSP: %p; CR3: %p", rip, auxval.entry, newProcess->rsp, newProcess->cr3);
 
     scheduler->AddProcess(newProcess);
 
@@ -540,7 +542,9 @@ void ProcessManager::Exit(int exitCode)
 
     lock.Unlock();
 
-    SwitchTasks(scheduler->CurrentProcess());
+    auto pcb = scheduler->CurrentProcess();
+
+    SwitchTasks(pcb);
 }
 
 void ProcessManager::Sigaction(int signum, sigaction *act, sigaction *oldact)
@@ -771,7 +775,7 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
     //Set the return value for the new process
     pcb->rax = 0;
 
-    DEBUG_OUT("Forking process %llu (%llu)", current->process->ID, newProcess->ID);
+    DEBUG_OUT("Forking process %llu (%llu) cr3: %p", current->process->ID, newProcess->ID, newProcess->cr3);
 
     return 0;
 }
