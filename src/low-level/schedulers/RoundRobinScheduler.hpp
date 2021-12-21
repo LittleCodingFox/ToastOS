@@ -14,6 +14,4 @@ public:
     virtual ProcessControlBlock *AddProcess(ProcessInfo *process) override;
     virtual ProcessControlBlock *NextProcess() override;
     virtual void ExitProcess(ProcessInfo *process) override;
-    virtual ProcessInfo *GetProcess(pid_t pid) override;
-    virtual frg::vector<ProcessInfo *, frg_allocator> AllProcesses() override;
 };

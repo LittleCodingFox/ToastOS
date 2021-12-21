@@ -39,10 +39,10 @@ static struct stivale2_header stivaleHeader = {
 
 void KernelTask()
 {
-    //Dummy task
+    //Idle process
     for(;;)
     {
-        //DEBUG_OUT("KERNEL TASK", 0);
+        asm volatile("hlt");
     }
 }
 

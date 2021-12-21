@@ -263,6 +263,8 @@ ProcessInfo *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const cha
 
     scheduler->AddProcess(newProcess);
 
+    processes.push_back(newProcess);
+
     lock.Unlock();
 
     return newProcess;
@@ -510,6 +512,8 @@ ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, cons
 
     scheduler->AddProcess(newProcess);
 
+    processes.push_back(newProcess);
+
     lock.Unlock();
 
     return newProcess;
@@ -526,12 +530,15 @@ void ProcessManager::Exit(int exitCode)
 
     if(scheduler != NULL && scheduler->CurrentProcess() != NULL)
     {
-        scheduler->ExitProcess(scheduler->CurrentProcess()->process);
+        auto pcb = scheduler->CurrentProcess();
+
+        pcb->state = pcb->process->state = PROCESS_STATE_DEAD;
+        pcb->process->exitCode = exitCode;
+
+        scheduler->ExitProcess(pcb->process);
     }
 
     lock.Unlock();
-
-    //TODO: ExitCode
 
     SwitchTasks(scheduler->CurrentProcess());
 }
@@ -562,9 +569,9 @@ void ProcessManager::Sigaction(int signum, sigaction *act, sigaction *oldact)
 
 void ProcessManager::SetUID(pid_t pid, uid_t uid)
 {
-    Threading::ScopedLock Lock(lock);
+    ProcessInfo *process = GetProcess(pid);
 
-    ProcessInfo *process = scheduler->GetProcess(pid);
+    Threading::ScopedLock Lock(lock);
 
     if(process == NULL)
     {
@@ -576,9 +583,9 @@ void ProcessManager::SetUID(pid_t pid, uid_t uid)
 
 uid_t ProcessManager::GetUID(pid_t pid)
 {
-    Threading::ScopedLock Lock(lock);
+    ProcessInfo *process = GetProcess(pid);
 
-    ProcessInfo *process = scheduler->GetProcess(pid);
+    Threading::ScopedLock Lock(lock);
 
     if(process == NULL)
     {
@@ -590,9 +597,9 @@ uid_t ProcessManager::GetUID(pid_t pid)
 
 void ProcessManager::SetGID(pid_t pid, gid_t gid)
 {
-    Threading::ScopedLock Lock(lock);
+    ProcessInfo *process = GetProcess(pid);
 
-    ProcessInfo *process = scheduler->GetProcess(pid);
+    Threading::ScopedLock Lock(lock);
 
     if(process == NULL)
     {
@@ -604,9 +611,9 @@ void ProcessManager::SetGID(pid_t pid, gid_t gid)
 
 uid_t ProcessManager::GetGID(pid_t pid)
 {
-    Threading::ScopedLock Lock(lock);
+    ProcessInfo *process = GetProcess(pid);
 
-    ProcessInfo *process = scheduler->GetProcess(pid);
+    Threading::ScopedLock Lock(lock);
 
     if(process == NULL)
     {
@@ -740,9 +747,29 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
 
     currentPageManager.Duplicate(higherPageTableFrame);
 
+    processes.push_back(newProcess);
+
     lock.Unlock();
 
     *child = newProcess->ID;
+
+    uint64_t childOffset = (uint64_t)child % 0x1000;
+
+    void *newVirt = userPageManager.PhysicalMemory((uint8_t *)child - childOffset);
+
+    if(newVirt == NULL)
+    {
+        DEBUG_OUT("fork: newVirt is NULL!", 0);
+    }
+    else
+    {
+        pid_t *childPID = (pid_t *)((uint8_t *)TranslateToHighHalfMemoryAddress((uint64_t)newVirt) + childOffset);
+
+        *childPID = 0;
+    }
+
+    //Set the return value for the new process
+    pcb->rax = 0;
 
     DEBUG_OUT("Forking process %llu (%llu)", current->process->ID, newProcess->ID);
 
@@ -753,14 +780,20 @@ ProcessInfo *ProcessManager::GetProcess(pid_t pid)
 {
     Threading::ScopedLock Lock(lock);
 
-    return scheduler->GetProcess(pid);
+    for(auto &process : processes)
+    {
+        if(process->ID == pid)
+        {
+            return process;
+        }
+    }
+
+    return NULL;
 }
 
 frg::vector<ProcessInfo *, frg_allocator> ProcessManager::GetChildProcesses(pid_t ppid)
 {
     Threading::ScopedLock Lock(lock);
-
-    auto processes = scheduler->AllProcesses();
 
     frg::vector<ProcessInfo *, frg_allocator> outValue;
 
@@ -777,16 +810,16 @@ frg::vector<ProcessInfo *, frg_allocator> ProcessManager::GetChildProcesses(pid_
 
 void ProcessManager::Kill(pid_t pid, int signal)
 {
-    Threading::ScopedLock Lock(lock);
-
     if(signal < 0 || signal >= SIGNAL_MAX)
     {
         return;
     }
 
-    ProcessInfo *process = scheduler->GetProcess(pid);
+    ProcessInfo *process = GetProcess(pid);
 
-    if(process == NULL)
+    Threading::ScopedLock Lock(lock);
+
+    if(process == NULL || process->state != PROCESS_STATE_DEAD)
     {
         return;
     }

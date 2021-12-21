@@ -29,9 +29,6 @@ struct ProcessInfo
     uint64_t rsp;
     uint64_t cr3;
     uint64_t rflags;
-    uint64_t kernelStack;
-    uint64_t savedKernelStack;
-    uint64_t initialUserStack;
     uint64_t sleepTicks;
     uint64_t fsBase;
     sigaction sigHandlers[SIGNAL_MAX];
@@ -40,6 +37,7 @@ struct ProcessInfo
     pid_t ppid;
     sigset_t sigprocmask;
     uint64_t state;
+    int exitCode;
 
     frg::string<frg_allocator> cwd;
 
@@ -51,6 +49,7 @@ enum ProcessState
     PROCESS_STATE_NEEDS_INIT = 0,
     PROCESS_STATE_IDLE,
     PROCESS_STATE_RUNNING,
+    PROCESS_STATE_DEAD,
 };
 
 struct ProcessControlBlock
@@ -100,14 +99,13 @@ public:
     virtual ProcessControlBlock *AddProcess(ProcessInfo *process) = 0;
     virtual ProcessControlBlock *NextProcess() = 0;
     virtual void ExitProcess(ProcessInfo *process) = 0;
-    virtual ProcessInfo *GetProcess(pid_t pid) = 0;
-    virtual frg::vector<ProcessInfo *, frg_allocator> AllProcesses() = 0;
 };
 
 class ProcessManager
 {
 private:
     IScheduler *scheduler;
+    frg::vector<ProcessInfo *, frg_allocator> processes;
 public:
     Threading::AtomicLock lock;
 

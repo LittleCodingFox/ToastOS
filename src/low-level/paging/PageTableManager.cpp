@@ -103,6 +103,36 @@ void PageTableManager::MapMemory(void *virtualMemory, void *physicalMemory, uint
     pt->entries[offset.ptOffset] = (uint64_t)physicalMemory | flags | PAGING_FLAG_PRESENT;
 }
 
+void *PageTableManager::PhysicalMemory(void *virtualMemory)
+{
+    PageTableOffset offset = VirtualAddressToOffsets(virtualMemory);
+
+    PageTable *p4Virtual = (PageTable *)TranslateToHighHalfMemoryAddress((uint64_t)p4);
+
+    PageTable *pdp = GetOrNullifyEntry(p4Virtual, offset.p4Offset);
+
+    if(pdp == NULL)
+    {
+        return NULL;
+    }
+
+    PageTable *pd = GetOrNullifyEntry(pdp, offset.pdpOffset);
+
+    if(pd == NULL)
+    {
+        return NULL;
+    }
+
+    PageTable *pt = GetOrNullifyEntry(pd, offset.pdOffset);
+
+    if(pt == NULL)
+    {
+        return NULL;
+    }
+
+    return (void *)(pt->entries[offset.ptOffset] & ~(PAGE_FLAG_MASK));
+}
+
 void PageTableManager::UnmapMemory(void *virtualMemory)
 {
     PageTableOffset offset = VirtualAddressToOffsets(virtualMemory);
