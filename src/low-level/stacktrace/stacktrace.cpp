@@ -13,11 +13,19 @@ typedef struct stack_frame
 
 static char *symbolData = NULL;
 static size_t symbolDataSize = 0;
+static bool kernelStacktraceAvailable = false;
+
+bool KernelStacktraceAvailable()
+{
+  return kernelStacktraceAvailable;
+}
 
 void KernelInitStacktrace(char *symbols, size_t size)
 {
   symbolData = symbols;
   symbolDataSize = size;
+
+  kernelStacktraceAvailable = true;
 }
 
 char* SymbolForAddress(uintptr_t* address)
@@ -72,7 +80,7 @@ void KernelDumpStacktrace()
 
     *end = '\0';
 
-    DEBUG_OUT("  %p: %s", address, symbol);
+    DEBUG_OUT("  %p (%p): %s", address, stackframe->rip, symbol);
 
     *end = '\n';
 

@@ -743,7 +743,7 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
     pcb->rip = newProcess->rip;
     pcb->rsi = interruptStack->rsi;
     pcb->rflags = current->rflags;
-    pcb->state = newProcess->state = PROCESS_STATE_RUNNING;
+    pcb->state = newProcess->state = PROCESS_STATE_NEEDS_INIT;
     pcb->ss = current->ss;
     pcb->cs = current->cs;
     pcb->cr3 = newProcess->cr3;

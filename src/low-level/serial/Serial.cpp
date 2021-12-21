@@ -45,13 +45,15 @@ void Serial::Initialize()
 
 void Serial::Write(char c)
 {
-    Threading::ScopedLock lock(this->lock);
+    lock.Lock();
 
     Initialize();
 
     while(SerialPortIsTransmitFIFOEmpty(port) == false);
 
     outport8(port, c);
+
+    lock.Unlock();
 }
 
 void Serial::Print(const char *string)
