@@ -10,6 +10,10 @@ int64_t SyscallSigprocMask(InterruptStack *stack)
     const sigset_t *set = (const sigset_t *)stack->rdx;
     sigset_t *retrieve = (sigset_t *)stack->rcx;
 
+#if KERNEL_DEBUG_SYSCALLS
+    DEBUG_OUT("Syscall: sigprocmask how %i set %p retrieve %p", how, set, retrieve);
+#endif
+
     ProcessInfo *process = globalProcessManager->CurrentProcess();
 
     sigset_t sigprocmask = process->sigprocmask;

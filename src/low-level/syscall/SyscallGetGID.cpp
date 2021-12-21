@@ -4,7 +4,11 @@
 
 int64_t SyscallGetGID(InterruptStack *stack)
 {
-    uint64_t pid = stack->rsi;
+    pid_t pid = stack->rsi;
+
+#if KERNEL_DEBUG_SYSCALLS
+    DEBUG_OUT("Syscall: GetGID pid: %i", pid);
+#endif
 
     return globalProcessManager->GetGID(pid);
 }

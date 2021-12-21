@@ -135,6 +135,8 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
             outport8(PIC1, PIC_EOI);
         }
 
+        LoadFSBase(next->fsBase);
+
         lock.Unlock();
 
         SwitchTasks(next);

@@ -8,6 +8,10 @@ int64_t SyscallSigaction(InterruptStack *stack)
     sigaction *act = (sigaction *)stack->rdx;
     sigaction *oldact = (sigaction *)stack->rcx;
 
+#if KERNEL_DEBUG_SYSCALLS
+    DEBUG_OUT("Syscall: sigaction signum %i act %p oldact %p", signum, act, oldact);
+#endif
+
     globalProcessManager->Sigaction(signum, act, oldact);
 
     return 0;

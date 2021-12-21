@@ -10,7 +10,9 @@ int64_t SyscallWaitPID(InterruptStack *stack)
     int flags = (int)stack->rcx;
     pid_t *retpid = (pid_t *)stack->r8;
 
-    //DEBUG_OUT("Wait PID: %llu (%p); stats: %p; flags: %i; retpid: %p", pid, pid, status, flags, retpid);
+#if KERNEL_DEBUG_SYSCALLS
+    DEBUG_OUT("Syscall: waitpid pid: %i (%x) status: %p flags: %i retpid: %p", pid, pid, status, flags, retpid);
+#endif
 
     auto current = globalProcessManager->CurrentProcess();
 

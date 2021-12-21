@@ -14,6 +14,10 @@ int64_t SyscallRead(InterruptStack *stack)
     void *buffer = (void *)stack->rdx;
     size_t count = (size_t)stack->rcx;
 
+#if KERNEL_DEBUG_SYSCALLS
+    DEBUG_OUT("Syscall: Read fd: %i buffer: %p count: %llu", fd, buffer, count);
+#endif
+
     if(fd == 0) //stdin
     {
         while(!GotKeyboardInput())

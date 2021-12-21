@@ -11,6 +11,10 @@ int64_t SyscallClock(InterruptStack *stack)
     time_t *secs = (time_t *)stack->rdx;
     long *nanos = (long *)stack->rcx;
 
+#if KERNEL_DEBUG_SYSCALLS
+    DEBUG_OUT("Syscall: Clock clock: %i secs: %p nanos: %p", clock, secs, nanos);
+#endif
+
     if(clock == CLOCK_MONOTONIC || clock == CLOCK_MONOTONIC_RAW)
     {
         *secs = cmos.CurrentTime();

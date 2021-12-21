@@ -4,9 +4,13 @@
 
 int64_t SyscallTCBSet(InterruptStack *stack)
 {
-    ProcessInfo *process = globalProcessManager->CurrentProcess();
-
     uint64_t base = stack->rsi;
+
+#if KERNEL_DEBUG_SYSCALLS
+    DEBUG_OUT("Syscall: tcbset base %p", base);
+#endif
+
+    ProcessInfo *process = globalProcessManager->CurrentProcess();
 
     process->fsBase = base;
 

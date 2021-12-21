@@ -4,8 +4,12 @@
 
 int64_t SyscallKill(InterruptStack *stack)
 {
-    uint64_t pid = stack->rsi;
+    pid_t pid = stack->rsi;
     int signal = (int)stack->rdx;
+
+#if KERNEL_DEBUG_SYSCALLS
+    DEBUG_OUT("Syscall: kill pid: %i signal: %i", pid, signal);
+#endif
 
     globalProcessManager->Kill(pid, signal);
 

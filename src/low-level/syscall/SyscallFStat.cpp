@@ -12,6 +12,10 @@ int64_t SyscallFStat(InterruptStack *stack)
     FileSystemStat *stat = (FileSystemStat *)stack->rsi;
     int fd = (int)stack->rdx;
 
+#if KERNEL_DEBUG_SYSCALLS
+    DEBUG_OUT("Syscall: fstat stat: %p; fd: %i", stat, fd);
+#endif
+
     if(fd < 3)
     {
         return -1;

@@ -8,6 +8,10 @@ int64_t SyscallIsATTY(InterruptStack *stack)
 {
     int fd = (int)stack->rsi;
 
+#if KERNEL_DEBUG_SYSCALLS
+    DEBUG_OUT("Syscall: isatty fd: %i", fd);
+#endif
+
     if(fd == 1)
     {
         return 1;

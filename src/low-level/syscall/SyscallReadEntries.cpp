@@ -15,6 +15,10 @@ int64_t SyscallReadEntries(InterruptStack *stack)
     uint64_t maxSize = stack->rcx;
     int *error = (int *)stack->r8;
 
+#if KERNEL_DEBUG_SYSCALLS
+    DEBUG_OUT("Syscall: readentries fd: %i buffer %p maxSize %llu error %p", fd, buffer, maxSize, error);
+#endif
+
     if(fd < 3)
     {
         *error = EBADF;

@@ -13,7 +13,9 @@ int64_t SyscallStat(InterruptStack *stack)
     FileSystemStat *stat = (FileSystemStat *)stack->rsi;
     const char *path = (const char *)stack->rdx;
 
-    DEBUG_OUT("Stat for %s", path);
+#if KERNEL_DEBUG_SYSCALLS
+    DEBUG_OUT("Syscall: stat stat: %p path %s", stat, path);
+#endif
 
     FILE_HANDLE handle = vfs->OpenFile(path, O_RDONLY, globalProcessManager->CurrentProcess());
 

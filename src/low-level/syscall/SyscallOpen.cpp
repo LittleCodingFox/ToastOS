@@ -12,7 +12,9 @@ int64_t SyscallOpen(InterruptStack *stack)
     const char *path = (const char *)stack->rsi;
     uint32_t flags = (uint32_t)stack->rdx;
 
-    DEBUG_OUT("Open %s (flags: 0x%x)", path, flags);
+#if KERNEL_DEBUG_SYSCALLS
+    DEBUG_OUT("Syscall: open path: %s flags: 0x%x", path, flags);
+#endif
 
     FILE_HANDLE handle = vfs->OpenFile(path, flags, globalProcessManager->CurrentProcess());
 

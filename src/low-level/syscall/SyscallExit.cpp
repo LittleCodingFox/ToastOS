@@ -7,7 +7,9 @@ int64_t SyscallExit(InterruptStack *stack)
 {
     int status = stack->rsi;
 
-    DEBUG_OUT("Exit with status %i", status);
+#if KERNEL_DEBUG_SYSCALLS
+    DEBUG_OUT("Syscall: Exit status: %i", status);
+#endif
 
     globalProcessManager->Exit(status);
 

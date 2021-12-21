@@ -1,6 +1,8 @@
 #pragma once
 #include "printf/printf.h"
 
+#define KERNEL_DEBUG_SYSCALLS 1
+
 #if __cplusplus
 extern "C" 
 #endif

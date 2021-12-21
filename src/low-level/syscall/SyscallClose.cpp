@@ -11,6 +11,10 @@ int64_t SyscallClose(InterruptStack *stack)
 {
     int fd = (int)stack->rsi;
 
+#if KERNEL_DEBUG_SYSCALLS
+    DEBUG_OUT("Syscall: close fd: %i", fd);
+#endif
+
     if(fd < 3)
     {
         return -EPERM;

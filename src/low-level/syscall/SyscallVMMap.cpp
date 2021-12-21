@@ -19,15 +19,17 @@
 
 int64_t SyscallVMMap(InterruptStack *stack)
 {
-    ProcessInfo *process = globalProcessManager->CurrentProcess();
-
     void *hint = (void *)stack->rsi;
     size_t size = (size_t)stack->rdx;
     int prot = (int)stack->rcx;
     int flags = (int)stack->r8;
     int fd = (int)stack->r9;
 
-    //DEBUG_OUT("VMMap: Hint: %p; size: %llu; prot: 0x%x; flags: 0x%x; fd: %i", hint, size, prot, flags, fd);
+#if KERNEL_DEBUG_SYSCALLS
+    DEBUG_OUT("Syscall: vmmap hint %p size %llu prot 0x%x flags 0x%x fd %i", hint, size, prot, flags, fd);
+#endif
+
+    ProcessInfo *process = globalProcessManager->CurrentProcess();
 
     uint64_t pages = size / 0x1000 + 1;
 

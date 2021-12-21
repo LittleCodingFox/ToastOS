@@ -15,6 +15,10 @@ int64_t SyscallFcntl(InterruptStack *stack)
     size_t arg = (size_t)stack->rcx;
     int *result = (int *)stack->r8;
 
+#if KERNEL_DEBUG_SYSCALLS
+    DEBUG_OUT("Syscall: fcntl fd: %i; request: %i; arg: %llu; result: %p", fd, request, arg, result);
+#endif
+
     switch(request)
     {
         case F_DUPFD:
