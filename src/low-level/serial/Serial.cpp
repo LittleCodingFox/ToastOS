@@ -45,15 +45,22 @@ void Serial::Initialize()
 
 void Serial::Write(char c)
 {
-    lock.Lock();
+    Threading::ScopedLock lock(this->lock);
 
     Initialize();
 
     while(SerialPortIsTransmitFIFOEmpty(port) == false);
 
     outport8(port, c);
+}
 
-    lock.Unlock();
+void Serial::WriteNoLock(char c)
+{
+    Initialize();
+
+    while(SerialPortIsTransmitFIFOEmpty(port) == false);
+
+    outport8(port, c);
 }
 
 void Serial::Print(const char *string)
@@ -66,13 +73,34 @@ void Serial::Print(const char *string)
     }
 }
 
+void Serial::PrintNoLock(const char *string)
+{
+    while(*string)
+    {
+        WriteNoLock(*string);
+
+        string++;
+    }
+}
+
 void Serial::PrintLine(const char *string)
 {
     Print(string);
     Print("\n");
 }
 
+void Serial::PrintLineNoLock(const char *string)
+{
+    PrintNoLock(string);
+    PrintNoLock("\n");
+}
+
 extern "C" void SerialPortOutStreamCOM1(char character, void *arg)
 {
     SerialCOM1.Write(character);
+}
+
+extern "C" void SerialPortOutStreamCOM1NoLock(char character, void *arg)
+{
+    SerialCOM1.WriteNoLock(character);
 }

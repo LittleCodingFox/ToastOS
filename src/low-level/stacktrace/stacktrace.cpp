@@ -75,17 +75,52 @@ void KernelDumpStacktrace()
   {
     uint64_t address = stackframe->rip;
 
+    /*
     char *symbol = SymbolForAddress(&address);
     char *end = strchr(symbol, '\n');
 
     *end = '\0';
 
     DEBUG_OUT("  %p (%p): %s", address, stackframe->rip, symbol);
+    */
 
-    *end = '\n';
+    DEBUG_OUT("  %p", address);
+
+    //*end = '\n';
 
     stackframe = stackframe->rbp;
   }
 
   DEBUG_OUT("%s", "stacktrace end");
+}
+
+void KernelDumpStacktraceNoLock()
+{
+  DEBUG_OUT_NOLOCK("%s", "kernel stacktrace:");
+
+  stack_frame_t* stackframe = NULL;
+
+  __asm__("movq %%rbp, %0" : "=r"(stackframe));
+
+  while (stackframe != NULL)
+  {
+    uint64_t address = stackframe->rip;
+
+    /*
+    char *symbol = SymbolForAddress(&address);
+    char *end = strchr(symbol, '\n');
+
+    *end = '\0';
+
+    DEBUG_OUT_NOLOCK("  %p (%p): %s", address, stackframe->rip, symbol);
+    */
+
+    DEBUG_OUT_NOLOCK("  %p", address);
+
+    //*end = '\n';
+
+    stackframe = stackframe->rbp;
+  }
+
+  DEBUG_OUT_NOLOCK("%s", "stacktrace end");
 }

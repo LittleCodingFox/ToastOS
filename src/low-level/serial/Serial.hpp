@@ -31,6 +31,9 @@ public:
     void Print(const char *string);
     void PrintLine(const char *string);
     void Write(char c);
+    void WriteNoLock(char c);
+    void PrintNoLock(const char *string);
+    void PrintLineNoLock(const char *string);
 };
 
 extern Serial SerialCOM1;

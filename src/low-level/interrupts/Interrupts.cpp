@@ -9,6 +9,7 @@
 #include "keyboard/Keyboard.hpp"
 #include "process/Process.hpp"
 #include "debug.hpp"
+#include "serial/Serial.hpp"
 
 Interrupts interrupts;
 
@@ -180,44 +181,6 @@ void interruptIntHandler(InterruptStack stack)
         }
     }
 
-    DEBUG_OUT("received interrupt (see below)\n\n"
-        "  %d - %s\n\n"
-        "  error_code          = %#x\n"
-        "  instruction_pointer = %p\n"
-        "  code_segment        = %#x\n"
-        "  cpu_flags           = %#x\n"
-        "  stack_pointer       = %p\n"
-        "  stack_segment       = %#x\n"
-        "\n"
-        "  rax = 0x%016llx    rbx = 0x%016llx    rcx = 0x%016llx\n"
-        "  rdx = 0x%016llx    rsi = 0x%016llx    rdi = 0x%016llx\n"
-        "  rbp = 0x%016llx    r8  = 0x%016llx    r9  = 0x%016llx\n"
-        "  r10 = 0x%016llx    r11 = 0x%016llx    r12 = 0x%016llx\n"
-        "  r13 = 0x%016llx    r14 = 0x%016llx    r15 = 0x%016llx",
-        stack.id,
-        exception_messages[stack.id],
-        stack.errorCode,
-        stack.instructionPointer,
-        stack.codeSegment,
-        stack.cpuFlags,
-        stack.stackPointer,
-        stack.stackSegment,
-        stack.rax,
-        stack.rbx,
-        stack.rcx,
-        stack.rdx,
-        stack.rsi,
-        stack.rdi,
-        stack.rbp,
-        stack.r8,
-        stack.r9,
-        stack.r10,
-        stack.r11,
-        stack.r12,
-        stack.r13,
-        stack.r14,
-        stack.r15);
-
     Panic("received interrupt (see below)\n\n"
         "  %d - %s\n\n"
         "  error_code          = %#x\n"
@@ -231,7 +194,8 @@ void interruptIntHandler(InterruptStack stack)
         "  rdx = 0x%016llx    rsi = 0x%016llx    rdi = 0x%016llx\n"
         "  rbp = 0x%016llx    r8  = 0x%016llx    r9  = 0x%016llx\n"
         "  r10 = 0x%016llx    r11 = 0x%016llx    r12 = 0x%016llx\n"
-        "  r13 = 0x%016llx    r14 = 0x%016llx    r15 = 0x%016llx",
+        "  r13 = 0x%016llx    r14 = 0x%016llx    r15 = 0x%016llx\n",
+        "  cr3 = 0x%016llx\n",
         stack.id,
         exception_messages[stack.id],
         stack.errorCode,
@@ -254,7 +218,8 @@ void interruptIntHandler(InterruptStack stack)
         stack.r12,
         stack.r13,
         stack.r14,
-        stack.r15);
+        stack.r15,
+        Registers::ReadCR3());
 }
 
 void interruptIRQHandler(InterruptStack stack)
@@ -363,7 +328,7 @@ void PageFaultHandler(InterruptStack* stack)
             "  rbp = 0x%016llx    r8  = 0x%016llx    r9  = 0x%016llx\n"
             "  r10 = 0x%016llx    r11 = 0x%016llx    r12 = 0x%016llx\n"
             "  r13 = 0x%016llx    r14 = 0x%016llx    r15 = 0x%016llx\n"
-            "  cr3 = 0x%016llx",
+            "  cr3 = 0x%016llx\n",
             Registers::ReadCR2(),
             error_code,
             is_present != 0 ? 'Y' : 'N',

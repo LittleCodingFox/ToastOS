@@ -32,8 +32,6 @@ void SwitchProcess(InterruptStack *stack)
         return;
     }
 
-    //DEBUG_OUT("SWITCH PROCESS %p", stack);
-
     globalProcessManager->SwitchProcess(stack, true);
 }
 
@@ -72,7 +70,7 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
         return;
     }
 
-    //DEBUG_OUT("Switching processes %p to %p", current, next);
+    DEBUG_OUT("Switching processes %p to %p", current, next);
 
     if(current == next)
     {
@@ -123,11 +121,44 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
         }
     }
 
+    //Forked processes are added as the current process, so must init them properly
+    if(current->state == PROCESS_STATE_FORKED)
+    {
+        current->state = PROCESS_STATE_RUNNING;
+
+        DEBUG_OUT("Initializing fork %p: rsp: %p; rip: %p; cr3: %p", current, current->rsp, current->rip, current->cr3);
+
+        if(fromTimer)
+        {
+            //Called from timer, so must finish up PIC
+            outport8(PIC1, PIC_EOI);
+        }
+
+        LoadFSBase(current->fsBase);
+
+        if(current->process->permissionLevel == PROCESS_PERMISSION_KERNEL)
+        {
+            current->cs = (GDTKernelBaseSelector + 0x00);
+            current->ss = (GDTKernelBaseSelector + 0x08);
+        }
+        else
+        {
+            current->cs = (GDTUserBaseSelector + 0x10) | 3;
+            current->ss = (GDTUserBaseSelector + 0x08) | 3;
+        }
+
+        lock.Unlock();
+
+        SwitchTasks(current);
+
+        return;
+    }
+
     if(next->state == PROCESS_STATE_NEEDS_INIT)
     {
         next->state = PROCESS_STATE_RUNNING;
 
-        //DEBUG_OUT("Initializing task %p: rsp: %p; rip: %p; cr3: %p", next, next->rsp, next->rip, next->cr3);
+        DEBUG_OUT("Initializing task %p: rsp: %p; rip: %p; cr3: %p", next, next->rsp, next->rip, next->cr3);
 
         if(fromTimer)
         {
@@ -137,6 +168,17 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
 
         LoadFSBase(next->fsBase);
 
+        if(next->process->permissionLevel == PROCESS_PERMISSION_KERNEL)
+        {
+            next->cs = (GDTKernelBaseSelector + 0x00);
+            next->ss = (GDTKernelBaseSelector + 0x08);
+        }
+        else
+        {
+            next->cs = (GDTUserBaseSelector + 0x10) | 3;
+            next->ss = (GDTUserBaseSelector + 0x08) | 3;
+        }
+
         lock.Unlock();
 
         SwitchTasks(next);
@@ -144,11 +186,9 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
         return;
     }
 
-/*
     DEBUG_OUT("Switching tasks:\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%x\n\tss: 0x%x\nnext:\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%x\n\tss: 0x%x",
         current->rsp, current->rip, current->cr3, current->cs, current->ss,
         next->rsp, next->rip, next->cr3, next->cs, next->ss);
-*/
 
     if(fromTimer)
     {
@@ -745,7 +785,7 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
     pcb->rip = newProcess->rip;
     pcb->rsi = interruptStack->rsi;
     pcb->rflags = current->rflags;
-    pcb->state = newProcess->state = PROCESS_STATE_NEEDS_INIT;
+    pcb->state = newProcess->state = PROCESS_STATE_FORKED;
     pcb->ss = current->ss;
     pcb->cs = current->cs;
     pcb->cr3 = newProcess->cr3;
@@ -777,7 +817,8 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
     //Set the return value for the new process
     pcb->rax = 0;
 
-    DEBUG_OUT("Forking process %llu (%llu) cr3: %p", current->process->ID, newProcess->ID, newProcess->cr3);
+    DEBUG_OUT("Forking process %llu (%llu) cr3: %p, cs: %llx, ss: %llx, permission: %llx", current->process->ID, newProcess->ID, newProcess->cr3,
+        pcb->cs, pcb->ss, newProcess->permissionLevel);
 
     return 0;
 }
