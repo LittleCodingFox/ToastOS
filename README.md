@@ -1,1 +1,31 @@
 # ToastOS
+x86_64 OS created from scratch
+
+# Features
+
+* Scheduling
+* Usermode
+* tarfs ramdisk
+* Hosted toolchain
+* mlibc-based usermode libc
+
+# Requirements
+
+## Linux
+
+Packages:
+* bootstrap
+* meson
+* ninja
+* clang
+* gcc
+* g++
+* flex
+* bison
+* gmp
+* mpfr
+* mpc
+* texinfo
+
+In a debian-based linux environment, the following command should install everything:
+`sudo apt install  build-essential meson ninja clang flex bison libgmp3-dev libmpc-dev libmpfr-dev texinfo` 
