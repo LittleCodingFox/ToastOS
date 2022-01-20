@@ -16,7 +16,7 @@ x86_64 OS created from scratch
 Packages:
 * xbstrap
 * meson
-* ninja
+* ninja-build
 * clang
 * gcc
 * g++
@@ -28,7 +28,7 @@ Packages:
 * texinfo
 
 In a debian-based linux environment, the following command should install everything:
-`sudo apt install  build-essential meson ninja clang flex bison libgmp3-dev libmpc-dev libmpfr-dev texinfo`
+`sudo apt install build-essential meson ninja-build clang flex bison libgmp3-dev libmpc-dev libmpfr-dev texinfo`
 
 For xbstrap, run the following command:
 `pip3 install xbstrap` 
