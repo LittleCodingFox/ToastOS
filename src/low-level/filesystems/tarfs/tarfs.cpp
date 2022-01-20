@@ -197,6 +197,33 @@ namespace FileSystem
 
                 if(strstr(tarHeader->name, path.data()) == tarHeader->name)
                 {
+                    int found = 0;
+                    bool invalid = false;
+
+                    for(uint32_t i = path.size(); i < strlen(tarHeader->name); i++)
+                    {
+                        if(tarHeader->name[i] == '/')
+                        {
+                            found++;
+
+                            if(found > 1)
+                            {
+                                break;
+                            }
+                        }
+                        else if(found > 0)
+                        {
+                            invalid = true;
+
+                            break;
+                        }
+                    }
+
+                    if(found > 1 || invalid)
+                    {
+                        continue;
+                    }
+
                     AddInode(tarHeader, inode);
                 }
             }

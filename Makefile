@@ -1,11 +1,10 @@
 CC				= clang
 CPP				= clang++
 LD				= ld
-AR				= x86_64-elf-ar
-STRIP			= x86_64-elf-strip
-READELF			= x86_64-elf-readelf
+AR				= llvm-ar
+READELF			= llvm-readelf
 ASMC			= nasm
-ASC				= x86_64-elf-as
+ASC				= llvm-as
 
 KERNEL_NAME		= kernel
 
