@@ -15,6 +15,7 @@ jobs:
     steps:
       - checkout
       - run: git submodule init
+      - run: git submodule update
       - run: sudo apt update
       - run: sudo apt install ninja-build meson automake autoconf libtool intltool pkg-config clang nasm build-essential texinfo help2man flex bison libgmp3-dev libmpc-dev libmpfr-dev gperf
       - run: pip3 install xbstrap
