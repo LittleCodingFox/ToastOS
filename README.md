@@ -26,9 +26,7 @@ Packages:
 * mpfr
 * mpc
 * texinfo
+* python3-pip
 
 In a debian-based linux environment, the following command should install everything:
-`sudo apt install build-essential meson ninja-build clang flex bison libgmp3-dev libmpc-dev libmpfr-dev texinfo`
-
-For xbstrap, run the following command:
-`pip3 install xbstrap` 
+`sudo apt install build-essential meson ninja-build clang flex bison libgmp3-dev libmpc-dev libmpfr-dev texinfo python3-pip && pip3 install xbstrap`
