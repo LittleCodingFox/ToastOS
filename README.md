@@ -28,9 +28,10 @@ Packages:
 * texinfo
 * python3-pip
 * qemu-system-x86
+* help2man
 
 In a debian-based linux environment, the following command should install everything:
-`sudo apt install build-essential meson ninja-build clang flex bison libgmp3-dev libmpc-dev libmpfr-dev texinfo python3-pip qemu-system-x86 && pip3 install xbstrap`
+`sudo apt install build-essential meson ninja-build clang flex bison libgmp3-dev libmpc-dev libmpfr-dev texinfo python3-pip qemu-system-x86 help2man && pip3 install xbstrap`
 
 # Building the toolchain
 
