@@ -30,13 +30,13 @@ make -C limine
 
 sudo mkdir -p /mnt/osdev
 
-sudo umount /dev/loop0
+export LOOP=`sudo losetup -f`
 
-sudo losetup -o1048576 /dev/loop0 $BINDIR/$OS_NAME.img
+sudo losetup -o1048576 $LOOP $BINDIR/$OS_NAME.img
 
-sudo mkfs.vfat -F32 -n "EFI System" /dev/loop0
+sudo mkfs.vfat -F32 -n "EFI System" $LOOP
 
-sudo mount -tvfat /dev/loop0 /mnt/osdev
+sudo mount -tvfat $LOOP /mnt/osdev
 
 sudo cp -R boot/* /mnt/osdev
 
@@ -50,20 +50,20 @@ sync
 
 rm -Rf limine
 
-sudo umount /dev/loop0
+sudo umount $LOOP
 
-sudo losetup -d /dev/loop0
+sudo losetup -d $LOOP
 
-sudo losetup -o105906176 /dev/loop0 $BINDIR/$OS_NAME.img
+sudo losetup -o105906176 $LOOP $BINDIR/$OS_NAME.img
 
-sudo mke2fs -b1024 /dev/loop0 -L "Main Volume"
+sudo mke2fs -b1024 $LOOP -L "Main Volume"
 
-sudo mount -text2 /dev/loop0 /mnt/osdev
+sudo mount -text2 $LOOP /mnt/osdev
 
 sudo cp -R dist/* /mnt/osdev
 
-sudo umount /dev/loop0
+sudo umount $LOOP
 
-sudo losetup -d /dev/loop0
+sudo losetup -d $LOOP
 
 echo Done!
