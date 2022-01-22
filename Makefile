@@ -134,10 +134,8 @@ run-qemu-linux:
 	-bios /usr/share/qemu/OVMF.fd \
 	-m 256M -cpu qemu64 -machine type=q35 -serial file:./debug.log -net none -d int --no-reboot $(QEMU_FLAGS) 2>qemu.log
 
-debug-qemu-linux:
-	qemu-system-x86_64 -drive file=$(BINDIR)/$(OS_NAME).img,format=raw,index=0,media=disk \
-	-bios /usr/share/qemu/OVMF.fd -s -S \
-	-m 256M -cpu qemu64 -machine type=q35 -serial file:./debug.log -net none -d int --no-reboot $(QEMU_FLAGS) 2>qemu.log
+debug-qemu-linux: QEMU_FLAGS += -s -S
+debug-qemu-linux: run-qemu-linux
 
 bootstrap:
 	@mkdir -p toolchain

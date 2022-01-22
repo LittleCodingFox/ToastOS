@@ -23,5 +23,9 @@ dist/lib/libpthread.so
 dist/lib/libresolv.so
 dist/lib/librt.so
 dist/lib/libutil.so
+dist/lib/x86_64-toast
+dist/usr
+dist/bin
+dist/etc
+dist/root
 ports
-dist

@@ -20,6 +20,7 @@
 #include "filesystems/tarfs/tarfs.hpp"
 #include "sse/sse.hpp"
 #include "cmos/cmos.hpp"
+#include "keyboard/Keyboard.hpp"
 
 PageTableManager pageTableManager;
 
@@ -340,6 +341,8 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
     }
 
     FileSystem::InitializeVirtualFiles();
+
+    InitializeKeyboard();
 
     globalProcessManager = new ProcessManager(new RoundRobinScheduler());
 

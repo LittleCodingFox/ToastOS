@@ -1,7 +1,6 @@
 #ifndef STRING_H
 #define STRING_H
 
-#include "include/kernel.h"
 #include <stddef.h>
 #include <stdint.h>
 
