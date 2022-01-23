@@ -44,10 +44,5 @@ int liballoc_free(void* ptr, size_t pages)
 
     DEBUG_OUT("liballoc_free: freed %i pages at address %p", pages, ptr);
 
-    for(uint32_t i = 0; i < pages; i++)
-    {
-        globalPageTableManager->UnmapMemory((void*)((uint64_t)ptr + i * 0x1000));
-    }
-
     return 0;
 }

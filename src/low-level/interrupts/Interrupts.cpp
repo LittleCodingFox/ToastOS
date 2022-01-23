@@ -182,19 +182,19 @@ void interruptIntHandler(InterruptStack stack)
     }
 
     Panic("received interrupt (see below)\n\n"
-        "  %d - %s\n\n"
-        "  error_code          = %#x\n"
+        "  %lld - %s\n\n"
+        "  error_code          = %#llx\n"
         "  instruction_pointer = %p\n"
-        "  code_segment        = %#x\n"
-        "  cpu_flags           = %#x\n"
+        "  code_segment        = %#llx\n"
+        "  cpu_flags           = %#llx\n"
         "  stack_pointer       = %p\n"
-        "  stack_segment       = %#x\n"
+        "  stack_segment       = %#llx\n"
         "\n"
         "  rax = 0x%016llx    rbx = 0x%016llx    rcx = 0x%016llx\n"
         "  rdx = 0x%016llx    rsi = 0x%016llx    rdi = 0x%016llx\n"
         "  rbp = 0x%016llx    r8  = 0x%016llx    r9  = 0x%016llx\n"
         "  r10 = 0x%016llx    r11 = 0x%016llx    r12 = 0x%016llx\n"
-        "  r13 = 0x%016llx    r14 = 0x%016llx    r15 = 0x%016llx\n",
+        "  r13 = 0x%016llx    r14 = 0x%016llx    r15 = 0x%016llx\n"
         "  cr3 = 0x%016llx\n",
         stack.id,
         exception_messages[stack.id],

@@ -1,5 +1,6 @@
 #include "Serial.hpp"
 #include <ports/Ports.hpp>
+#include "stacktrace/stacktrace.hpp"
 
 Serial SerialCOM1;
 
@@ -10,6 +11,11 @@ Serial SerialCOM1;
 #define SERIAL_PORT_LINE_STATUS_PORT(base)      (base + 5)
 
 #define SERIAL_PORT_LINE_ENABLE_DLAB            0x80
+
+extern "C" void DumpSerialString(const char *msg)
+{
+    SerialCOM1.PrintLine(msg);
+}
 
 void InitializeSerial()
 {

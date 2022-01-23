@@ -3,7 +3,7 @@ export PATH := $(PATH):../../toolchain/tools/host-binutils/bin:../../toolchain/t
 CC				= x86_64-toast-g++
 LD				= x86_64-toast-ld
 
-PROGRAM_NAME	= echo
+PROGRAM_NAME	= forktest
 BINDIR 			= ../../dist/bin
 SRCDIR			= src
 OBJDIR			= ../obj/userland/$(PROGRAM_NAME)
