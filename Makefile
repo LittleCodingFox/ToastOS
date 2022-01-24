@@ -108,9 +108,11 @@ kernel: makedirs $(OBJECTS) $(COBJECTS) $(LIBKCOBJECTS) $(EXTOBJECTS) $(EXTCOBJE
 libc: makedirs $(LIBCCOBJECTS) $(LIBCASMOBJECTS) $(EXTCOBJECTS)
 	$(AR) rcs "$(LIBCBINDIR)/$@.a" $(LIBCCOBJECTS) $(LIBCASMOBJECTS) $(EXTCOBJECTS)
 	mkdir -p $(DISTDIR)/lib/x86_64-toast/
+	mkdir -p $(DISTDIR)/usr/lib64
 	cp toolchain/pkg-builds/mlibc/*.so $(DISTDIR)/lib/x86_64-toast
 	cp toolchain/pkg-builds/mlibc/*.so $(DISTDIR)/lib
 	cp $(DISTDIR)/lib/ld.so $(DISTDIR)/lib/ld64.so.1
+	cp -Rf toolchain/tools/host-gcc/x86_64-toast/lib64/* $(DISTDIR)/usr/lib64/
 
 iso-linux:
 	sh makebootdir.sh
@@ -131,8 +133,8 @@ debug-linux: run-linux
 
 run-qemu-linux:
 	qemu-system-x86_64 -drive file=$(BINDIR)/$(OS_NAME).img,format=raw,index=0,media=disk \
-	-bios /usr/share/qemu/OVMF.fd \
-	-m 256M -cpu qemu64 -machine type=q35 -serial file:./debug.log -net none -d int --no-reboot $(QEMU_FLAGS) 2>qemu.log
+	-bios /usr/share/qemu/OVMF.fd -display gtk \
+	-m 1G -cpu qemu64 -machine type=q35 -serial file:./debug.log -net none -d int --no-reboot $(QEMU_FLAGS) 2>qemu.log
 
 debug-qemu-linux: QEMU_FLAGS += -s -S
 debug-qemu-linux: run-qemu-linux
@@ -152,6 +154,7 @@ clean-bootstrap:
 rebuild-mlibc:
 	cd toolchain && xbstrap build mlibc-headers --reconfigure
 	cd toolchain && xbstrap build mlibc --reconfigure
+	cd toolchain && xbstrap install mlibc
 
 clean:
 	rm -Rf $(BINDIR)/*.img

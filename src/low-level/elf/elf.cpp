@@ -23,7 +23,7 @@ namespace Elf
 
         if(!(programHeader->flags & ELF_PROGRAM_FLAG_EXECUTE))
         {
-            flags |= PAGING_FLAG_NO_EXECUTE;
+            //flags |= PAGING_FLAG_NO_EXECUTE;
         }
 
         if((programHeader->flags & ELF_PROGRAM_FLAG_WRITE))
@@ -44,7 +44,7 @@ namespace Elf
         {
             void *physicalAddress = globalAllocator.RequestPage();
 
-            pageTableManager->MapMemory((void *)((startPage + i) * 0x1000), physicalAddress, flags);
+            pageTableManager->MapMemory((void *)((startPage + i) * 0x1000), physicalAddress, flags | PAGING_FLAG_WRITABLE);
             globalPageTableManager->MapMemory((void *)TranslateToHighHalfMemoryAddress((startPage + i) * 0x1000), physicalAddress, flags | PAGING_FLAG_WRITABLE);
         }
 
@@ -157,7 +157,7 @@ namespace Elf
 
                 for(uint64_t j = 0; j < pageCount; j++)
                 {
-                    globalPageTableManager->UnmapMemory((void *)(TranslateToHighHalfMemoryAddress((startPage + j) * 0x1000)));
+                    //globalPageTableManager->UnmapMemory((void *)(TranslateToHighHalfMemoryAddress((startPage + j) * 0x1000)));
                 }
             }
         }

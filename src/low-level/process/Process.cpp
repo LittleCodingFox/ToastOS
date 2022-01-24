@@ -67,10 +67,12 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
 
         lock.Unlock();
 
+        interrupts.EnableInterrupts();
+
         return;
     }
 
-    DEBUG_OUT("Switching processes %p to %p", current, next);
+    //DEBUG_OUT("Switching processes %p to %p", current, next);
 
     if(current == next)
     {
@@ -81,6 +83,8 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
         }
 
         lock.Unlock();
+
+        interrupts.EnableInterrupts();
 
         return;
     }
@@ -186,9 +190,11 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
         return;
     }
 
+    /*
     DEBUG_OUT("Switching tasks:\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%x\n\tss: 0x%x\nnext:\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%x\n\tss: 0x%x",
         current->rsp, current->rip, current->cr3, current->cs, current->ss,
         next->rsp, next->rip, next->cr3, next->cs, next->ss);
+        */
 
     if(fromTimer)
     {
@@ -329,10 +335,12 @@ ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, cons
     PageTable *higherPageTableFrame = (PageTable *)TranslateToHighHalfMemoryAddress((uint64_t)pageTableFrame);
 
     memset(higherPageTableFrame, 0, sizeof(PageTable));
+
+    auto higherCurrentP4 = (PageTable *)TranslateToHighHalfMemoryAddress((uint64_t)currentPageManager.p4);
     
     for(uint64_t i = 256; i < 512; i++)
     {
-        higherPageTableFrame->entries[i] = currentPageManager.p4->entries[i];
+        higherPageTableFrame->entries[i] = higherCurrentP4->entries[i];
     }
 
     PageTableManager userPageManager;
@@ -579,12 +587,18 @@ void ProcessManager::Exit(int exitCode)
         pcb->state = pcb->process->state = PROCESS_STATE_DEAD;
         pcb->process->exitCode = exitCode;
 
+        DEBUG_OUT("Process %llu exited with code %d", pcb->process->ID, exitCode);
+
         scheduler->ExitProcess(pcb->process);
+
+        scheduler->DumpProcessList();
     }
 
     lock.Unlock();
 
     auto pcb = scheduler->CurrentProcess();
+
+    DEBUG_OUT("Swapping to process %llu", pcb->process->ID);
 
     SwitchTasks(pcb);
 }

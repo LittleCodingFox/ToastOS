@@ -129,5 +129,29 @@ void RoundRobinScheduler::ExitProcess(ProcessInfo *process)
 
     processes = p;
 
-    //delete remove;
+    delete remove;
+}
+
+void RoundRobinScheduler::DumpProcessList()
+{
+    Threading::ScopedLock lock(this->lock);
+
+    DEBUG_OUT("Dumping Process List:", 0);
+    
+    ProcessControlBlock *p = processes;
+
+    if(processes == processes->next)
+    {
+        DEBUG_OUT("Single Process!", 0);
+    }
+
+    do
+    {
+        auto state = p->State();
+
+        DEBUG_OUT("Process %llu (state: %s)", p->process->ID, state.data());
+
+        p = p->next;
+    }
+    while(p != processes);
 }

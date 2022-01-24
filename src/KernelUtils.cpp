@@ -96,12 +96,14 @@ void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_fr
         pageTableManager.p4->entries[i] = (uint64_t)page | PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE;
     }
 
+    /*
     //Enable write protection
     Registers::WriteCR0(Registers::ReadCR0() | (1 << 16));
 
     //Enable NXE bit
     uint64_t efer = Registers::ReadMSR(Registers::IA32_EFER);
     Registers::WriteMSR(Registers::IA32_EFER, efer | (1 << 11));
+    */
 
     DEBUG_OUT("%s", "Identity mapping the whole memory");
 

@@ -17,10 +17,15 @@ COBJECTS		= $(CSRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 INCLUDEDIRS		= -I../../toolchain/system-root/usr/include -I../include
 
 CFLAGS			= $(INCLUDEDIRS) -fshort-wchar -Wall -O0 -g -fno-omit-frame-pointer \
-	-fno-rtti -fno-exceptions -fno-stack-protector -mno-3dnow \
-	-mno-mmx -mno-sse -mno-sse2 -mno-avx
+	-fno-exceptions -fno-stack-protector -mno-3dnow \
+	-mno-mmx -mno-avx
 
-LDFLAGS			= -L../../toolchain/pkg-builds/mlibc/ -L../../toolchain/packages/mlibc/usr/lib -L../../dist/usr/lib -lc -ltoastgraphics -Map=linker.map
+LDFLAGS			= -L../../toolchain/pkg-builds/mlibc/ \
+				  -L../../toolchain/packages/mlibc/usr/lib \
+				  -L../../dist/usr/lib \
+				  -L../../toolchain/system-root/usr/lib \
+				  -L../../toolchain/tools/host-gcc/x86_64-toast/lib64 \
+				  -ltoastgraphics -lGLESv1_CM -lOSMesa -lc -lstdc++ -lgcc_s -Map=linker.map
 
 default: $(PROGRAM_NAME)
 

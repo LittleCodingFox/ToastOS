@@ -5,9 +5,7 @@
 #include "elf/elf.hpp"
 #include "lock.hpp"
 #include "interrupts/Interrupts.hpp"
-#include "frg_allocator.hpp"
-#include "frg/string.hpp"
-#include "frg/vector.hpp"
+#include "kernel.h"
 
 #define PROCESS_STACK_SIZE 0x4000
 
@@ -15,6 +13,15 @@ enum ProcessPermissionLevel
 {
     PROCESS_PERMISSION_KERNEL,
     PROCESS_PERMISSION_USER
+};
+
+enum ProcessState
+{
+    PROCESS_STATE_NEEDS_INIT = 0,
+    PROCESS_STATE_IDLE,
+    PROCESS_STATE_RUNNING,
+    PROCESS_STATE_FORKED,
+    PROCESS_STATE_DEAD,
 };
 
 struct ProcessInfo
@@ -39,18 +46,9 @@ struct ProcessInfo
     uint64_t state;
     int exitCode;
 
-    frg::string<frg_allocator> cwd;
+    string cwd;
 
     Elf::ElfHeader *elf;
-};
-
-enum ProcessState
-{
-    PROCESS_STATE_NEEDS_INIT = 0,
-    PROCESS_STATE_IDLE,
-    PROCESS_STATE_RUNNING,
-    PROCESS_STATE_FORKED,
-    PROCESS_STATE_DEAD,
 };
 
 struct ProcessControlBlock
@@ -91,6 +89,36 @@ struct ProcessControlBlock
     uint64_t state;
 
     ProcessControlBlock *next;
+
+    inline string State() const
+    {
+        switch(state)
+        {
+            case PROCESS_STATE_DEAD:
+
+                return "DEAD";
+
+            case PROCESS_STATE_FORKED:
+
+                return "FORKED";
+
+            case PROCESS_STATE_IDLE:
+
+                return "IDLE";
+
+            case PROCESS_STATE_NEEDS_INIT:
+
+                return "NEEDS INIT";
+
+            case PROCESS_STATE_RUNNING:
+
+                return "RUNNING";
+
+            default:
+
+                return "UNKNOWN (CORRUPTED?)";
+        }
+    }
 };
 
 class IScheduler
@@ -99,6 +127,7 @@ public:
     virtual ProcessControlBlock *CurrentProcess() = 0;
     virtual ProcessControlBlock *AddProcess(ProcessInfo *process) = 0;
     virtual ProcessControlBlock *NextProcess() = 0;
+    virtual void DumpProcessList() = 0;
     virtual void ExitProcess(ProcessInfo *process) = 0;
 };
 
