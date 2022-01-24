@@ -1,7 +1,12 @@
 #pragma once
-#include <stdbool.h>
-#include <stddef.h>
+
 #include <stdint.h>
+#include <stdarg.h>
+
+#if __cplusplus
+extern "C"
+{
+#endif
 
 #define SYSCALL_READ                1
 #define SYSCALL_WRITE               2
@@ -36,10 +41,30 @@
 #define SYSCALL_GETGRAPHICSSIZE     31
 #define SYSCALL_SETGRAPHICSBUFFER   32
 
-void InitializeSyscalls();
+static int64_t syscall(uint64_t id, ...)
+{
+    va_list args;
+    va_start(args, id);
 
-bool PerformingSyscall();
+    register uint64_t rdi __asm__("rdi") = id;
+    register uint64_t a1 __asm__ ("rsi") = va_arg(args, uint64_t);
+    register uint64_t a2 __asm__ ("rdx") = va_arg(args, uint64_t);
+    register uint64_t a3 __asm__ ("rcx") = va_arg(args, uint64_t);
+    register uint64_t a4 __asm__ ("r8") = va_arg(args, uint64_t);
+    register uint64_t a5 __asm__ ("r9") = va_arg(args, uint64_t);
 
-void SyscallLock();
+    uint64_t s;
 
-void SyscallUnlock();
+    asm volatile ("int $0x80"
+            : "=a"(s)
+            : "r"(rdi), "r"(a1), "r"(a2), "r"(a3), "r"(a4)
+            : "r11", "memory");
+
+    va_end(args);
+
+    return s;
+}
+
+#if __cplusplus
+}
+#endif

@@ -17,7 +17,7 @@ using namespace FileSystem;
 
 static uint8_t stack[0x100000];
 
-const char *startAppPath = "/usr/bin/bash";
+const char *startAppPath = "/bin/graphicstest";
 
 static stivale2_header_tag_framebuffer framebufferTag = {
     .tag = {

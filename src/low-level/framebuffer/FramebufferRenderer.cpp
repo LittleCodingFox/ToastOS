@@ -13,7 +13,7 @@ void RefreshFramebuffer(InterruptStack *stack)
 }
 
 FramebufferRenderer::FramebufferRenderer(Framebuffer* targetFramebuffer, psf2_font_t* font) : lockedCount(0),
-    doubleBuffer(NULL), initialized(false), doubleBufferSize(0), backgroundColor(0)
+    doubleBuffer(NULL), initialized(false), doubleBufferSize(0), backgroundColor(0), graphicsType(GRAPHICS_TYPE_CONSOLE)
 {
     this->targetFramebuffer = targetFramebuffer;
     this->font = font;
@@ -35,6 +35,37 @@ void FramebufferRenderer::Initialize()
     doubleBuffer = (uint32_t *)malloc(doubleBufferSize);
 
     Clear(0);
+}
+
+void FramebufferRenderer::SetGraphicsBuffer(const void *buffer)
+{
+    if(graphicsType != GRAPHICS_TYPE_UI)
+    {
+        return;
+    }
+
+    memcpy(doubleBuffer, buffer, doubleBufferSize);
+}
+
+void FramebufferRenderer::SetGraphicsType(int graphicsType)
+{
+    switch(graphicsType)
+    {
+        case GRAPHICS_TYPE_CONSOLE:
+
+        this->graphicsType = GRAPHICS_TYPE_CONSOLE;
+
+        //TODO
+        break;
+
+        case GRAPHICS_TYPE_UI:
+
+        this->graphicsType = GRAPHICS_TYPE_UI;
+
+        Clear(0);
+
+        break;        
+    }
 }
 
 void FramebufferRenderer::Lock()
@@ -74,7 +105,7 @@ void FramebufferRenderer::Clear(uint32_t colour)
 
 void FramebufferRenderer::PutChar(char chr, unsigned int xOff, unsigned int yOff, uint32_t color)
 {
-    if(font == NULL)
+    if(font == NULL || graphicsType != GRAPHICS_TYPE_CONSOLE)
     {
         return;
     }

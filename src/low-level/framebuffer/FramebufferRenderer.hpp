@@ -42,6 +42,12 @@ union Color32
     }
 };
 
+enum 
+{
+    GRAPHICS_TYPE_CONSOLE,
+    GRAPHICS_TYPE_UI,
+};
+
 class FramebufferRenderer
 {
 private:
@@ -53,6 +59,7 @@ private:
     bool initialized;
     size_t doubleBufferSize;
     size_t framebufferPixelCount;
+    uint32_t graphicsType;
 
 public:
 
@@ -66,6 +73,8 @@ public:
     void SwapBuffers();
     void Lock();
     void Unlock();
+    void SetGraphicsType(int graphicsType);
+    void SetGraphicsBuffer(const void *buffer);
 
     inline int Width() const
     {
@@ -82,6 +91,16 @@ public:
         if(targetFramebuffer != NULL)
         {
             return targetFramebuffer->height;
+        }
+
+        return 0;
+    }
+
+    inline int BitsPerPixel() const
+    {
+        if(targetFramebuffer != NULL)
+        {
+            return sizeof(uint32_t);
         }
 
         return 0;

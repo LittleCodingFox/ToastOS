@@ -117,7 +117,7 @@ iso-linux:
 	sh makeisolinux.sh
 
 userland: libc
-	@for path in $(shell find userland/* -type d -maxdepth 0); do \
+	@for path in $(shell find userland/* -maxdepth 0 -type d); do \
 		$(MAKE) -C $$path; \
 	done
 
@@ -150,6 +150,7 @@ clean-bootstrap:
 	rm -Rf ports
 
 rebuild-mlibc:
+	cd toolchain && xbstrap build mlibc-headers --reconfigure
 	cd toolchain && xbstrap build mlibc --reconfigure
 
 clean:

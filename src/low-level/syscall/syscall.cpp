@@ -54,6 +54,9 @@ int64_t SyscallLog(InterruptStack *stack);
 int64_t SyscallFork(InterruptStack *stack);
 int64_t SyscallWaitPID(InterruptStack *stack);
 int64_t SyscallGetPPID(InterruptStack *stack);
+int64_t SyscallSetGraphicsType(InterruptStack *stack);
+int64_t SyscallSetGraphicsBuffer(InterruptStack *stack);
+int64_t SyscallGetGraphicsSize(InterruptStack *stack);
 
 SyscallPointer syscallHandlers[] =
 {
@@ -85,6 +88,9 @@ SyscallPointer syscallHandlers[] =
     [SYSCALL_FORK] = (SyscallPointer)SyscallFork,
     [SYSCALL_WAITPID] = (SyscallPointer)SyscallWaitPID,
     [SYSCALL_GETPPID] = (SyscallPointer)SyscallGetPPID,
+    [SYSCALL_SETGRAPHICSTYPE] = (SyscallPointer)SyscallSetGraphicsType,
+    [SYSCALL_GETGRAPHICSSIZE] = (SyscallPointer)SyscallGetGraphicsSize,
+    [SYSCALL_SETGRAPHICSBUFFER] = (SyscallPointer)SyscallSetGraphicsBuffer,
 };
 
 void SyscallHandler(InterruptStack *stack)
