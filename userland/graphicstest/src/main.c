@@ -24,7 +24,7 @@ int main(int argc, char **argv)
 
     printf("Making current\n");
 
-    OSMesaContext GLContext = OSMesaCreateContext(OSMESA_RGBA, NULL);
+    OSMesaContext GLContext = OSMesaCreateContext(OSMESA_BGRA, NULL);
 
     if (!OSMesaMakeCurrent(GLContext, buffer, GL_UNSIGNED_BYTE, width, height))
     {
@@ -39,16 +39,40 @@ int main(int argc, char **argv)
 
     glViewport(0, 0, width, height);
 
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, width, height, 0, -1, 1);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
     printf("Entering main loop!\n");
 
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClearColor(0.0f, 1.0f, 1.0f, 0.0f);
 
     int frames = 0;
     time_t t = time(NULL);
 
+    float angle = 0.0f;
+
     for(;;)
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glColor3f(1, 1, 1);
+
+        glPushMatrix();
+        glTranslatef(width / 2, height / 2, 0);
+        glRotatef(angle, 0, 0, 1);
+
+        glBegin(GL_QUADS);
+        glVertex2f(-50, -50);
+        glVertex2f(-50, 50);
+        glVertex2f(50, 50);
+        glVertex2f(50, -50);
+        glEnd();
+
+        glPopMatrix();
 
         glFinish();
 
@@ -57,6 +81,8 @@ int main(int argc, char **argv)
         time_t current = time(NULL);
 
         auto diff = difftime(current, t);
+
+        angle += diff;
 
         if(diff >= 1.0)
         {

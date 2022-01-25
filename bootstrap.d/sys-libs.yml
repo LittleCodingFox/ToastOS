@@ -116,3 +116,39 @@ packages:
       - args: ['/usr/sbin/zic', '-d', '@THIS_COLLECT_DIR@/usr/share/zoneinfo', '-p', 'America/New_York']
       # Default to UTC for localtime, this should be fixed, but that is pending xbstrap support.
       - args: ['ln', '-sf', '/usr/share/zoneinfo/UTC', '@THIS_COLLECT_DIR@/etc/localtime']
+
+  - name: mesa
+    source:
+      subdir: ports
+      git: 'https://gitlab.freedesktop.org/mesa/mesa.git'
+      branch: '21.3'
+      version: '21.3'
+      tools_required:
+        - host-pkg-config
+    tools_required:
+      - host-gcc
+      - host-pkg-config
+    pkgs_required:
+      - mlibc
+    configure:
+      - args:
+        - 'meson'
+        - '--cross-file'
+        - '@SOURCE_ROOT@/cross_file.txt'
+        - '-Dprefix=/usr'
+        - '@THIS_SOURCE_DIR@'
+        - '-Dplatforms=[]'
+        - '-Dosmesa=true'
+        - '-Dgallium-drivers=swrast'
+        - '-Ddri-drivers=[]'
+        - '-Dvulkan-drivers=[]'
+        - '-Degl-native-platform=surfaceless'
+        - '-Dopengl=true'
+        - '-Dglx=disabled'
+        - '-Dllvm=disabled'
+        - '-Dbuildtype=release'
+    build:
+      - args: ['ninja' ]
+      - args: ['ninja', 'install' ]
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'

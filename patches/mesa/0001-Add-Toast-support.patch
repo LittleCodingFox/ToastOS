@@ -1,0 +1,163 @@
+From 858a4ef058f6efafc5ca9ce38fb17e8e01ad1717 Mon Sep 17 00:00:00 2001
+From: Nuno Silva <little.coding.fox@gmail.com>
+Date: Tue, 25 Jan 2022 12:45:00 +0000
+Subject: [PATCH] Add Toast support
+
+---
+ include/drm-uapi/drm.h            | 6 ++++++
+ src/compiler/spirv/spirv_to_nir.c | 1 +
+ src/util/debug.c                  | 1 +
+ src/util/detect_os.h              | 9 ++++++++-
+ src/util/os_misc.c                | 4 ++--
+ src/util/os_time.c                | 4 ++--
+ src/util/u_printf.h               | 1 +
+ src/util/u_thread.h               | 4 ++--
+ 8 files changed, 23 insertions(+), 7 deletions(-)
+
+diff --git a/include/drm-uapi/drm.h b/include/drm-uapi/drm.h
+index 5e54c3aa4c3..16e3879645b 100644
+--- a/include/drm-uapi/drm.h
++++ b/include/drm-uapi/drm.h
+@@ -41,6 +41,12 @@
+ #include <asm/ioctl.h>
+ typedef unsigned int drm_handle_t;
+ 
++#elif defined(__toast__)
++
++#include <sys/ioctl.h>
++#include <linux/types.h>
++typedef unsigned int drm_handle_t;
++
+ #else /* One of the BSDs */
+ 
+ #include <stdint.h>
+diff --git a/src/compiler/spirv/spirv_to_nir.c b/src/compiler/spirv/spirv_to_nir.c
+index 71cdc834e86..3d2670507a8 100644
+--- a/src/compiler/spirv/spirv_to_nir.c
++++ b/src/compiler/spirv/spirv_to_nir.c
+@@ -37,6 +37,7 @@
+ #include "util/u_string.h"
+ 
+ #include <stdio.h>
++#include <strings.h>
+ 
+ #ifndef NDEBUG
+ static enum nir_spirv_debug_level
+diff --git a/src/util/debug.c b/src/util/debug.c
+index 89ae6131074..fbf45f4ba78 100644
+--- a/src/util/debug.c
++++ b/src/util/debug.c
+@@ -23,6 +23,7 @@
+ 
+ #include <errno.h>
+ #include <string.h>
++#include <strings.h>
+ #include "debug.h"
+ #include "u_string.h"
+ 
+diff --git a/src/util/detect_os.h b/src/util/detect_os.h
+index 6506948e035..0c368df4b8c 100644
+--- a/src/util/detect_os.h
++++ b/src/util/detect_os.h
+@@ -20,6 +20,11 @@
+ #define DETECT_OS_UNIX 1
+ #endif
+ 
++#if defined(__toast__)
++#define DETECT_OS_TOAST 1
++#define DETECT_OS_UNIX 1
++#endif
++
+ /*
+  * Android defines __linux__, so DETECT_OS_LINUX and DETECT_OS_UNIX will
+  * also be defined.
+@@ -127,5 +132,7 @@
+ #ifndef DETECT_OS_WINDOWS
+ #define DETECT_OS_WINDOWS 0
+ #endif
+-
++#ifndef DETECT_OS_TOAST
++#define DETECT_OS_TOAST 0
++#endif
+ #endif /* DETECT_OS_H */
+diff --git a/src/util/os_misc.c b/src/util/os_misc.c
+index 31f1c55d6e8..9dbb1ea4e89 100644
+--- a/src/util/os_misc.c
++++ b/src/util/os_misc.c
+@@ -57,7 +57,7 @@
+ #  include <unistd.h>
+ #  include <log/log.h>
+ #  include <cutils/properties.h>
+-#elif DETECT_OS_LINUX || DETECT_OS_CYGWIN || DETECT_OS_SOLARIS || DETECT_OS_HURD
++#elif DETECT_OS_LINUX || DETECT_OS_CYGWIN || DETECT_OS_SOLARIS || DETECT_OS_HURD || DETECT_OS_TOAST
+ #  include <unistd.h>
+ #elif DETECT_OS_OPENBSD || DETECT_OS_FREEBSD
+ #  include <sys/resource.h>
+@@ -223,7 +223,7 @@ os_get_option(const char *name)
+ bool
+ os_get_total_physical_memory(uint64_t *size)
+ {
+-#if DETECT_OS_LINUX || DETECT_OS_CYGWIN || DETECT_OS_SOLARIS || DETECT_OS_HURD
++#if DETECT_OS_LINUX || DETECT_OS_CYGWIN || DETECT_OS_SOLARIS || DETECT_OS_HURD || DETECT_OS_TOAST
+    const long phys_pages = sysconf(_SC_PHYS_PAGES);
+    const long page_size = sysconf(_SC_PAGE_SIZE);
+ 
+diff --git a/src/util/os_time.c b/src/util/os_time.c
+index d2edd88104a..6e08eca1f45 100644
+--- a/src/util/os_time.c
++++ b/src/util/os_time.c
+@@ -53,7 +53,7 @@
+ int64_t
+ os_time_get_nano(void)
+ {
+-#if DETECT_OS_LINUX || DETECT_OS_BSD
++#if DETECT_OS_LINUX || DETECT_OS_BSD || DETECT_OS_TOAST
+ 
+    struct timespec tv;
+    clock_gettime(CLOCK_MONOTONIC, &tv);
+@@ -92,7 +92,7 @@ os_time_get_nano(void)
+ void
+ os_time_sleep(int64_t usecs)
+ {
+-#if DETECT_OS_LINUX
++#if DETECT_OS_LINUX || DETECT_OS_TOAST
+    struct timespec time;
+    time.tv_sec = usecs / 1000000;
+    time.tv_nsec = (usecs % 1000000) * 1000;
+diff --git a/src/util/u_printf.h b/src/util/u_printf.h
+index 44dcce5529f..14f324de10c 100644
+--- a/src/util/u_printf.h
++++ b/src/util/u_printf.h
+@@ -25,6 +25,7 @@
+ #ifdef __cplusplus
+ 
+ #include <string>
++#include <stdarg.h>
+ 
+ /* find next valid printf specifier in a C++ std::string */
+ size_t util_printf_next_spec_pos(const std::string &s, size_t pos);
+diff --git a/src/util/u_thread.h b/src/util/u_thread.h
+index 013e8be6a6e..b6feaa84cbd 100644
+--- a/src/util/u_thread.h
++++ b/src/util/u_thread.h
+@@ -129,7 +129,7 @@ static inline thrd_t u_thread_create(int (*routine)(void *), void *param)
+ static inline void u_thread_setname( const char *name )
+ {
+ #if defined(HAVE_PTHREAD)
+-#if DETECT_OS_LINUX || DETECT_OS_CYGWIN || DETECT_OS_SOLARIS
++#if DETECT_OS_LINUX || DETECT_OS_CYGWIN || DETECT_OS_SOLARIS || DETECT_OS_TOAST
+    int ret = pthread_setname_np(pthread_self(), name);
+    if (ret == ERANGE) {
+       char buf[16];
+@@ -242,7 +242,7 @@ util_set_current_thread_affinity(const uint32_t *mask,
+ static inline int64_t
+ util_thread_get_time_nano(thrd_t thread)
+ {
+-#if defined(HAVE_PTHREAD) && !defined(__APPLE__) && !defined(__HAIKU__)
++#if defined(HAVE_PTHREAD) && !defined(__APPLE__) && !defined(__HAIKU__) && !defined(__toast__)
+    struct timespec ts;
+    clockid_t cid;
+ 
+-- 
+2.25.1
+

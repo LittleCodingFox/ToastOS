@@ -140,6 +140,8 @@ debug-qemu-linux: QEMU_FLAGS += -s -S
 debug-qemu-linux: run-qemu-linux
 
 bootstrap:
+	@rm -Rf toolchain
+	@rm -Rf ports
 	@mkdir -p toolchain
 	@mkdir -p ports
 	cd toolchain && xbstrap init ..

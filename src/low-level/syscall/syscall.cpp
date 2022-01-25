@@ -99,6 +99,8 @@ void SyscallHandler(InterruptStack *stack)
 {
     if(stack->rdi <= sizeof(syscallHandlers) / sizeof(SyscallPointer) && syscallHandlers[stack->rdi] != NULL)
     {
+        interrupts.DisableInterrupts();
+
         ProcessInfo *process = globalProcessManager->CurrentProcess();
 
         bool needsPermissionChange = process->permissionLevel == PROCESS_PERMISSION_USER;
@@ -112,6 +114,8 @@ void SyscallHandler(InterruptStack *stack)
         auto result = handler(stack);
 
         stack->rax = result;
+
+        interrupts.EnableInterrupts();
 
         if(needsPermissionChange)
         {

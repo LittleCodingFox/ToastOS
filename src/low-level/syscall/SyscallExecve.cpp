@@ -42,9 +42,11 @@ int64_t SyscallExecve(InterruptStack *stack)
         return EIO;
     }
 
-    globalProcessManager->LoadImage(buffer, path, argv, envp, process->cwd.data(), PROCESS_PERMISSION_USER);
+    globalProcessManager->LoadImage(buffer, path, argv, envp, process->cwd.data(), PROCESS_PERMISSION_USER, process->ID);
 
     delete [] buffer;
+
+    globalProcessManager->Exit(0, true);
 
     return 0;
 }
