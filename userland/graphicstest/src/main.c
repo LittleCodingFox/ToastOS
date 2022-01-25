@@ -80,9 +80,9 @@ int main(int argc, char **argv)
 
         time_t current = time(NULL);
 
-        auto diff = difftime(current, t);
+        double diff = difftime(current, t);
 
-        angle += diff;
+        angle += 0.5f;
 
         if(diff >= 1.0)
         {
