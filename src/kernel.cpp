@@ -18,9 +18,13 @@ using namespace FileSystem;
 static uint8_t stack[0x100000];
 
 const char *startAppPath = "/bin/graphicstest";
-const char *args[] = {
+
+const char *args[] =
+{
     "-i", "-l"
 };
+
+const char *cwd = "/home/toast/";
 
 static stivale2_header_tag_framebuffer framebufferTag = {
     .tag = {
@@ -83,7 +87,7 @@ extern "C" void _start(stivale2_struct *stivale2Struct)
             const char *envp[] { "HOME=/home/toast", NULL };
 
             globalProcessManager->CreateFromEntryPoint((uint64_t)KernelTask, "KernelTask", "/home/toast/", PROCESS_PERMISSION_KERNEL);
-            globalProcessManager->LoadImage(buffer, "elf", (const char**)argv, envp, "/home/toast/", PROCESS_PERMISSION_USER);
+            globalProcessManager->LoadImage(buffer, "elf", (const char**)argv, envp, cwd, PROCESS_PERMISSION_USER);
         }
         else
         {
