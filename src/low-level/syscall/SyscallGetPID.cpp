@@ -8,7 +8,12 @@ int64_t SyscallGetPID(InterruptStack *stack)
     DEBUG_OUT("Syscall: GetPID", 0);
 #endif
 
-    ProcessInfo *process = globalProcessManager->CurrentProcess();
+    auto process = globalProcessManager->CurrentProcess();
 
-    return process->ID;
+    if(process == NULL || process->isValid == false)
+    {
+        return 0;
+    }
+
+    return process->info->ID;
 }

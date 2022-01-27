@@ -20,7 +20,12 @@ int64_t SyscallExecve(InterruptStack *stack)
 
     auto process = globalProcessManager->CurrentProcess();
 
-    FILE_HANDLE handle = vfs->OpenFile(path, 0, process);
+    if(process == NULL || process->isValid == false)
+    {
+        return ENOENT;
+    }
+
+    FILE_HANDLE handle = vfs->OpenFile(path, 0, process->info);
 
     if(handle == INVALID_FILE_HANDLE)
     {
@@ -42,7 +47,7 @@ int64_t SyscallExecve(InterruptStack *stack)
         return EIO;
     }
 
-    globalProcessManager->LoadImage(buffer, path, argv, envp, process->cwd.data(), PROCESS_PERMISSION_USER, process->ID);
+    globalProcessManager->LoadImage(buffer, path, argv, envp, process->info->cwd.data(), PROCESS_PERMISSION_USER, process->info->ID);
 
     delete [] buffer;
 

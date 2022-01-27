@@ -28,6 +28,7 @@ struct ProcessInfo
 {
     uint64_t ID;
     uint64_t permissionLevel;
+    uint64_t activePermissionLevel;
     string name;
     char **argv;
     char **environment;
@@ -132,21 +133,30 @@ public:
 
 class ProcessManager
 {
+public:
+    struct ProcessPair;
 private:
     IScheduler *scheduler;
-    frg::vector<ProcessInfo *, frg_allocator> processes;
+    vector<ProcessPair> processes;
 public:
+    struct ProcessPair
+    {
+        ProcessInfo *info;
+        ProcessControlBlock *pcb;
+        bool isValid;
+    };
+
     Threading::AtomicLock lock;
 
     ProcessManager(IScheduler *scheduler);
 
-    ProcessInfo *LoadImage(const void *image, const char *name, const char **argv, const char **envp, const char *cwd,
+    ProcessPair *LoadImage(const void *image, const char *name, const char **argv, const char **envp, const char *cwd,
         uint64_t permissionLevel, uint64_t IDOverride = 0);
-    ProcessInfo *CreateFromEntryPoint(uint64_t entryPoint, const char *name, const char *cwd, uint64_t permissionLevel);
+    ProcessPair *CreateFromEntryPoint(uint64_t entryPoint, const char *name, const char *cwd, uint64_t permissionLevel);
 
-    ProcessInfo *CurrentProcess();
-    ProcessInfo *GetProcess(pid_t pid);
-    frg::vector<ProcessInfo *, frg_allocator> GetChildProcesses(pid_t ppid);
+    ProcessPair *CurrentProcess();
+    ProcessPair *GetProcess(pid_t pid);
+    vector<ProcessPair> GetChildProcesses(pid_t ppid);
 
     void SwitchProcess(InterruptStack *stack, bool fromTimer);
 

@@ -19,37 +19,38 @@ int64_t SyscallWaitPID(InterruptStack *stack)
 
     auto current = globalProcessManager->CurrentProcess();
 
+    if(current == NULL || current->isValid == false)
+    {
+        return 0;
+    }
+
     if(pid == (pid_t)-1)
     {
-        auto children = globalProcessManager->GetChildProcesses(current->ID);
+        auto children = globalProcessManager->GetChildProcesses(current->info->ID);
 
         if(children.size() == 0)
         {
             return -EINTR;
         }
 
-        *retpid = children[0]->ID;
-
-        return 0;
+        *retpid = children[0].info->ID;
     }
     else if(pid == 0)
     {
-        auto children = globalProcessManager->GetChildProcesses(current->ID);
+        auto children = globalProcessManager->GetChildProcesses(current->info->ID);
 
         if(children.size() == 0)
         {
             return -EINTR;
         }
 
-        *retpid = children[0]->ID;
-
-        return 0;
+        *retpid = children[0].info->ID;
     }
     else if(pid > 0)
     {
-        ProcessInfo *process = globalProcessManager->GetProcess(pid);
+        auto process = globalProcessManager->GetProcess(pid);
 
-        if(process == NULL)
+        if(process == NULL || process->isValid == false)
         {
             return -EINTR;
         }

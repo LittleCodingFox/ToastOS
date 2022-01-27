@@ -1,5 +1,4 @@
 #include "PartitionManager.hpp"
-#include "filesystems/ext2/ext2.hpp"
 #include "filesystems/VFS.hpp"
 #include "elf/elf.hpp"
 #include "debug.hpp"
@@ -58,11 +57,6 @@ namespace FileSystem
                 printf("\t%s with size: %s, type: %s)\n", partition.GetID().ToString(), partition.SizeString(), partition.GetType().ToString());
 
 /*
-                if(ext2::Ext2FileSystem::IsValidEntry(&partition))
-                {
-                    disk.fileSystem = new ext2::Ext2FileSystem(&partition);
-                }
-
                 if(disk.fileSystem != NULL)
                 {
                     printf("Found volume %s\n", disk.fileSystem->VolumeName());

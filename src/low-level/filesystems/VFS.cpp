@@ -532,11 +532,13 @@ namespace FileSystem
             return original;
         }
 
+        auto currentProcess = globalProcessManager->CurrentProcess();
+
         while(original->fileType == FILE_HANDLE_SYMLINK)
         {
             auto path = original->mountPoint->fileSystem->FileLink(original->fsHandle);
 
-            auto handle = OpenFile(path.data(), flags, globalProcessManager->CurrentProcess());
+            auto handle = OpenFile(path.data(), flags, currentProcess != NULL ? currentProcess->info : NULL);
 
             if(handle == INVALID_FILE_HANDLE)
             {

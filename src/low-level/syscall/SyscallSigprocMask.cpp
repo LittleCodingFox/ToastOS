@@ -14,9 +14,14 @@ int64_t SyscallSigprocMask(InterruptStack *stack)
     DEBUG_OUT("Syscall: sigprocmask how %i set %p retrieve %p", how, set, retrieve);
 #endif
 
-    ProcessInfo *process = globalProcessManager->CurrentProcess();
+    auto process = globalProcessManager->CurrentProcess();
 
-    sigset_t sigprocmask = process->sigprocmask;
+    if(process == NULL || process->isValid == false)
+    {
+        return 0;
+    }
+
+    sigset_t sigprocmask = process->info->sigprocmask;
 
     if(set == NULL)
     {
@@ -37,7 +42,7 @@ int64_t SyscallSigprocMask(InterruptStack *stack)
                 }
             }
 
-            process->sigprocmask = sigprocmask;
+            process->info->sigprocmask = sigprocmask;
 
             break;
 
@@ -51,13 +56,13 @@ int64_t SyscallSigprocMask(InterruptStack *stack)
                 }
             }
 
-            process->sigprocmask = sigprocmask;
+            process->info->sigprocmask = sigprocmask;
 
             break;
 
         case SIG_SETMASK:
 
-            process->sigprocmask = *set;
+            process->info->sigprocmask = *set;
 
             break;
 

@@ -17,8 +17,15 @@ int64_t SyscallStat(InterruptStack *stack)
     DEBUG_OUT("Syscall: stat stat: %p path %s", stat, path);
 #endif
 
-    FILE_HANDLE handle = vfs->OpenFile(path, O_RDONLY, globalProcessManager->CurrentProcess());
+    auto currentProcess = globalProcessManager->CurrentProcess();
 
+    if(currentProcess == NULL || currentProcess->isValid == false)
+    {
+        return -1;
+    }
+
+    FILE_HANDLE handle = vfs->OpenFile(path, O_RDONLY, currentProcess->info);
+    
     if(vfs->FileType(handle) == FILE_HANDLE_UNKNOWN)
     {
         DEBUG_OUT("Stat is unknown", 0);

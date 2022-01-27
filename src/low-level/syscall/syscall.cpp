@@ -101,24 +101,16 @@ void SyscallHandler(InterruptStack *stack)
 {
     if(stack->rdi <= sizeof(syscallHandlers) / sizeof(SyscallPointer) && syscallHandlers[stack->rdi] != NULL)
     {
-        ProcessInfo *process = globalProcessManager->CurrentProcess();
+        auto current = globalProcessManager->CurrentProcess();
 
-        bool needsPermissionChange = process->permissionLevel == PROCESS_PERMISSION_USER;
-
-        if(needsPermissionChange)
-        {
-            process->permissionLevel = PROCESS_PERMISSION_KERNEL;
-        }
+        current->info->activePermissionLevel = PROCESS_PERMISSION_KERNEL;
 
         auto handler = syscallHandlers[stack->rdi];
         auto result = handler(stack);
 
         stack->rax = result;
 
-        if(needsPermissionChange)
-        {
-            process->permissionLevel = PROCESS_PERMISSION_USER;
-        }
+        current->info->activePermissionLevel = PROCESS_PERMISSION_USER;
     }
 }
 

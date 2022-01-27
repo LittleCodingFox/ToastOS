@@ -16,6 +16,35 @@
 
 using namespace FileSystem;
 
+#define UPDATE_PROCESS_ACTIVE_PERMISSIONS(pcb) \
+    switch(pcb->process->activePermissionLevel)\
+    {\
+        case PROCESS_PERMISSION_KERNEL:\
+            pcb->cs = (GDTKernelBaseSelector + 0x00);\
+            pcb->ss = (GDTKernelBaseSelector + 0x08);\
+            \
+            break;\
+            \
+        case PROCESS_PERMISSION_USER:\
+            pcb->cs = (GDTUserBaseSelector + 0x10) | 3;\
+            pcb->ss = (GDTUserBaseSelector + 0x08) | 3;\
+            \
+            break;\
+    }
+
+#define HANDLEFORK(task) \
+    task->state = PROCESS_STATE_RUNNING; \
+    \
+    DEBUG_OUT("Initializing fork %p for process %llu: rsp: %p; rip: %p; cr3: %p", task, task->process->ID, task->rsp, task->rip, task->cr3); \
+    \
+    LoadFSBase(task->fsBase); \
+    \
+    UPDATE_PROCESS_ACTIVE_PERMISSIONS(task); \
+    \
+    lock.Unlock(); \
+    \
+    SwitchTasks(task);
+
 #define LD_BASE 0x40000000
 #define push(stack, value) *(--stack) = (value)
 
@@ -55,28 +84,6 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
         //Called from timer, so must finish up PIC
         outport8(PIC1, PIC_EOI);
     }
-
-    #define HANDLEFORK(task) \
-        task->state = PROCESS_STATE_RUNNING; \
-        \
-        DEBUG_OUT("Initializing fork %p for process %llu: rsp: %p; rip: %p; cr3: %p", task, task->process->ID, task->rsp, task->rip, task->cr3);\
-        \
-        LoadFSBase(task->fsBase);\
-        \
-        if(task->process->permissionLevel == PROCESS_PERMISSION_KERNEL)\
-        {\
-            task->cs = (GDTKernelBaseSelector + 0x00);\
-            task->ss = (GDTKernelBaseSelector + 0x08);\
-        }\
-        else\
-        {\
-            task->cs = (GDTUserBaseSelector + 0x10) | 3;\
-            task->ss = (GDTUserBaseSelector + 0x08) | 3;\
-        }\
-        \
-        lock.Unlock();\
-        \
-        SwitchTasks(task);
 
     lock.Lock();
 
@@ -127,16 +134,7 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
         current->rflags = stack->cpuFlags;
         current->fsBase = current->process->fsBase;
 
-        if(current->process->permissionLevel == PROCESS_PERMISSION_KERNEL)
-        {
-            current->cs = (GDTKernelBaseSelector + 0x00);
-            current->ss = (GDTKernelBaseSelector + 0x08);
-        }
-        else
-        {
-            current->cs = (GDTUserBaseSelector + 0x10) | 3;
-            current->ss = (GDTUserBaseSelector + 0x08) | 3;
-        }
+        UPDATE_PROCESS_ACTIVE_PERMISSIONS(current);
     }
 
     //Forked processes are added as the current process, so must init them properly
@@ -161,16 +159,7 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
 
         LoadFSBase(next->fsBase);
 
-        if(next->process->permissionLevel == PROCESS_PERMISSION_KERNEL)
-        {
-            next->cs = (GDTKernelBaseSelector + 0x00);
-            next->ss = (GDTKernelBaseSelector + 0x08);
-        }
-        else
-        {
-            next->cs = (GDTUserBaseSelector + 0x10) | 3;
-            next->ss = (GDTUserBaseSelector + 0x08) | 3;
-        }
+        UPDATE_PROCESS_ACTIVE_PERMISSIONS(next);
 
         scheduler->Advance();
 
@@ -190,6 +179,8 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
 
     LoadFSBase(next->fsBase);
 
+    UPDATE_PROCESS_ACTIVE_PERMISSIONS(next);
+
     scheduler->Advance();
 
     lock.Unlock();
@@ -197,23 +188,25 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
     SwitchTasks(next);
 }
 
-ProcessInfo *ProcessManager::CurrentProcess()
+ProcessManager::ProcessPair *ProcessManager::CurrentProcess()
 {
     lock.Lock();
 
-    ProcessInfo *current = NULL;
+    pid_t pid = 0;
 
     if(scheduler != NULL && scheduler->CurrentProcess() != NULL)
     {
-        current = scheduler->CurrentProcess()->process;
+        pid = scheduler->CurrentProcess()->process->ID;
     }
 
     lock.Unlock();
 
+    auto current = GetProcess(pid);
+
     return current;
 }
 
-ProcessInfo *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const char *name, const char *cwd, uint64_t permissionLevel)
+ProcessManager::ProcessPair *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const char *name, const char *cwd, uint64_t permissionLevel)
 {
     lock.Lock();
 
@@ -268,7 +261,7 @@ ProcessInfo *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const cha
 
     memset(newProcess, 0, sizeof(ProcessInfo));
     newProcess->ID = ++processIDCounter;
-    newProcess->permissionLevel = permissionLevel;
+    newProcess->permissionLevel = newProcess->activePermissionLevel = permissionLevel;
     newProcess->cwd = cwd;
     newProcess->state = PROCESS_STATE_NEEDS_INIT;
 
@@ -293,18 +286,23 @@ ProcessInfo *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const cha
 
     newProcess->cr3 = (uint64_t)pageTableFrame;
 
-    scheduler->AddProcess(newProcess);
+    auto pcb = scheduler->AddProcess(newProcess);
 
-    processes.push_back(newProcess);
+    ProcessPair pair;
+    pair.isValid = true;
+    pair.info = newProcess;
+    pair.pcb = pcb;
+
+    auto outPair = &processes.push_back(pair);
 
     DEBUG_OUT("Initializing entry point process at RIP %p; RSP: %p; CR3: %p", newProcess->rip, newProcess->rsp, newProcess->cr3);
 
     lock.Unlock();
 
-    return newProcess;
+    return outPair;
 }
 
-ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, const char **argv, const char **envp, const char *cwd,
+ProcessManager::ProcessPair *ProcessManager::LoadImage(const void *image, const char *name, const char **argv, const char **envp, const char *cwd,
     uint64_t permissionLevel, uint64_t IDOverride)
 {
     lock.Lock();
@@ -368,7 +366,7 @@ ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, cons
     memset(newProcess, 0, sizeof(ProcessInfo));
 
     newProcess->ID = IDOverride != 0 ? IDOverride : ++processIDCounter;
-    newProcess->permissionLevel = permissionLevel;
+    newProcess->permissionLevel = newProcess->activePermissionLevel = permissionLevel;
     newProcess->cwd = cwd;
     newProcess->state = PROCESS_STATE_NEEDS_INIT;
 
@@ -547,13 +545,19 @@ ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, cons
 
     DEBUG_OUT("Initializing process at RIP %p auxval entry: %p RSP: %p; CR3: %p", rip, auxval.entry, newProcess->rsp, newProcess->cr3);
 
-    scheduler->AddProcess(newProcess);
+    auto pcb = scheduler->AddProcess(newProcess);
 
-    processes.push_back(newProcess);
+    ProcessPair pair;
+
+    pair.isValid = true;
+    pair.pcb = pcb;
+    pair.info = newProcess;
+
+    auto outPair = &processes.push_back(pair);
 
     lock.Unlock();
 
-    return newProcess;
+    return outPair;
 }
 
 void ProcessManager::LoadFSBase(uint64_t base)
@@ -565,7 +569,14 @@ void ProcessManager::Exit(int exitCode, bool forceRemove)
 {
     lock.Lock();
 
-    if(scheduler != NULL && scheduler->CurrentProcess() != NULL)
+    if(scheduler == NULL)
+    {
+        lock.Unlock();
+
+        return;
+    }
+
+    if(scheduler->CurrentProcess() != NULL)
     {
         auto pcb = scheduler->CurrentProcess();
 
@@ -589,11 +600,11 @@ void ProcessManager::Exit(int exitCode, bool forceRemove)
         scheduler->DumpProcessList();
     }
 
-    lock.Unlock();
-
     auto pcb = scheduler->CurrentProcess();
 
     DEBUG_OUT("Swapping to process %llu", pcb->process->ID);
+
+    lock.Unlock();
 
     SwitchTasks(pcb);
 }
@@ -605,18 +616,23 @@ void ProcessManager::Sigaction(int signum, sigaction *act, sigaction *oldact)
         return;
     }
 
-    ProcessInfo *currentProcess = CurrentProcess();
+    ProcessPair *currentProcess = CurrentProcess();
+
+    if(currentProcess == NULL || currentProcess->isValid == false)
+    {
+        return;
+    }
 
     lock.Lock();
 
     if(act)
     {
-        currentProcess->sigHandlers[signum] = *act;
+        currentProcess->info->sigHandlers[signum] = *act;
     }
 
     if(oldact)
     {
-        *oldact = currentProcess->sigHandlers[signum];
+        *oldact = currentProcess->info->sigHandlers[signum];
     }
 
     lock.Unlock();
@@ -624,58 +640,58 @@ void ProcessManager::Sigaction(int signum, sigaction *act, sigaction *oldact)
 
 void ProcessManager::SetUID(pid_t pid, uid_t uid)
 {
-    ProcessInfo *process = GetProcess(pid);
+    ProcessPair *process = GetProcess(pid);
 
     Threading::ScopedLock Lock(lock);
 
-    if(process == NULL)
+    if(process == NULL || process->isValid == false)
     {
         return;
     }
 
-    process->uid = uid;
+    process->info->uid = uid;
 }
 
 uid_t ProcessManager::GetUID(pid_t pid)
 {
-    ProcessInfo *process = GetProcess(pid);
+    ProcessPair *process = GetProcess(pid);
 
     Threading::ScopedLock Lock(lock);
 
-    if(process == NULL)
+    if(process == NULL || process->isValid == false)
     {
         return 0;
     }
 
-    return process->uid;
+    return process->info->uid;
 }
 
 void ProcessManager::SetGID(pid_t pid, gid_t gid)
 {
-    ProcessInfo *process = GetProcess(pid);
+    ProcessPair *process = GetProcess(pid);
 
     Threading::ScopedLock Lock(lock);
 
-    if(process == NULL)
+    if(process == NULL || process->isValid == false)
     {
         return;
     }
 
-    process->gid = gid;
+    process->info->gid = gid;
 }
 
 uid_t ProcessManager::GetGID(pid_t pid)
 {
-    ProcessInfo *process = GetProcess(pid);
+    ProcessPair *process = GetProcess(pid);
 
     Threading::ScopedLock Lock(lock);
 
-    if(process == NULL)
+    if(process == NULL || process->isValid == false)
     {
         return 0;
     }
 
-    return process->gid;
+    return process->info->gid;
 }
 
 int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
@@ -800,7 +816,12 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
 
     currentPageManager.Duplicate(higherPageTableFrame);
 
-    processes.push_back(newProcess);
+    auto pair = ProcessPair();
+    pair.info = newProcess;
+    pair.pcb = pcb;
+    pair.isValid = true;
+
+    processes.push_back(pair);
 
     lock.Unlock();
 
@@ -830,32 +851,42 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
     return 0;
 }
 
-ProcessInfo *ProcessManager::GetProcess(pid_t pid)
+ProcessManager::ProcessPair *ProcessManager::GetProcess(pid_t pid)
 {
     Threading::ScopedLock Lock(lock);
 
-    for(auto &process : processes)
+    for(auto &pair : processes)
     {
-        if(process->ID == pid)
+        if(!pair.isValid)
+         {
+             continue;
+         }
+
+        if(pair.info->ID == pid)
         {
-            return process;
+            return &pair;
         }
     }
 
     return NULL;
 }
 
-frg::vector<ProcessInfo *, frg_allocator> ProcessManager::GetChildProcesses(pid_t ppid)
+vector<ProcessManager::ProcessPair> ProcessManager::GetChildProcesses(pid_t ppid)
 {
     Threading::ScopedLock Lock(lock);
 
-    frg::vector<ProcessInfo *, frg_allocator> outValue;
+    vector<ProcessPair> outValue;
 
-    for(auto &process : processes)
+    for(auto &pair : processes)
     {
-        if(process->ppid == ppid)
+        if(!pair.isValid)
         {
-            outValue.push_back(process);
+            continue;
+        }
+
+        if(pair.info->ppid == ppid)
+        {
+            outValue.push_back(pair);
         }
     }
 
@@ -869,16 +900,16 @@ void ProcessManager::Kill(pid_t pid, int signal)
         return;
     }
 
-    ProcessInfo *process = GetProcess(pid);
+    ProcessPair *process = GetProcess(pid);
 
     Threading::ScopedLock Lock(lock);
 
-    if(process == NULL || process->state != PROCESS_STATE_DEAD)
+    if(process == NULL || process->info->state != PROCESS_STATE_DEAD)
     {
         return;
     }
 
-    if(process->sigHandlers[signal].sa_flags & SA_SIGINFO)
+    if(process->info->sigHandlers[signal].sa_flags & SA_SIGINFO)
     {
         //TODO: Support sa_sigaction
         return;
@@ -889,7 +920,7 @@ void ProcessManager::Kill(pid_t pid, int signal)
         return;
     }
 
-    void *handler = (void *)process->sigHandlers[signal].sa_handler;
+    void *handler = (void *)process->info->sigHandlers[signal].sa_handler;
 
     if(handler == SIG_IGN)
     {

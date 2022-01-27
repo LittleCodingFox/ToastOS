@@ -38,8 +38,8 @@ namespace Elf
             address, pageCount,
             (address / 0x1000) * 0x1000, ((address / 0x1000) + pageCount) * 0x1000,
             memSize, fileSize,
-            programHeader->offset);
-            
+            offset);
+
         auto cr3 = Registers::ReadCR3();
 
         PageTableManager localPageTable;
