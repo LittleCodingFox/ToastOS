@@ -32,7 +32,7 @@ void FramebufferRenderer::Initialize()
 
     doubleBufferSize = sizeof(uint32_t) * targetFramebuffer->width * targetFramebuffer->height;
 
-    doubleBuffer = (uint32_t *)malloc(doubleBufferSize);
+    doubleBuffer = (uint32_t *)targetFramebuffer->baseAddress;
 
     Clear(0);
 }
@@ -89,7 +89,7 @@ void FramebufferRenderer::SwapBuffers()
 {
     if(doubleBuffer != NULL && lockedCount == 0)
     {
-        memcpy(targetFramebuffer->baseAddress, doubleBuffer, doubleBufferSize);
+        //memcpy(targetFramebuffer->baseAddress, doubleBuffer, doubleBufferSize);
     }
 }
 

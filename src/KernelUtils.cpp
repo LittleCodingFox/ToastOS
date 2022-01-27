@@ -106,6 +106,14 @@ void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_fr
     Registers::WriteMSR(Registers::IA32_EFER, efer | (1 << 11));
     */
 
+    // Program the PAT. Each byte configures a single entry.
+    // 00: Uncacheable
+    // 01: Write Combining
+    // 04: Write Through
+    // 06: Write Back
+    //Registers::WriteMSR(0x277, 0x00'00'01'00'00'00'04'06);
+    Registers::WriteMSR(0x0277, 0x0000000005010406);
+
     DEBUG_OUT("%s", "Identity mapping the whole memory");
 
     for(uint64_t index = 0; index < GetMemorySize(memmap); index += 0x1000)
@@ -149,7 +157,8 @@ void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_fr
 
     for (uint64_t t = fbBase; t < fbBase + fbSize; t += 0x1000)
     {
-        pageTableManager.MapMemory((void *)t, (void *)TranslateToPhysicalMemoryAddress((uint64_t)t), PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+        pageTableManager.MapMemory((void *)t, (void *)TranslateToPhysicalMemoryAddress((uint64_t)t),
+            PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_WRITE_COMBINE);
     }
 
     framebuffer->framebuffer_addr = fbBase;

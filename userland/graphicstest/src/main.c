@@ -4,8 +4,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+
+#define ENABLE_MESA 1
+
+#if ENABLE_MESA
 #include <GLES/gl.h>
 #include <GL/osmesa.h>
+#endif
 
 uint32_t GetTime()
 {
@@ -38,6 +43,7 @@ int main(int argc, char **argv)
 
     printf("Making current\n");
 
+#if ENABLE_MESA
     OSMesaContext GLContext = OSMesaCreateContext(OSMESA_BGRA, NULL);
 
     if (!OSMesaMakeCurrent(GLContext, buffer, GL_UNSIGNED_BYTE, width, height))
@@ -63,6 +69,7 @@ int main(int argc, char **argv)
     printf("Entering main loop!\n");
 
     glClearColor(0.0f, 1.0f, 1.0f, 0.0f);
+#endif
 
     int frames = 0;
     uint32_t start = GetTime();
@@ -72,6 +79,7 @@ int main(int argc, char **argv)
 
     for(;;)
     {
+#if ENABLE_MESA
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glColor3f(1, 1, 1);
@@ -90,12 +98,11 @@ int main(int argc, char **argv)
         glPopMatrix();
 
         glFinish();
+#endif
 
         frames++;
 
         uint32_t current = GetTime();
-
-        uint32_t difference = current - t;
 
         float delta = (current - t) / 1000.0f;
 

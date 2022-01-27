@@ -42,6 +42,10 @@ enum PagingFlag
     PAGING_FLAG_PRESENT = (1ull << 0),
     PAGING_FLAG_WRITABLE = (1ull << 1),
     PAGING_FLAG_USER_ACCESSIBLE = (1ull << 2),
+    PAGING_FLAG_PAT0 = (1ull << 3),
+    PAGING_FLAG_PAT1 = (1ull << 4),
+    PAGING_FLAG_PAT2 = (1ull << 7),
+    PAGING_FLAG_WRITE_COMBINE = PAGING_FLAG_PAT0 | PAGING_FLAG_PAT1,
     PAGING_FLAG_LARGER_PAGES = (1ull << 7),
     PAGING_FLAG_NO_EXECUTE = (1ull << 63),
 };

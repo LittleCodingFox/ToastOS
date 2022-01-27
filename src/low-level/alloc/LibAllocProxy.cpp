@@ -5,17 +5,17 @@
 #include "paging/PageFrameAllocator.hpp"
 #include "paging/PageTableManager.hpp"
 
-int liballoc_lock()
+extern "C" int liballoc_lock()
 {
     return 0;
 }
 
-int liballoc_unlock()
+extern "C" int liballoc_unlock()
 {
     return 0;
 }
 
-void* liballoc_alloc(size_t pages)
+extern "C" void* liballoc_alloc(size_t pages)
 {
     void *ptr = globalAllocator.RequestPages(pages);
 
@@ -31,7 +31,7 @@ void* liballoc_alloc(size_t pages)
     return realPtr;
 }
 
-int liballoc_free(void* ptr, size_t pages)
+extern "C" int liballoc_free(void* ptr, size_t pages)
 {
     void *realPtr = (void *)TranslateToPhysicalMemoryAddress((uint64_t)ptr);
     

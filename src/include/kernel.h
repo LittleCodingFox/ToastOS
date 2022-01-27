@@ -21,4 +21,6 @@ template<typename element>
 using box = frg::manual_box<element>;
 #endif
 
+#define ALIGNED(address, align) (!((uint64_t)address & (align - 1)))
+
 #endif
