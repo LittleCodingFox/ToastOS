@@ -178,6 +178,8 @@ void interruptIntHandler(InterruptStack stack)
         if(argHandler != NULL && argHandler->handler != NULL)
         {
             argHandler->handler(&stack, argHandler->data);
+
+            return;
         }
     }
 

@@ -44,5 +44,6 @@ struct __attribute__((packed)) ACPIDeviceConfig
 
 namespace ACPI
 {
-    void *findTable(volatile SDTHeader *header, const char *signature);
+    void DumpTables(volatile SDTHeader *header);
+    void *FindTable(volatile SDTHeader *header, const char *signature);
 }

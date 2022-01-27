@@ -190,11 +190,17 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
     memcpy(signature, rsdpStruct->signature, 8);
     memcpy(OEMID, rsdpStruct->OEMID, 6);
 
-    printf("[ACPI] RSDP Signature: %s\n[ACPI] OEMID: %s\n",
+    printf("[ACPI] RSDP Signature: %s\n[ACPI] OEMID: %s\n[ACPI] Revision: %u\n",
         signature,
-        OEMID);
+        OEMID,
+        rsdpStruct->revision);
 
-    volatile SDTHeader *xsdt = (volatile SDTHeader *)TranslateToHighHalfMemoryAddress(rsdpStruct->XSDTAddress);
+    if(rsdpStruct->revision == 0)
+    {
+        printf("[ACPI] Unsupported ACPI revision\n");
+
+        return;
+    }
 
     if(rsdpStruct->XSDTAddress == 0)
     {
@@ -203,19 +209,21 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
         return;
     }
 
-    volatile MCFGHeader *mcfg = (volatile MCFGHeader *)ACPI::findTable(xsdt, "MCFG");
+    volatile SDTHeader *xsdt = (volatile SDTHeader *)TranslateToHighHalfMemoryAddress(rsdpStruct->XSDTAddress);
+
+    ACPI::DumpTables(xsdt);
+
+    volatile MCFGHeader *mcfg = (volatile MCFGHeader *)ACPI::FindTable(xsdt, "MCFG");
 
     if(mcfg == NULL)
     {
-        printf("[ACPI] Failed to get MCFG!");
+        printf("[ACPI] Failed to get MCFG!\n");
 
         return;
     }
 
     PCI::EnumeratePCI(mcfg);
 
-    FileSystem::vfs.initialize();
-    FileSystem::globalPartitionManager.initialize();
     FileSystem::globalPartitionManager->Initialize();
 }
 
@@ -325,6 +333,9 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
     timer->Initialize();
 
     timer->RegisterHandler(RefreshFramebuffer);
+
+    FileSystem::vfs.initialize();
+    FileSystem::globalPartitionManager.initialize();
 
     InitializeACPI(rsdp);
 
