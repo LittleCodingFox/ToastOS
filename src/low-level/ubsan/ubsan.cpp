@@ -21,7 +21,7 @@ void ubsanPanic(const char *error)
 
 extern "C" void __ubsan_handle_type_mismatch_v1(ubsan_mismatch_data_t *data, uintptr_t ptr)
 {
-    if(ptr == NULL)
+    if(ptr == 0)
     {
         ubsanPanicAt(&data->location, "NULL pointer access");
     }

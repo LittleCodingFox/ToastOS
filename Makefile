@@ -46,7 +46,8 @@ LIBCASMOBJECTS	= $(LIBCASMSRC:$(LIBCSRCDIR)/%.asm=$(LIBCOBJDIR)/%_asm.o)
 INCLUDEDIRS		= -Isrc -Iklibc -Isrc/include -Isrc/low-level -Iext-libs -Iext-libs/liballoc/ -Ifrigg/include -Icxxshim/stage2/include
 ASMFLAGS		= -g -F dwarf
 CFLAGS			= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -nostdlib -mno-red-zone -Wall -fpic -O3 -fno-omit-frame-pointer -g \
-	-fno-stack-protector -fno-rtti -fno-exceptions -mno-3dnow -mno-mmx -mno-sse -mno-sse2 -mno-avx
+	-fno-stack-protector -fno-rtti -fno-exceptions -mno-3dnow -mno-mmx -mno-sse -mno-sse2 -mno-avx \
+	-Werror -Wno-ambiguous-reversed-operator -Wno-c99-designator -Wno-deprecated-volatile -Wno-initializer-overrides
 CFLAGS_INTERNAL	= 
 LDFLAGS			= -T $(SRCDIR)/link.ld -static -Bsymbolic -nostdlib -Map=linker.map -zmax-page-size=0x1000
 QEMU_FLAGS		=
@@ -140,14 +141,14 @@ debug-qemu-linux: QEMU_FLAGS += -s -S
 debug-qemu-linux: run-qemu-linux
 
 bootstrap:
-	@rm -Rf toolchain
-	@rm -Rf ports
 	@mkdir -p toolchain
 	@mkdir -p ports
 	cd toolchain && xbstrap init ..
 	cd toolchain && xbstrap install-tool --all
 	cd toolchain && xbstrap install mlibc
 	cd toolchain && xbstrap install -u --all
+
+rebuild-bootstrap: clean-bootstrap bootstrap
 
 clean-bootstrap:
 	rm -Rf toolchain

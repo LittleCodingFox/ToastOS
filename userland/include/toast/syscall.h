@@ -40,6 +40,8 @@ extern "C"
 #define SYSCALL_SETGRAPHICSTYPE     30
 #define SYSCALL_GETGRAPHICSSIZE     31
 #define SYSCALL_SETGRAPHICSBUFFER   32
+#define SYSCALL_EXECVE              33
+#define SYSCALL_POLLINPUT           34
 
 static int64_t syscall(uint64_t id, ...)
 {

@@ -21,6 +21,7 @@
 #include "sse/sse.hpp"
 #include "cmos/cmos.hpp"
 #include "keyboard/Keyboard.hpp"
+#include "input/InputSystem.hpp"
 
 PageTableManager pageTableManager;
 
@@ -317,6 +318,8 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     console = vtconsole(consoleWidth, consoleHeight, PaintHandler, CursorHandler);
 
+    globalInputSystem.initialize();
+
     timer.initialize();
 
     timer->Initialize();
@@ -351,6 +354,8 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
     DEBUG_OUT("%s", "Finished initializing the kernel");
 
     uint64_t MBSize = 1024 * 1024;
+
+    (void)MBSize;
 
     DEBUG_OUT("Memory Stats: Free: %lluMB; Used: %lluMB; Reserved: %lluMB", globalAllocator.GetFreeRAM() / MBSize,
         globalAllocator.GetUsedRAM() / MBSize, globalAllocator.GetReservedRAM() / MBSize);

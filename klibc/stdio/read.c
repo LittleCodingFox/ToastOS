@@ -12,6 +12,8 @@ size_t read(int fd, const void *buffer, size_t count)
 #if IS_LIBC
     return syscall(SYSCALL_READ, fd, buffer, count);
 #else
+    //No longer used
+    /*
     if(fd == 0)
     {
         while(!GotKeyboardInput());
@@ -27,6 +29,7 @@ size_t read(int fd, const void *buffer, size_t count)
     {
         //TODO
     }
+    */
 
     return 0;
 #endif

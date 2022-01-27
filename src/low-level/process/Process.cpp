@@ -50,6 +50,34 @@ bool ProcessManager::IsLocked()
 
 void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
 {
+    if(fromTimer)
+    {
+        //Called from timer, so must finish up PIC
+        outport8(PIC1, PIC_EOI);
+    }
+
+    #define HANDLEFORK(task) \
+        task->state = PROCESS_STATE_RUNNING; \
+        \
+        DEBUG_OUT("Initializing fork %p for process %llu: rsp: %p; rip: %p; cr3: %p", task, task->process->ID, task->rsp, task->rip, task->cr3);\
+        \
+        LoadFSBase(task->fsBase);\
+        \
+        if(task->process->permissionLevel == PROCESS_PERMISSION_KERNEL)\
+        {\
+            task->cs = (GDTKernelBaseSelector + 0x00);\
+            task->ss = (GDTKernelBaseSelector + 0x08);\
+        }\
+        else\
+        {\
+            task->cs = (GDTUserBaseSelector + 0x10) | 3;\
+            task->ss = (GDTUserBaseSelector + 0x08) | 3;\
+        }\
+        \
+        lock.Unlock();\
+        \
+        SwitchTasks(task);
+
     lock.Lock();
 
     interrupts.DisableInterrupts(); //Will be enabled in the switch task call
@@ -59,12 +87,6 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
 
     if(current == NULL || next == NULL)
     {
-        if(fromTimer)
-        {
-            //Called from timer, so must finish up PIC
-            outport8(PIC1, PIC_EOI);
-        }
-
         lock.Unlock();
 
         interrupts.EnableInterrupts();
@@ -76,12 +98,6 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
 
     if(current == next)
     {
-        if(fromTimer)
-        {
-            //Called from timer, so must finish up PIC
-            outport8(PIC1, PIC_EOI);
-        }
-
         lock.Unlock();
 
         interrupts.EnableInterrupts();
@@ -111,8 +127,6 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
         current->rflags = stack->cpuFlags;
         current->fsBase = current->process->fsBase;
 
-        asm volatile(" fxsave %0" :: "m"(current->FXSAVE));
-
         if(current->process->permissionLevel == PROCESS_PERMISSION_KERNEL)
         {
             current->cs = (GDTKernelBaseSelector + 0x00);
@@ -128,32 +142,13 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
     //Forked processes are added as the current process, so must init them properly
     if(current->state == PROCESS_STATE_FORKED)
     {
-        current->state = PROCESS_STATE_RUNNING;
+        HANDLEFORK(current);
 
-        DEBUG_OUT("Initializing fork %p: rsp: %p; rip: %p; cr3: %p", current, current->rsp, current->rip, current->cr3);
-
-        if(fromTimer)
-        {
-            //Called from timer, so must finish up PIC
-            outport8(PIC1, PIC_EOI);
-        }
-
-        LoadFSBase(current->fsBase);
-
-        if(current->process->permissionLevel == PROCESS_PERMISSION_KERNEL)
-        {
-            current->cs = (GDTKernelBaseSelector + 0x00);
-            current->ss = (GDTKernelBaseSelector + 0x08);
-        }
-        else
-        {
-            current->cs = (GDTUserBaseSelector + 0x10) | 3;
-            current->ss = (GDTUserBaseSelector + 0x08) | 3;
-        }
-
-        lock.Unlock();
-
-        SwitchTasks(current);
+        return;
+    }
+    else if(next->state == PROCESS_STATE_FORKED)
+    {
+        HANDLEFORK(next);
 
         return;
     }
@@ -162,13 +157,7 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
     {
         next->state = PROCESS_STATE_RUNNING;
 
-        DEBUG_OUT("Initializing task %p: rsp: %p; rip: %p; cr3: %p", next, next->rsp, next->rip, next->cr3);
-
-        if(fromTimer)
-        {
-            //Called from timer, so must finish up PIC
-            outport8(PIC1, PIC_EOI);
-        }
+        DEBUG_OUT("Initializing task %p for process %llu: rsp: %p; rip: %p; cr3: %p", next, next->process->ID, next->rsp, next->rip, next->cr3);
 
         LoadFSBase(next->fsBase);
 
@@ -183,6 +172,8 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
             next->ss = (GDTUserBaseSelector + 0x08) | 3;
         }
 
+        scheduler->Advance();
+
         lock.Unlock();
 
         SwitchTasks(next);
@@ -191,20 +182,15 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
     }
 
     /*
-    DEBUG_OUT("Switching tasks:\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%x\n\tss: 0x%x\nnext:\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%x\n\tss: 0x%x",
-        current->rsp, current->rip, current->cr3, current->cs, current->ss,
-        next->rsp, next->rip, next->cr3, next->cs, next->ss);
-        */
-
-    if(fromTimer)
-    {
-        //Called from timer, so must finish up PIC
-        outport8(PIC1, PIC_EOI);
-    }
-
-    asm volatile(" fxrstor %0" : : "m"(next->FXSAVE));
+    DEBUG_OUT("Switching tasks:\n\tID: %llu\n\tstate: %s\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%x\n\tss: 0x%x\n"
+        "next:\n\tID: %llu\n\tstate: %s\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%x\n\tss: 0x%x",
+        current->process->ID, current->State().data(), current->rsp, current->rip, current->cr3, current->cs, current->ss,
+        next->process->ID, next->State().data(), next->rsp, next->rip, next->cr3, next->cs, next->ss);
+    */
 
     LoadFSBase(next->fsBase);
+
+    scheduler->Advance();
 
     lock.Unlock();
 
@@ -286,14 +272,12 @@ ProcessInfo *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const cha
     newProcess->cwd = cwd;
     newProcess->state = PROCESS_STATE_NEEDS_INIT;
 
-    newProcess->name = strdup(name);
+    newProcess->name = name;
 
     for(uint64_t i = 0; i < SIGNAL_MAX; i++)
     {
         newProcess->sigHandlers[i].sa_handler = SIG_DFL;
     }
-
-    //TODO: proper env
 
     char **env = (char **)calloc(1, sizeof(char *[10]));
 
@@ -320,7 +304,8 @@ ProcessInfo *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const cha
     return newProcess;
 }
 
-ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, const char **argv, const char **envp, const char *cwd, uint64_t permissionLevel)
+ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, const char **argv, const char **envp, const char *cwd,
+    uint64_t permissionLevel, uint64_t IDOverride)
 {
     lock.Lock();
 
@@ -382,12 +367,12 @@ ProcessInfo *ProcessManager::LoadImage(const void *image, const char *name, cons
 
     memset(newProcess, 0, sizeof(ProcessInfo));
 
-    newProcess->ID = ++processIDCounter;
+    newProcess->ID = IDOverride != 0 ? IDOverride : ++processIDCounter;
     newProcess->permissionLevel = permissionLevel;
     newProcess->cwd = cwd;
     newProcess->state = PROCESS_STATE_NEEDS_INIT;
 
-    newProcess->name = strdup(name);
+    newProcess->name = name;
 
     newProcess->rflags = 0x202;
 
@@ -576,7 +561,7 @@ void ProcessManager::LoadFSBase(uint64_t base)
     Registers::WriteMSR(0xC0000100, base);
 }
 
-void ProcessManager::Exit(int exitCode)
+void ProcessManager::Exit(int exitCode, bool forceRemove)
 {
     lock.Lock();
 
@@ -585,9 +570,19 @@ void ProcessManager::Exit(int exitCode)
         auto pcb = scheduler->CurrentProcess();
 
         pcb->state = pcb->process->state = PROCESS_STATE_DEAD;
-        pcb->process->exitCode = exitCode;
 
-        DEBUG_OUT("Process %llu exited with code %d", pcb->process->ID, exitCode);
+        if(forceRemove)
+        {
+            DEBUG_OUT("Process %llu is being force removed", pcb->process->ID);
+
+            pcb->process->ID = (uint64_t)-1;
+        }
+        else
+        {
+            pcb->process->exitCode = exitCode;
+
+            DEBUG_OUT("Process %llu exited with code %d", pcb->process->ID, exitCode);
+        }
 
         scheduler->ExitProcess(pcb->process);
 
@@ -750,9 +745,9 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
     newProcess->rflags = 0x202;
     newProcess->cr3 = (uint64_t)pageTableFrame;
 
-    if(current->process->name != NULL)
+    if(current->process->name.size() > 0)
     {
-        newProcess->name = strdup(current->process->name);
+        newProcess->name = current->process->name;
     }
     else
     {
@@ -778,8 +773,6 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
     newProcess->ppid = current->process->ID;
 
     auto pcb = scheduler->AddProcess(newProcess);
-
-    memcpy(pcb->FXSAVE, current->FXSAVE, sizeof(pcb->FXSAVE));
 
     pcb->fsBase = current->fsBase;
     pcb->r10 = interruptStack->r10;

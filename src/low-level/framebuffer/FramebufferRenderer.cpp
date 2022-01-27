@@ -13,7 +13,7 @@ void RefreshFramebuffer(InterruptStack *stack)
 }
 
 FramebufferRenderer::FramebufferRenderer(Framebuffer* targetFramebuffer, psf2_font_t* font) : lockedCount(0),
-    doubleBuffer(NULL), initialized(false), doubleBufferSize(0), backgroundColor(0), graphicsType(GRAPHICS_TYPE_CONSOLE)
+    doubleBuffer(NULL), initialized(false), doubleBufferSize(0), graphicsType(GRAPHICS_TYPE_CONSOLE), backgroundColor(0)
 {
     this->targetFramebuffer = targetFramebuffer;
     this->font = font;
@@ -39,7 +39,7 @@ void FramebufferRenderer::Initialize()
 
 void FramebufferRenderer::SetGraphicsBuffer(const void *buffer)
 {
-    if(graphicsType != GRAPHICS_TYPE_UI)
+    if(graphicsType != GRAPHICS_TYPE_GUI)
     {
         return;
     }
@@ -58,9 +58,9 @@ void FramebufferRenderer::SetGraphicsType(int graphicsType)
         //TODO
         break;
 
-        case GRAPHICS_TYPE_UI:
+        case GRAPHICS_TYPE_GUI:
 
-        this->graphicsType = GRAPHICS_TYPE_UI;
+        this->graphicsType = GRAPHICS_TYPE_GUI;
 
         Clear(0);
 

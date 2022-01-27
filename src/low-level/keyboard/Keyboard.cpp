@@ -3,19 +3,94 @@
 #include "debug.hpp"
 #include "layouts/QWERTYKeyboard.hpp"
 #include "filesystems/VFS.hpp"
+#include "input/InputSystem.hpp"
+
+#define LAYOUT_EXT "layout"
 
 using namespace FileSystem;
+
+struct KeyInfo
+{
+    const char *text;
+    int key;
+};
+
+#define FILLKEY(name) \
+    { .text=#name, .key=TOAST_##name }
+
+KeyInfo keys[] =
+{
+    FILLKEY(KEY_A),
+    FILLKEY(KEY_B),
+    FILLKEY(KEY_C),
+    FILLKEY(KEY_D),
+    FILLKEY(KEY_E),
+    FILLKEY(KEY_F),
+    FILLKEY(KEY_G),
+    FILLKEY(KEY_H),
+    FILLKEY(KEY_I),
+    FILLKEY(KEY_J),
+    FILLKEY(KEY_K),
+    FILLKEY(KEY_L),
+    FILLKEY(KEY_M),
+    FILLKEY(KEY_N),
+    FILLKEY(KEY_O),
+    FILLKEY(KEY_P),
+    FILLKEY(KEY_Q),
+    FILLKEY(KEY_R),
+    FILLKEY(KEY_S),
+    FILLKEY(KEY_T),
+    FILLKEY(KEY_U),
+    FILLKEY(KEY_V),
+    FILLKEY(KEY_Y),
+    FILLKEY(KEY_Z),
+    FILLKEY(KEY_1),
+    FILLKEY(KEY_2),
+    FILLKEY(KEY_3),
+    FILLKEY(KEY_4),
+    FILLKEY(KEY_5),
+    FILLKEY(KEY_6),
+    FILLKEY(KEY_7),
+    FILLKEY(KEY_8),
+    FILLKEY(KEY_9),
+    FILLKEY(KEY_0),
+    FILLKEY(KEY_LEFT_SHIFT),
+    FILLKEY(KEY_RIGHT_SHIFT),
+    FILLKEY(KEY_LEFT_CONTROL),
+    FILLKEY(KEY_RIGHT_CONTROL),
+    FILLKEY(KEY_LEFT_ARROW),
+    FILLKEY(KEY_RIGHT_ARROW),
+    FILLKEY(KEY_UP_ARROW),
+    FILLKEY(KEY_DOWN_ARROW),
+    FILLKEY(KEY_SPACE),
+    FILLKEY(KEY_BACKSPACE),
+    FILLKEY(KEY_RETURN),
+    FILLKEY(KEY_ESCAPE),
+    FILLKEY(KEY_F1),
+    FILLKEY(KEY_F2),
+    FILLKEY(KEY_F3),
+    FILLKEY(KEY_F4),
+    FILLKEY(KEY_F5),
+    FILLKEY(KEY_F6),
+    FILLKEY(KEY_F7),
+    FILLKEY(KEY_F8),
+    FILLKEY(KEY_F9),
+    FILLKEY(KEY_F10),
+    FILLKEY(KEY_F11),
+    FILLKEY(KEY_F12),
+    FILLKEY(KEY_TAB),
+    FILLKEY(KEY_CAPS_LOCK),
+};
 
 bool isLeftShiftPressed;
 bool isRightShiftPressed;
 
-bool gotKeyboardInput = false;
-char keyboardInput;
-
 struct KeyboardLayoutItem
 {
-    int scancode;
+    uint32_t scancode;
+    string modifier;
     string value;
+    uint8_t key;
 };
 
 struct KeyboardLayout
@@ -75,11 +150,24 @@ public:
 
 box<KeyboardLayout> currentLayout;
 
+uint8_t KeyFromString(const string &key)
+{
+    for(int i = 0; i < sizeof(keys) / sizeof(keys[0]); i++)
+    {
+        if(key == keys[i].text)
+        {
+            return keys[i].key;
+        }
+    }
+
+    return 0;
+}
+
 bool LoadLayout(const string &name)
 {
     DEBUG_OUT("Loading keyboard layout \"%s\"", name.data());
 
-    auto path = string("/system/kbd/layouts/") + name + ".ini";
+    auto path = string("/system/kbd/layouts/") + name + "." + LAYOUT_EXT;
 
     auto handle = vfs->OpenFile(path.data(), 0, NULL);
 
@@ -149,12 +237,42 @@ bool LoadLayout(const string &name)
                 auto left = lineView.sub_string(0, position);
                 auto right = lineView.sub_string(position + 1, lineView.size() - position - 1);
 
+                auto mod = left.find_first(':');
+                string modifier;
+
+                if(mod != (size_t)-1)
+                {
+                    modifier = left.sub_string(mod + 1, left.size() - mod - 1);
+
+                    left = left.sub_string(0, mod);
+                }
+
                 auto scancode = strtol(left.data(), NULL, 16);
+
+                auto k = right.find_first(':');
+
+                if(k == (size_t)-1)
+                {
+                    printf("At line '%s': Missing key at right side\n");
+
+                    if(needsQuit)
+                    {
+                        break;
+                    }
+
+                    continue;
+                }
+
+                auto key = right.sub_string(k + 1, right.size() - k - 1);
+
+                right = right.sub_string(0, k);
 
                 KeyboardLayoutItem item;
 
                 item.scancode = scancode;
+                item.modifier = modifier;
                 item.value = right;
+                item.key = KeyFromString(key);
 
                 currentLayout->items.push_back(item);
             }
@@ -226,16 +344,15 @@ extern "C" const char *GetKeyboardLayoutName()
     return currentLayout.valid() ? currentLayout->name.data() : "";
 }
 
-extern "C" bool GotKeyboardInput()
+InputEvent MakeKeyboardEvent(uint8_t scancode, uint16_t character, uint8_t key, bool leftShift, bool rightShift)
 {
-    return gotKeyboardInput;
-}
+    InputEvent event = {.type = scancode >= 0x80 ? TOAST_INPUT_EVENT_KEYUP : TOAST_INPUT_EVENT_KEYDOWN };
 
-extern "C" char KeyboardInput()
-{
-    gotKeyboardInput = false;
+    event.keyEvent.key = key;
+    event.keyEvent.character = character;
+    event.keyEvent.modifiers = (leftShift ? TOAST_INPUT_MODIFIER_LSHIFT : 0) | (rightShift ? TOAST_INPUT_MODIFIER_RSHIFT : 0);
 
-    return keyboardInput;
+    return event;
 }
 
 extern "C" void HandleKeyboardKeyPress(uint8_t scancode)
@@ -248,11 +365,15 @@ extern "C" void HandleKeyboardKeyPress(uint8_t scancode)
             {
                 isLeftShiftPressed = true;
 
+                globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, 0, TOAST_KEY_LEFT_SHIFT, isLeftShiftPressed, isRightShiftPressed));
+
                 return;
             }
             else if(scancode == currentLayout->lshiftKey->scancode + 0x80)
             {
                 isLeftShiftPressed = false;
+
+                globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, 0, TOAST_KEY_LEFT_SHIFT, isLeftShiftPressed, isRightShiftPressed));
 
                 return;
             }
@@ -264,74 +385,101 @@ extern "C" void HandleKeyboardKeyPress(uint8_t scancode)
             {
                 isRightShiftPressed = true;
 
+                globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, 0, TOAST_KEY_RIGHT_SHIFT, isLeftShiftPressed, isRightShiftPressed));
+
                 return;
             }
             else if(scancode == currentLayout->rshiftKey->scancode + 0x80)
             {
                 isRightShiftPressed = false;
 
-               return;
+                globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, 0, TOAST_KEY_RIGHT_SHIFT, isLeftShiftPressed, isRightShiftPressed));
+
+                return;
             }
         }
         
         if(currentLayout->returnKey != NULL && scancode == currentLayout->returnKey->scancode)
         {
-            gotKeyboardInput = true;
-            keyboardInput = '\n';
+            globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, '\n', TOAST_KEY_RETURN, isLeftShiftPressed, isRightShiftPressed));
 
             return;
         }
         
         if(currentLayout->spaceKey != NULL && scancode == currentLayout->spaceKey->scancode)
         {
-            gotKeyboardInput = true;
-            keyboardInput = ' ';
+            globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, ' ', TOAST_KEY_SPACE, isLeftShiftPressed, isRightShiftPressed));
 
             return;
         }
         
         if(currentLayout->backspaceKey != NULL && scancode == currentLayout->backspaceKey->scancode)
         {
-            gotKeyboardInput = true;
-            keyboardInput = '\b';
+            globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, '\b', TOAST_KEY_BACKSPACE, isLeftShiftPressed, isRightShiftPressed));
 
             return;
         }
 
         for(auto &entry : currentLayout->items)
         {
-            if(entry.scancode == scancode)
+            if(entry.scancode == scancode || entry.scancode + 0x80 == scancode)
             {
-                if(entry.value.size() == 1)
+                if(entry.modifier.size() > 0)
                 {
-                    gotKeyboardInput = true;
-                    keyboardInput = entry.value[0];
+                    if(entry.modifier == "SHIFT" && (isLeftShiftPressed || isRightShiftPressed))
+                    {
+                        globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, entry.value[0], entry.key, isLeftShiftPressed, isRightShiftPressed));
+                        return;
+                    }
 
-                    return;
+                    continue;
                 }
+
+                globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, entry.value[0], entry.key, isLeftShiftPressed, isRightShiftPressed));
+
+                return;
             }
         }
-
-        return;
     }
 
     switch (scancode)
     {
         case Enter:
-            gotKeyboardInput = true;
-            keyboardInput = '\n';
-
+            globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, '\n', TOAST_KEY_RETURN, isLeftShiftPressed, isRightShiftPressed));
+            
             return;
 
         case Spacebar:
-            gotKeyboardInput = true;
-            keyboardInput = ' ';
+            globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, ' ', TOAST_KEY_SPACE, isLeftShiftPressed, isRightShiftPressed));
 
             return;
 
         case BackSpace:
-            gotKeyboardInput = true;
-            keyboardInput = '\b';
+            globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, '\b', TOAST_KEY_BACKSPACE, isLeftShiftPressed, isRightShiftPressed));
+
+            return;
+
+        case LeftShift:
+            isLeftShiftPressed = true;
+            globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, 0, TOAST_KEY_LEFT_SHIFT, isLeftShiftPressed, isRightShiftPressed));
+
+            return;
+
+        case LeftShift + 0x80:
+            isLeftShiftPressed = false;
+            globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, 0, TOAST_KEY_LEFT_SHIFT, isLeftShiftPressed, isRightShiftPressed));
+
+            return;
+
+        case RightShift:
+            isRightShiftPressed = true;
+            globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, 0, TOAST_KEY_RIGHT_SHIFT, isLeftShiftPressed, isRightShiftPressed));
+
+            return;
+
+        case RightShift + 0x80:
+            isRightShiftPressed = false;
+            globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, 0, TOAST_KEY_RIGHT_SHIFT, isLeftShiftPressed, isRightShiftPressed));
 
             return;
     }
@@ -340,7 +488,6 @@ extern "C" void HandleKeyboardKeyPress(uint8_t scancode)
 
     if (ascii != 0)
     {
-        gotKeyboardInput = true;
-        keyboardInput = ascii;
+        globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, ascii, 0, isLeftShiftPressed, isRightShiftPressed));
     }
 }

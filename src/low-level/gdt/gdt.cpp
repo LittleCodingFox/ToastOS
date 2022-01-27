@@ -74,12 +74,12 @@ void LoadGDT()
     uint64_t address = (uint64_t)&tss;
     
     gdt.tss = (TSSDescriptor) {
+        .length = 104,
         .baseLow = (uint16_t)address,
         .baseMid = (uint8_t)(address >> 16),
+        .flags = 0b10001001,
         .baseHigh = (uint8_t)(address >> 24),
         .baseUp = (uint32_t)(address >> 32),
-        .length = 104,
-        .flags = 0b10001001
     };
 
     tss.rsp0 = (uint64_t)&tssStack[sizeof(tssStack)];

@@ -154,16 +154,16 @@ void *PageFrameAllocator::RequestPages(uint32_t count)
     {
         if (PageBitmap[i] == false)
         {
-            freeCount++;
-
             if(freeCount == count)
             {
-                uint32_t index = 1 + i - count;
+                uint32_t index = i - count;
 
                 LockPages((void*)((uint64_t)index * 0x1000), count);
 
                 return (void *)((uint64_t)index * 0x1000);
             }
+
+            freeCount++;
         }
         else
         {

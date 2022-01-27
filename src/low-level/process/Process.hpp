@@ -28,7 +28,7 @@ struct ProcessInfo
 {
     uint64_t ID;
     uint64_t permissionLevel;
-    char *name;
+    string name;
     char **argv;
     char **environment;
     uint64_t stack[PROCESS_STACK_SIZE];
@@ -82,8 +82,6 @@ struct ProcessControlBlock
 
     uint64_t fsBase;
 
-    char __attribute__((aligned(16))) FXSAVE[512];
-
     ProcessInfo *process;
 
     uint64_t state;
@@ -127,6 +125,7 @@ public:
     virtual ProcessControlBlock *CurrentProcess() = 0;
     virtual ProcessControlBlock *AddProcess(ProcessInfo *process) = 0;
     virtual ProcessControlBlock *NextProcess() = 0;
+    virtual void Advance() = 0;
     virtual void DumpProcessList() = 0;
     virtual void ExitProcess(ProcessInfo *process) = 0;
 };
@@ -141,7 +140,8 @@ public:
 
     ProcessManager(IScheduler *scheduler);
 
-    ProcessInfo *LoadImage(const void *image, const char *name, const char **argv, const char **envp, const char *cwd, uint64_t permissionLevel);
+    ProcessInfo *LoadImage(const void *image, const char *name, const char **argv, const char **envp, const char *cwd,
+        uint64_t permissionLevel, uint64_t IDOverride = 0);
     ProcessInfo *CreateFromEntryPoint(uint64_t entryPoint, const char *name, const char *cwd, uint64_t permissionLevel);
 
     ProcessInfo *CurrentProcess();
@@ -158,7 +158,7 @@ public:
 
     void Kill(pid_t pid, int signal);
 
-    void Exit(int exitCode);
+    void Exit(int exitCode, bool forceRemove = false);
 
     void SetUID(pid_t pid, uid_t uid);
 

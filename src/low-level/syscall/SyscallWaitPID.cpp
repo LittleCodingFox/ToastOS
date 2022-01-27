@@ -10,6 +10,9 @@ int64_t SyscallWaitPID(InterruptStack *stack)
     int flags = (int)stack->rcx;
     pid_t *retpid = (pid_t *)stack->r8;
 
+    (void)status;
+    (void)flags;
+
 #if KERNEL_DEBUG_SYSCALLS
     DEBUG_OUT("Syscall: waitpid pid: %i (%x) status: %p flags: %i retpid: %p", pid, pid, status, flags, retpid);
 #endif

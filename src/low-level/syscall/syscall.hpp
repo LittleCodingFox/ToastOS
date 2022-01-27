@@ -36,6 +36,7 @@
 #define SYSCALL_GETGRAPHICSSIZE     31
 #define SYSCALL_SETGRAPHICSBUFFER   32
 #define SYSCALL_EXECVE              33
+#define SYSCALL_POLLINPUT           34
 
 void InitializeSyscalls();
 

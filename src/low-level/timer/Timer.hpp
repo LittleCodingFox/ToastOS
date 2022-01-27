@@ -12,7 +12,8 @@ private:
     frg::vector<void *, frg_allocator> handlers;
 public:
     void Initialize();
-    uint32_t GetTicks();
+    uint32_t Frequency();
+    uint64_t GetTicks();
     void RegisterHandler(void (*callback)(InterruptStack *));
     void UnregisterHandler(void (*callback)(InterruptStack *));
     void RunHandlers(InterruptStack *stack);

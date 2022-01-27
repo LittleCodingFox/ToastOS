@@ -58,6 +58,7 @@ int64_t SyscallSetGraphicsType(InterruptStack *stack);
 int64_t SyscallSetGraphicsBuffer(InterruptStack *stack);
 int64_t SyscallGetGraphicsSize(InterruptStack *stack);
 int64_t SyscallExecve(InterruptStack *stack);
+int64_t SyscallPollInput(InterruptStack *stack);
 
 SyscallPointer syscallHandlers[] =
 {
@@ -93,14 +94,13 @@ SyscallPointer syscallHandlers[] =
     [SYSCALL_GETGRAPHICSSIZE] = (SyscallPointer)SyscallGetGraphicsSize,
     [SYSCALL_SETGRAPHICSBUFFER] = (SyscallPointer)SyscallSetGraphicsBuffer,
     [SYSCALL_EXECVE] = (SyscallPointer)SyscallExecve,
+    [SYSCALL_POLLINPUT] = (SyscallPointer)SyscallPollInput,
 };
 
 void SyscallHandler(InterruptStack *stack)
 {
     if(stack->rdi <= sizeof(syscallHandlers) / sizeof(SyscallPointer) && syscallHandlers[stack->rdi] != NULL)
     {
-        interrupts.DisableInterrupts();
-
         ProcessInfo *process = globalProcessManager->CurrentProcess();
 
         bool needsPermissionChange = process->permissionLevel == PROCESS_PERMISSION_USER;
@@ -114,8 +114,6 @@ void SyscallHandler(InterruptStack *stack)
         auto result = handler(stack);
 
         stack->rax = result;
-
-        interrupts.EnableInterrupts();
 
         if(needsPermissionChange)
         {

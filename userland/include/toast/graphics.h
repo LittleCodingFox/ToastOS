@@ -7,14 +7,14 @@ extern "C" {
 enum 
 {
     GRAPHICS_TYPE_CONSOLE,
-    GRAPHICS_TYPE_UI,
+    GRAPHICS_TYPE_GUI,
 };
 
-void toastSetGraphicsType(int type);
+void ToastSetGraphicsType(int type);
 
-void toastGetGraphicsSize(int *width, int *height, int *bpp);
+void ToastGetGraphicsSize(int *width, int *height, int *bpp);
 
-void toastSetGraphicsBuffer(const void *buffer);
+void ToastSetGraphicsBuffer(const void *buffer);
 
 #if __cplusplus
 }

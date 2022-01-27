@@ -73,9 +73,9 @@ void KernelDumpStacktrace()
 
   while (stackframe != NULL)
   {
+    /*
     uint64_t address = stackframe->rip;
 
-    /*
     char *symbol = SymbolForAddress(&address);
     char *end = strchr(symbol, '\n');
 
@@ -84,7 +84,7 @@ void KernelDumpStacktrace()
     DEBUG_OUT("  %p (%p): %s", address, stackframe->rip, symbol);
     */
 
-    DEBUG_OUT("  %p", address);
+    DEBUG_OUT("  %p", stackframe->rip);
 
     //*end = '\n';
 
@@ -104,9 +104,9 @@ void KernelDumpStacktraceNoLock()
 
   while (stackframe != NULL)
   {
+    /*
     uint64_t address = stackframe->rip;
 
-    /*
     char *symbol = SymbolForAddress(&address);
     char *end = strchr(symbol, '\n');
 
@@ -115,7 +115,7 @@ void KernelDumpStacktraceNoLock()
     DEBUG_OUT_NOLOCK("  %p (%p): %s", address, stackframe->rip, symbol);
     */
 
-    DEBUG_OUT_NOLOCK("  %p", address);
+    DEBUG_OUT_NOLOCK("  %p", stackframe->rip);
 
     //*end = '\n';
 

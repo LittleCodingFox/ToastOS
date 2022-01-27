@@ -7,14 +7,24 @@
 #include <GLES/gl.h>
 #include <GL/osmesa.h>
 
+uint32_t GetTime()
+{
+  struct timespec currentTime;
+
+  clock_gettime(CLOCK_MONOTONIC, &currentTime);
+
+  return currentTime.tv_sec * 1000 + currentTime.tv_nsec / 1000000;
+}
+
 int main(int argc, char **argv)
 {
-    printf("Setting graphics type to UI\n");
-    toastSetGraphicsType(GRAPHICS_TYPE_UI);
+    printf("Setting graphics type to GUI\n");
+
+    ToastSetGraphicsType(GRAPHICS_TYPE_GUI);
 
     int width, height, bpp;
 
-    toastGetGraphicsSize(&width, &height, &bpp);
+    ToastGetGraphicsSize(&width, &height, &bpp);
 
     printf("Graphics Size is: %dx%d (%d)\n", width, height, bpp);
 
@@ -51,7 +61,8 @@ int main(int argc, char **argv)
     glClearColor(0.0f, 1.0f, 1.0f, 0.0f);
 
     int frames = 0;
-    time_t t = time(NULL);
+    uint32_t start = GetTime();
+    uint32_t t = GetTime();
 
     float angle = 0.0f;
 
@@ -78,22 +89,26 @@ int main(int argc, char **argv)
 
         frames++;
 
-        time_t current = time(NULL);
+        uint32_t current = GetTime();
 
-        double diff = difftime(current, t);
+        uint32_t difference = current - t;
 
-        angle += 0.5f;
+        float delta = (current - t) / 1000.0f;
 
-        if(diff >= 1.0)
+        t = current;
+
+        angle += delta * 30;
+
+        if(current - start >= 1000)
         {
             printf("FPS: %d\n", frames);
 
             frames = 0;
 
-            t = current;
+            start = current;
         }
 
-        toastSetGraphicsBuffer(buffer);
+        ToastSetGraphicsBuffer(buffer);
     }
 
     return 0;

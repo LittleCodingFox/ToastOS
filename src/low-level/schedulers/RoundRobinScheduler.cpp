@@ -19,7 +19,7 @@ ProcessControlBlock *RoundRobinScheduler::CurrentProcess()
 
 ProcessControlBlock *RoundRobinScheduler::AddProcess(ProcessInfo *process)
 {
-    Threading::ScopedLock lock(this->lock);
+    lock.Lock();
     
     ProcessControlBlock *node = new ProcessControlBlock();
 
@@ -50,11 +50,34 @@ ProcessControlBlock *RoundRobinScheduler::AddProcess(ProcessInfo *process)
     }
     else
     {
-        ProcessControlBlock *next = processes->next;
+        ProcessControlBlock *p = processes;
 
-        processes->next = node;
-        node->next = next;
+        if(p->next == processes)
+        {
+            ProcessControlBlock *next = processes->next;
+
+            processes->next = node;
+            node->next = next;
+        }
+        else
+        {
+            while(p->next != processes)
+            {
+                p = p->next;
+            }
+
+            ProcessControlBlock *next = p->next;
+
+            p->next = node;
+            node->next = next;
+        }
     }
+
+    DEBUG_OUT("Added process %p (%llu)", node, node->process->ID);
+
+    lock.Unlock();
+
+    DumpProcessList();
 
     return node;
 }
@@ -72,6 +95,43 @@ ProcessControlBlock *RoundRobinScheduler::NextProcess()
 
     do
     {
+        if(p->next->process->sleepTicks == 0)
+        {
+            if(p->next == processes)
+            {
+                return processes;
+            }
+
+            if(p->next == processes->next)
+            {
+                break;
+            }
+
+            break;
+        }
+
+        p = p->next;
+    }
+    while(p != processes);
+
+    processes = processes->next;
+
+    return processes;
+}
+
+void RoundRobinScheduler::Advance()
+{
+    Threading::ScopedLock lock(this->lock);
+
+    if(processes == NULL)
+    {
+        return;
+    }
+
+    ProcessControlBlock *p = processes;
+
+    do
+    {
         if(p->next->process->sleepTicks > 0)
         {
             p->next->process->sleepTicks--;
@@ -80,7 +140,7 @@ ProcessControlBlock *RoundRobinScheduler::NextProcess()
         {
             if(p->next == processes)
             {
-                return processes;
+                return;
             }
 
             if(p->next == processes->next)
@@ -102,10 +162,6 @@ ProcessControlBlock *RoundRobinScheduler::NextProcess()
         p = p->next;
     }
     while(p != processes);
-
-    processes = processes->next;
-
-    return processes;
 }
 
 void RoundRobinScheduler::ExitProcess(ProcessInfo *process)
@@ -127,7 +183,10 @@ void RoundRobinScheduler::ExitProcess(ProcessInfo *process)
     ProcessControlBlock *remove = p->next;
     p->next = p->next->next;
 
-    processes = p;
+    if(remove == processes)
+    {
+        processes = p->next;
+    }
 
     delete remove;
 }
@@ -143,6 +202,8 @@ void RoundRobinScheduler::DumpProcessList()
     if(processes == processes->next)
     {
         DEBUG_OUT("Single Process!", 0);
+
+        return;
     }
 
     do

@@ -2,6 +2,7 @@
 #include "keyboard/Keyboard.hpp"
 #include "process/Process.hpp"
 #include "filesystems/VFS.hpp"
+#include "input/InputSystem.hpp"
 #include "debug.hpp"
 #include "errno.h"
 #include "ctype.h"
@@ -20,12 +21,14 @@ int64_t SyscallRead(InterruptStack *stack)
 
     if(fd == 0) //stdin
     {
-        while(!GotKeyboardInput())
+        InputEvent event;
+
+        while(!globalInputSystem->Poll(&event) || event.type != TOAST_INPUT_EVENT_KEYDOWN)
         {
             ProcessYield();
         }
 
-        char keyboardInput = (char)KeyboardInput();
+        char keyboardInput = (char)event.keyEvent.character;
 
         uint8_t *ptr = (uint8_t *)buffer;
 

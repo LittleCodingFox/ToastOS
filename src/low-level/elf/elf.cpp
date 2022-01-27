@@ -6,7 +6,7 @@
 
 namespace Elf
 {
-    void LoadElfSegment(const void *data, ElfProgramHeader *programHeader, PageTableManager *pageTableManager, uint64_t base)
+    bool LoadElfSegment(const void *data, ElfProgramHeader *programHeader, PageTableManager *pageTableManager, uint64_t base)
     {
         uint64_t memSize = programHeader->memorySize;
         uint64_t fileSize = programHeader->fileSize;
@@ -16,7 +16,7 @@ namespace Elf
 
         if(memSize == 0)
         {
-            return;
+            return false;
         }
 
         uint32_t flags = PAGING_FLAG_PRESENT | PAGING_FLAG_USER_ACCESSIBLE;
@@ -36,16 +36,21 @@ namespace Elf
 
         DEBUG_OUT("Load at address %p with %llu pages (%p-%p) (memsize: %llu; fileSize: %llu; offset: %p)",
             address, pageCount,
-            address, address + pageCount * 0x1000,
+            (address / 0x1000) * 0x1000, ((address / 0x1000) + pageCount) * 0x1000,
             memSize, fileSize,
             programHeader->offset);
+            
+        auto cr3 = Registers::ReadCR3();
+
+        PageTableManager localPageTable;
+        localPageTable.p4 = (PageTable *)cr3;
 
         for(uint64_t i = 0; i < pageCount; i++)
         {
             void *physicalAddress = globalAllocator.RequestPage();
 
             pageTableManager->MapMemory((void *)((startPage + i) * 0x1000), physicalAddress, flags | PAGING_FLAG_WRITABLE);
-            globalPageTableManager->MapMemory((void *)TranslateToHighHalfMemoryAddress((startPage + i) * 0x1000), physicalAddress, flags | PAGING_FLAG_WRITABLE);
+            localPageTable.MapMemory((void *)TranslateToHighHalfMemoryAddress((startPage + i) * 0x1000), physicalAddress, flags | PAGING_FLAG_WRITABLE);
         }
 
         memcpy((void *)higherAddress, (uint8_t *)data + offset, fileSize);
@@ -54,6 +59,8 @@ namespace Elf
         {
             memset((void *)(higherAddress + fileSize), 0, memSize - fileSize);
         }
+
+        return true;
     }
 
     ElfHeader *LoadElf(const void *data, uint64_t base, Auxval *auxval)

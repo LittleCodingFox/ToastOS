@@ -3,7 +3,7 @@
 #include "debug.hpp"
 #include <stdlib.h>
 
-#define TIMER_FREQUENCY 50 // in Hz
+#define TIMER_FREQUENCY 60 // in Hz
 #define TIMER_QUOTIENT  1193180
 
 #define PIT_0           0x40
@@ -12,7 +12,7 @@
 #define PIT_CMD         0x43
 #define PIT_SET         0x36
 
-static uint32_t currentTick;
+static uint64_t currentTick;
 
 frg::manual_box<Timer> timer;
 
@@ -37,6 +37,11 @@ void Timer::Initialize()
     outport8(PIT_0, (divisor >> 8) & 0xFF);
 }
 
+uint32_t Timer::Frequency()
+{
+    return TIMER_FREQUENCY;
+}
+
 void Timer::RunHandlers(InterruptStack *stack)
 {
     for(uint32_t i = 0; i < handlers.size(); i++)
@@ -58,7 +63,7 @@ void Timer::UnregisterHandler(void (*callback)(InterruptStack *))
     //handlers.remove((void *)callback);
 }
 
-uint32_t Timer::GetTicks()
+uint64_t Timer::GetTicks()
 {
     return currentTick;
 }

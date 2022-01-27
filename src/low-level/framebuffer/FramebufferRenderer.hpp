@@ -45,7 +45,7 @@ union Color32
 enum 
 {
     GRAPHICS_TYPE_CONSOLE,
-    GRAPHICS_TYPE_UI,
+    GRAPHICS_TYPE_GUI,
 };
 
 class FramebufferRenderer

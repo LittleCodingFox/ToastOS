@@ -29,7 +29,7 @@ int64_t SyscallVMMap(InterruptStack *stack)
     DEBUG_OUT("Syscall: vmmap hint %p size %llu prot 0x%x flags 0x%x fd %i", hint, size, prot, flags, fd);
 #endif
 
-    ProcessInfo *process = globalProcessManager->CurrentProcess();
+    (void)fd;
 
     uint64_t pages = size / 0x1000 + 1;
 

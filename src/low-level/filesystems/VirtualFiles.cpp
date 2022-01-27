@@ -1,16 +1,19 @@
 #include "VFS.hpp"
 #include "keyboard/Keyboard.hpp"
+#include "input/InputSystem.hpp"
 
 namespace FileSystem
 {
     uint64_t ReadDevTTY(void *buffer, uint64_t cursor, uint64_t length)
     {
-        if(!GotKeyboardInput())
+        InputEvent event;
+
+        if(!globalInputSystem->Poll(&event) || event.type != TOAST_INPUT_EVENT_KEYDOWN)
         {
             return 0;
         }
 
-        char keyboardInput = (char)KeyboardInput();
+        char keyboardInput = (char)event.keyEvent.character;
 
         uint8_t *ptr = (uint8_t *)buffer;
 

@@ -247,6 +247,12 @@ namespace FileSystem
                         stat.mode = S_IFLNK | S_IRWXU;
 
                         break;
+
+                    case FILE_HANDLE_UNKNOWN:
+
+                        stat.mode = 0;
+
+                        break;
                 }
 
                 stat.nlink = 1;
