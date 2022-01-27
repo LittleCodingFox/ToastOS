@@ -8,7 +8,7 @@ namespace FileSystem
     {
         InputEvent event;
 
-        if(!globalInputSystem->Poll(&event) || event.type != TOAST_INPUT_EVENT_KEYDOWN)
+        if(!globalInputSystem->Poll(&event) || event.type != TOAST_INPUT_EVENT_KEYDOWN || event.keyEvent.character == '\0')
         {
             return 0;
         }

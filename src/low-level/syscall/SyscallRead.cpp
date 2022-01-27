@@ -23,7 +23,7 @@ int64_t SyscallRead(InterruptStack *stack)
     {
         InputEvent event;
 
-        while(!globalInputSystem->Poll(&event) || event.type != TOAST_INPUT_EVENT_KEYDOWN)
+        while(!globalInputSystem->Poll(&event) || event.type != TOAST_INPUT_EVENT_KEYDOWN || event.keyEvent.character == '\0')
         {
             ProcessYield();
         }

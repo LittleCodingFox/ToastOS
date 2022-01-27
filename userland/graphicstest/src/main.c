@@ -32,6 +32,10 @@ int main(int argc, char **argv)
 
     uint32_t *buffer = (uint32_t *)malloc(bufferByteSize);
 
+    memset(buffer, 128, bufferByteSize);
+
+    ToastSetGraphicsBuffer(buffer);
+
     printf("Making current\n");
 
     OSMesaContext GLContext = OSMesaCreateContext(OSMESA_BGRA, NULL);

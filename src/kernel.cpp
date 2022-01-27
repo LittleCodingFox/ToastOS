@@ -17,7 +17,10 @@ using namespace FileSystem;
 
 static uint8_t stack[0x100000];
 
-const char *startAppPath = "/bin/graphicstest";
+const char *startAppPath = "/usr/bin/bash";
+const char *args[] = {
+    "-i", "-l"
+};
 
 static stivale2_header_tag_framebuffer framebufferTag = {
     .tag = {
@@ -64,11 +67,23 @@ extern "C" void _start(stivale2_struct *stivale2Struct)
         {
             vfs->CloseFile(handle);
 
-            const char *argv[] { startAppPath, "-i", "-l", NULL };
+            int size = sizeof(args) / sizeof(args[0]);
+
+            char **argv = new char*[size + 2];
+
+            argv[0] = (char *)startAppPath;
+
+            for(int i = 0; i < size; i++)
+            {
+                argv[i + 1] = (char *)args[i];
+            }
+
+            argv[size + 1] = NULL;
+
             const char *envp[] { "HOME=/home/toast", NULL };
 
             globalProcessManager->CreateFromEntryPoint((uint64_t)KernelTask, "KernelTask", "/home/toast/", PROCESS_PERMISSION_KERNEL);
-            globalProcessManager->LoadImage(buffer, "elf", argv, envp, "/home/toast/", PROCESS_PERMISSION_USER);
+            globalProcessManager->LoadImage(buffer, "elf", (const char**)argv, envp, "/home/toast/", PROCESS_PERMISSION_USER);
         }
         else
         {
