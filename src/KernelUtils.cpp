@@ -348,10 +348,6 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     InitializeACPI(rsdp);
 
-    printf("Initializing syscalls\n");
-
-    InitializeSyscalls();
-
     printf("Initializing cmos\n");
 
     cmos.Initialize();

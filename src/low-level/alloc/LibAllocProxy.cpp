@@ -26,7 +26,7 @@ extern "C" void* liballoc_alloc(size_t pages)
 
     void *realPtr = (void *)TranslateToHighHalfMemoryAddress((uint64_t)ptr);
 
-    DEBUG_OUT("liballoc_alloc: allocated %i pages at address %p", pages, realPtr);
+    DEBUG_OUT("alloc: allocated %i pages at address %p", pages, realPtr);
 
     return realPtr;
 }
@@ -37,7 +37,7 @@ extern "C" int liballoc_free(void* ptr, size_t pages)
     
     globalAllocator.FreePages(realPtr, pages);
 
-    DEBUG_OUT("liballoc_free: freed %i pages at address %p", pages, ptr);
+    DEBUG_OUT("free: freed %i pages at address %p", pages, ptr);
 
     return 0;
 }

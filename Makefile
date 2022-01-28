@@ -51,7 +51,7 @@ CFLAGS			= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -nostdlib -mno-red-zone -
 	-Werror -Wno-ambiguous-reversed-operator -Wno-c99-designator -Wno-deprecated-volatile -Wno-initializer-overrides
 CFLAGS_INTERNAL	= 
 LDFLAGS			= -T $(SRCDIR)/link.ld -static -Bsymbolic -nostdlib -Map=linker.map -zmax-page-size=0x1000
-QEMU_FLAGS		=
+QEMU_FLAGS		= -enable-kvm
 
 ifeq ($(USE_UBSAN), 1)
 	CFLAGS_INTERNAL += -fsanitize=undefined -fno-sanitize=function
@@ -130,15 +130,15 @@ linux: kernel userland iso-linux
 run-linux: linux run-qemu-linux
 
 debug-linux: CFLAGS += -DKERNEL_DEBUG=1 #-O0
-debug-linux: QEMU_FLAGS += -s -S
+debug-linux: QEMU_FLAGS = -s -S
 debug-linux: run-linux
 
 run-qemu-linux:
 	qemu-system-x86_64 -drive file=$(BINDIR)/$(OS_NAME).img,format=raw,index=0,media=disk \
-	-bios /usr/share/qemu/OVMF.fd -display gtk -enable-kvm \
+	-bios /usr/share/qemu/OVMF.fd -display gtk \
 	-m 1G -cpu qemu64 -machine type=q35 -serial file:./debug.log -net none -d int --no-reboot $(QEMU_FLAGS) 2>qemu.log
 
-debug-qemu-linux: QEMU_FLAGS += -s -S
+debug-qemu-linux: QEMU_FLAGS = -s -S
 debug-qemu-linux: run-qemu-linux
 
 bootstrap:

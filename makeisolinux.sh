@@ -12,12 +12,12 @@ echo n
 echo 1
 echo 2048
 echo +300M
-#echo t
-#echo 1
+echo t
+echo 1
 #echo n
 #echo 2
-#echo 1026048
-#echo 2097118
+#echo 616448
+#echo 819166
 echo p
 echo w) | 
 fdisk -u -C500 -S63 -H16 $BINDIR/$OS_NAME.img
@@ -39,13 +39,11 @@ sudo mkfs.vfat -F32 -n "EFI System" $LOOP
 
 sudo mount -tvfat $LOOP /mnt/osdev
 
+sudo cp limine.cfg limine/limine.sys boot/
+
+sudo cp limine/BOOTX64.EFI boot/EFI/BOOT/
+
 sudo cp -R boot/* /mnt/osdev
-
-sudo mkdir -p /mnt/osdev/EFI/BOOT/
-
-sudo cp limine.cfg limine/limine.sys /mnt/osdev
-
-sudo cp limine/BOOTX64.EFI /mnt/osdev/EFI/BOOT/
 
 sync
 

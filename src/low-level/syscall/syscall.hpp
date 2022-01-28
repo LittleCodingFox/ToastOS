@@ -37,11 +37,3 @@
 #define SYSCALL_SETGRAPHICSBUFFER   32
 #define SYSCALL_EXECVE              33
 #define SYSCALL_POLLINPUT           34
-
-void InitializeSyscalls();
-
-bool PerformingSyscall();
-
-void SyscallLock();
-
-void SyscallUnlock();

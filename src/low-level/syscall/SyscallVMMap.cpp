@@ -82,16 +82,12 @@ int64_t SyscallVMMap(InterruptStack *stack)
                 for(uint64_t i = 0; i < pages; i++)
                 {
                     auto target = (void *)((uint64_t)physical + i * 0x1000);
-
-                    void *higher = (void *)TranslateToHighHalfMemoryAddress((uint64_t)target);
+                    auto higher = (void *)TranslateToHighHalfMemoryAddress((uint64_t)target);
 
                     userManager.IdentityMap(target, pagingFlags);
 
                     userManager.MapMemory(higher, target,
                         PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
-
-                    globalPageTableManager->MapMemory(higher, target,
-                        PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
 
                     memset(higher, 0, 0x1000);
                 }

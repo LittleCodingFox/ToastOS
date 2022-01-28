@@ -101,8 +101,6 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
         return;
     }
 
-    //DEBUG_OUT("Switching processes %p to %p", current, next);
-
     if(current == next)
     {
         lock.Unlock();

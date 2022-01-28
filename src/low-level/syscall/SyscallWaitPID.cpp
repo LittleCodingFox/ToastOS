@@ -24,7 +24,7 @@ int64_t SyscallWaitPID(InterruptStack *stack)
         return 0;
     }
 
-    if(pid == (pid_t)-1)
+    if(pid == -1)
     {
         auto children = globalProcessManager->GetChildProcesses(current->info->ID);
 
@@ -33,7 +33,7 @@ int64_t SyscallWaitPID(InterruptStack *stack)
             return -EINTR;
         }
 
-        *retpid = children[0].info->ID;
+        *retpid = children[children.size() - 1].info->ID;
     }
     else if(pid == 0)
     {
@@ -44,7 +44,7 @@ int64_t SyscallWaitPID(InterruptStack *stack)
             return -EINTR;
         }
 
-        *retpid = children[0].info->ID;
+        *retpid = children[children.size() - 1].info->ID;
     }
     else if(pid > 0)
     {

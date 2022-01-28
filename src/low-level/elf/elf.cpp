@@ -11,7 +11,6 @@ namespace Elf
         uint64_t memSize = programHeader->memorySize;
         uint64_t fileSize = programHeader->fileSize;
         uint64_t address = programHeader->virtualAddress + base;
-        uint64_t higherAddress = TranslateToHighHalfMemoryAddress(address);
         uint64_t offset = programHeader->offset;
 
         if(memSize == 0)
@@ -45,20 +44,21 @@ namespace Elf
         PageTableManager localPageTable;
         localPageTable.p4 = (PageTable *)cr3;
 
+        auto physical = (uint64_t)globalAllocator.RequestPages(pageCount);
+        auto higherPhysical = TranslateToHighHalfMemoryAddress(physical);
+
         for(uint64_t i = 0; i < pageCount; i++)
         {
-            void *physicalAddress = globalAllocator.RequestPage();
+            uint64_t physicalAddress = (physical + i * 0x1000);
+            uint64_t userAddress = (startPage + i) * 0x1000;
+            uint64_t localPhysicalAddress = TranslateToHighHalfMemoryAddress(physicalAddress);
 
-            pageTableManager->MapMemory((void *)((startPage + i) * 0x1000), physicalAddress, flags | PAGING_FLAG_WRITABLE);
-            localPageTable.MapMemory((void *)TranslateToHighHalfMemoryAddress((startPage + i) * 0x1000), physicalAddress, flags | PAGING_FLAG_WRITABLE);
+            pageTableManager->MapMemory((void *)userAddress, (void *)physicalAddress, flags | PAGING_FLAG_WRITABLE);
+            localPageTable.MapMemory((void *)localPhysicalAddress, (void *)physicalAddress, flags | PAGING_FLAG_WRITABLE);
         }
 
-        memcpy((void *)higherAddress, (uint8_t *)data + offset, fileSize);
-
-        if(memSize > fileSize)
-        {
-            memset((void *)(higherAddress + fileSize), 0, memSize - fileSize);
-        }
+        memset((void *)higherPhysical, 0, pageCount * 0x1000);
+        memcpy((void *)(higherPhysical + address % 0x1000), (uint8_t *)data + offset, fileSize);
 
         return true;
     }

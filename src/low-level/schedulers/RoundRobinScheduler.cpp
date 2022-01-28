@@ -121,10 +121,12 @@ ProcessControlBlock *RoundRobinScheduler::NextProcess()
 
 void RoundRobinScheduler::Advance()
 {
-    Threading::ScopedLock lock(this->lock);
+    lock.Lock();
 
     if(processes == NULL)
     {
+        lock.Unlock();
+
         return;
     }
 
@@ -140,6 +142,8 @@ void RoundRobinScheduler::Advance()
         {
             if(p->next == processes)
             {
+                lock.Unlock();
+
                 return;
             }
 
@@ -162,6 +166,8 @@ void RoundRobinScheduler::Advance()
         p = p->next;
     }
     while(p != processes);
+
+    lock.Unlock();
 }
 
 void RoundRobinScheduler::ExitProcess(ProcessInfo *process)

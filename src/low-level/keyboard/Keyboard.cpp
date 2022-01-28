@@ -429,6 +429,7 @@ extern "C" void HandleKeyboardKeyPress(uint8_t scancode)
                     if(entry.modifier == "SHIFT" && (isLeftShiftPressed || isRightShiftPressed))
                     {
                         globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, entry.value[0], entry.key, isLeftShiftPressed, isRightShiftPressed));
+
                         return;
                     }
 
@@ -437,57 +438,8 @@ extern "C" void HandleKeyboardKeyPress(uint8_t scancode)
 
                 globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, entry.value[0], entry.key, isLeftShiftPressed, isRightShiftPressed));
 
-                return;
+                break;
             }
         }
-    }
-
-    switch (scancode)
-    {
-        case Enter:
-            globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, '\n', TOAST_KEY_RETURN, isLeftShiftPressed, isRightShiftPressed));
-            
-            return;
-
-        case Spacebar:
-            globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, ' ', TOAST_KEY_SPACE, isLeftShiftPressed, isRightShiftPressed));
-
-            return;
-
-        case BackSpace:
-            globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, '\b', TOAST_KEY_BACKSPACE, isLeftShiftPressed, isRightShiftPressed));
-
-            return;
-
-        case LeftShift:
-            isLeftShiftPressed = true;
-            globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, 0, TOAST_KEY_LEFT_SHIFT, isLeftShiftPressed, isRightShiftPressed));
-
-            return;
-
-        case LeftShift + 0x80:
-            isLeftShiftPressed = false;
-            globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, 0, TOAST_KEY_LEFT_SHIFT, isLeftShiftPressed, isRightShiftPressed));
-
-            return;
-
-        case RightShift:
-            isRightShiftPressed = true;
-            globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, 0, TOAST_KEY_RIGHT_SHIFT, isLeftShiftPressed, isRightShiftPressed));
-
-            return;
-
-        case RightShift + 0x80:
-            isRightShiftPressed = false;
-            globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, 0, TOAST_KEY_RIGHT_SHIFT, isLeftShiftPressed, isRightShiftPressed));
-
-            return;
-    }
-
-    char ascii = QWERTYKeyboard::Translate(scancode, isLeftShiftPressed | isRightShiftPressed);
-
-    if (ascii != 0)
-    {
-        globalInputSystem->AddEvent(MakeKeyboardEvent(scancode, ascii, 0, isLeftShiftPressed, isRightShiftPressed));
     }
 }

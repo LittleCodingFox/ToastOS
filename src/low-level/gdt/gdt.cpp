@@ -5,6 +5,7 @@
 static uint8_t tssStack[0x100000];
 static uint8_t tssist1Stack[0x100000];
 static uint8_t tssist2Stack[0x100000];
+static uint8_t tssist3Stack[0x100000];
 
 TSS tss = { 0 };
 
@@ -85,6 +86,7 @@ void LoadGDT()
     tss.rsp0 = (uint64_t)&tssStack[sizeof(tssStack)];
     tss.ist1 = (uint64_t)&tssist1Stack[sizeof(tssist1Stack)];
     tss.ist2 = (uint64_t)&tssist2Stack[sizeof(tssist2Stack)];
+    tss.ist3 = (uint64_t)&tssist3Stack[sizeof(tssist3Stack)];
 
     DEBUG_OUT("%s", "GDT Offsets:");
     DEBUG_OUT("GDT Null: 0x%llx", (uint64_t)&gdt.null - (uint64_t)&gdt);

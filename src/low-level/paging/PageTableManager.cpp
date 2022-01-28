@@ -4,6 +4,7 @@
 #include <string.h>
 #include "PageFrameAllocator.hpp"
 #include "debug.hpp"
+#include "Panic.hpp"
 #include "registers/Registers.hpp"
 #include "stacktrace/stacktrace.hpp"
 
@@ -59,10 +60,12 @@ static inline uint64_t DuplicateRecursive(PageTableManager *self, uint64_t entry
     uint64_t newPage = (uint64_t)globalAllocator.RequestPage();
     uint64_t *newVirtual = (uint64_t *)TranslateToHighHalfMemoryAddress(newPage);
 
+    self->MapMemory(newVirtual, (void *)newPage, flags);
+
+    memset(newVirtual, 0, 0x1000);
+
     if(level == 0)
     {
-        self->MapMemory(newVirtual, (void *)newPage, flags);
-
         memcpy(newVirtual, (void *)virt, 0x1000);
     }
     else
@@ -165,6 +168,8 @@ void PageTableManager::UnmapMemory(void *virtualMemory)
 void PageTableManager::Duplicate(PageTable *newTable)
 {
     PageTable *p4Virtual = (PageTable *)TranslateToHighHalfMemoryAddress((uint64_t)p4);
+
+    memset(newTable, 0, 0x1000);
 
     for(uint64_t i = 0; i < 256; i++)
     {

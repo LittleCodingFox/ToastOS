@@ -8,11 +8,11 @@ int main(int argc, char **argv)
 
     if(f == 0)
     {
-        printf("Client program!\n");
+        printf("Forked program!\n");
     }
     else
     {
-        printf("Forked program!\n");
+        printf("Client program!\n");
     }
 
     return 0;

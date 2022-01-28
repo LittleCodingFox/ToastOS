@@ -7,7 +7,7 @@
 #include "interrupts/Interrupts.hpp"
 #include "kernel.h"
 
-#define PROCESS_STACK_SIZE 0x4000
+constexpr int PROCESS_STACK_SIZE = 4 * 1024 * 1024;
 
 enum ProcessPermissionLevel
 {

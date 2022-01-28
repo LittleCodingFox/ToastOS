@@ -53,30 +53,15 @@ namespace Threading
     {
     private:
         AtomicLock &lock;
-        bool interruptsEnabled;
     public:
-        ScopedLock(AtomicLock &value) : lock(value), interruptsEnabled(false)
+        ScopedLock(AtomicLock &value) : lock(value)
         {
-            uint64_t rflags = Registers::ReadRFlags();
-
-            if(rflags & (1 << 9))
-            {
-                interruptsEnabled = true;
-
-                interrupts.DisableInterrupts();
-            }
-
             lock.Lock();
         }
 
         ~ScopedLock()
         {
             lock.Unlock();
-
-            if(interruptsEnabled)
-            {
-                interrupts.EnableInterrupts();
-            }
         }
     };
 }
