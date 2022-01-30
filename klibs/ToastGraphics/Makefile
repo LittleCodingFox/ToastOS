@@ -23,9 +23,12 @@ default: $(PROGRAM_NAME)
 
 makedirs:
 	mkdir -p $(OBJDIR)
+	mkdir -p $(DESTDIR)/usr/include/toast/
+	mkdir -p $(DESTDIR)/usr/lib
 
 $(PROGRAM_NAME): makedirs $(COBJECTS)
-	$(AR) rcs "$(DESTDIR)/lib$@.a" $(COBJECTS)
+	$(AR) rcs "$(DESTDIR)/usr/lib/lib$@.a" $(COBJECTS)
+	cp -Rf ../../userland/include/* $(DESTDIR)/usr/include/toast/
 
 $(COBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
 	mkdir -p $(shell dirname $@)
