@@ -1,0 +1,19 @@
+packages:
+  - name: doomgeneric
+    source:
+      subdir: 'ports'
+      git: 'https://github.com/ozkl/doomgeneric.git'
+      branch: 'master'
+      commit: '2d9b24f07c78c36becf41d89db30fa99863463e5'
+    tools_required:
+      - host-gcc
+    pkgs_required:
+      - mlibc
+      - toastgraphics
+      - toastinput
+    build:
+      - args: ['rm', '-Rf', '@THIS_COLLECT_DIR@/apps']
+      - args: ['mkdir', '-p', '@THIS_COLLECT_DIR@/apps/doom']
+      - args: ['wget', 'http://static.painkiller.allfearthesentinel.net/wads/doom1.wad', '-P',
+        '@THIS_COLLECT_DIR@/apps/doom']
+      - args: ['make', '-C', '@THIS_SOURCE_DIR@', '-f', '@THIS_SOURCE_DIR@/Makefile.toast', 'DESTDIR=@THIS_COLLECT_DIR@', '-j@PARALLELISM@']

@@ -1,0 +1,236 @@
+From d652a2f7f1d7c538115e1c3481abe3fe44d9f64a Mon Sep 17 00:00:00 2001
+From: Nuno Silva <little.coding.fox@gmail.com>
+Date: Sun, 30 Jan 2022 18:12:37 +0000
+Subject: [PATCH] Add toast target
+
+---
+ Makefile.toast                  |  54 +++++++++++
+ doomgeneric/doomgeneric_toast.c | 155 ++++++++++++++++++++++++++++++++
+ 2 files changed, 209 insertions(+)
+ create mode 100644 Makefile.toast
+ create mode 100644 doomgeneric/doomgeneric_toast.c
+
+diff --git a/Makefile.toast b/Makefile.toast
+new file mode 100644
+index 0000000..1a30e2c
+--- /dev/null
++++ b/Makefile.toast
+@@ -0,0 +1,54 @@
++################################################################
++#
++# $Id:$
++#
++# $Log:$
++#
++export PATH := $(PATH):../../toolchain/tools/host-binutils/bin:../../toolchain/tools/host-gcc/bin
++
++ifeq ($(V),1)
++	VB=''
++else
++	VB=@
++endif
++
++CC=x86_64-toast-gcc  # gcc or g++
++LD=x86_64-toast-ld
++CFLAGS+=-Os $(INCLUDES) --sysroot=../../toolchain/system-root/ -I../include
++LDFLAGS+=-L../../toolchain/pkg-builds/mlibc/ -L../../toolchain/packages/mlibc/usr/lib -L../../dist/usr/lib
++CFLAGS+=-Wall -DNORMALUNIX -DLINUX -DSNDSERV # -DUSEASM
++LIBS+=-ltoastgraphics -ltoastinput -lm -lc ../../toolchain/packages/mlibc/usr/lib/crt0.o
++
++# subdirectory for objects
++OBJDIR=doomgeneric/build
++OUTPUT=doom
++
++SRC_DOOM = i_main.o dummy.o am_map.o doomdef.o doomstat.o dstrings.o d_event.o d_items.o d_iwad.o d_loop.o d_main.o d_mode.o d_net.o f_finale.o f_wipe.o g_game.o hu_lib.o hu_stuff.o info.o i_cdmus.o i_endoom.o i_joystick.o i_scale.o i_sound.o i_system.o i_timer.o memio.o m_argv.o m_bbox.o m_cheat.o m_config.o m_controls.o m_fixed.o m_menu.o m_misc.o m_random.o p_ceilng.o p_doors.o p_enemy.o p_floor.o p_inter.o p_lights.o p_map.o p_maputl.o p_mobj.o p_plats.o p_pspr.o p_saveg.o p_setup.o p_sight.o p_spec.o p_switch.o p_telept.o p_tick.o p_user.o r_bsp.o r_data.o r_draw.o r_main.o r_plane.o r_segs.o r_sky.o r_things.o sha1.o sounds.o statdump.o st_lib.o st_stuff.o s_sound.o tables.o v_video.o wi_stuff.o w_checksum.o w_file.o w_main.o w_wad.o z_zone.o w_file_stdc.o i_input.o i_video.o doomgeneric.o doomgeneric_toast.o
++OBJS += $(addprefix $(OBJDIR)/, $(SRC_DOOM))
++
++all:	 $(OUTPUT)
++
++clean:
++	rm -rf $(OBJDIR)
++	rm -f $(OUTPUT)
++	rm -f $(OUTPUT).gdb
++	rm -f $(OUTPUT).map
++
++$(OUTPUT):	$(OBJS)
++	@echo [Linking $@]
++	$(VB)$(LD) $(OBJS) $(LDFLAGS) $(LIBS) -o $(DESTDIR)/apps/doom/$(OUTPUT)
++	@echo [Size]
++	-$(CROSS_COMPILE)size $(DESTDIR)/apps/doom/$(OUTPUT)
++
++$(OBJS): | $(OBJDIR)
++
++$(OBJDIR):
++	mkdir -p $(OBJDIR)
++
++$(OBJDIR)/%.o: doomgeneric/%.c
++	@echo [Compiling $<]
++	$(VB)$(CC) $(CFLAGS) -c $< -o $@
++
++print:
++	@echo OBJS: $(OBJS)
++
+diff --git a/doomgeneric/doomgeneric_toast.c b/doomgeneric/doomgeneric_toast.c
+new file mode 100644
+index 0000000..5e658fc
+--- /dev/null
++++ b/doomgeneric/doomgeneric_toast.c
+@@ -0,0 +1,155 @@
++//doomgeneric for soso os
++
++#include "doomkeys.h"
++#include "m_argv.h"
++#include "doomgeneric.h"
++
++#include <string.h>
++#include <stdio.h>
++#include <unistd.h>
++#include <time.h>
++
++#include <stdbool.h>
++#include <toast/graphics.h>
++#include <toast/input.h>
++
++uint8_t *buffer = NULL;
++uint32_t bufferSize = 0;
++int bufferWidth = 0;
++
++#define KEYQUEUE_SIZE 16
++
++static unsigned short s_KeyQueue[KEYQUEUE_SIZE];
++static unsigned int s_KeyQueueWriteIndex = 0;
++static unsigned int s_KeyQueueReadIndex = 0;
++
++static unsigned char convertToDoomKey(unsigned int key, char character){
++  switch (key)
++    {
++    case TOAST_KEY_RETURN:
++      key = KEY_ENTER;
++      break;
++    case TOAST_KEY_ESCAPE:
++      key = KEY_ESCAPE;
++      break;
++    case TOAST_KEY_LEFT_ARROW:
++      key = KEY_LEFTARROW;
++      break;
++    case TOAST_KEY_RIGHT_ARROW:
++      key = KEY_RIGHTARROW;
++      break;
++    case TOAST_KEY_UP_ARROW:
++      key = KEY_UPARROW;
++      break;
++    case TOAST_KEY_DOWN_ARROW:
++      key = KEY_DOWNARROW;
++      break;
++    case TOAST_KEY_LEFT_CONTROL:
++    case TOAST_KEY_RIGHT_CONTROL:
++      key = KEY_FIRE;
++      break;
++    case TOAST_KEY_SPACE:
++      key = KEY_USE;
++      break;
++    case TOAST_KEY_LEFT_SHIFT:
++    case TOAST_KEY_RIGHT_SHIFT:
++      key = KEY_RSHIFT;
++      break;
++    default:
++      key = tolower(character);
++      break;
++    }
++
++  return key;
++}
++
++static void addKeyToQueue(int pressed, unsigned int keyCode, char character){
++  unsigned char key = convertToDoomKey(keyCode, character);
++
++  unsigned short keyData = (pressed << 8) | key;
++
++  s_KeyQueue[s_KeyQueueWriteIndex] = keyData;
++  s_KeyQueueWriteIndex++;
++  s_KeyQueueWriteIndex %= KEYQUEUE_SIZE;
++}
++
++static void handleKeyInput()
++{
++  struct InputEvent event;
++
++  while(ToastInputPollEvent(&event))
++  {
++    if(event.type == TOAST_INPUT_EVENT_KEYDOWN)
++    {
++      addKeyToQueue(1, event.keyEvent.key, event.keyEvent.character);
++    }
++    else if(event.type == TOAST_INPUT_EVENT_KEYUP)
++    {
++      addKeyToQueue(0, event.keyEvent.key, event.keyEvent.character);
++    }
++  }
++}
++
++void DG_Init()
++{
++  ToastSetGraphicsType(TOAST_GRAPHICS_TYPE_GUI);
++
++  int height, bpp;
++
++  ToastGetGraphicsSize(&bufferWidth, &height, &bpp);
++
++  bufferSize = sizeof(uint32_t) * bufferWidth * height;
++
++  buffer = (uint8_t *)malloc(bufferSize);
++  memset(buffer, 128, bufferSize);
++
++  ToastSetGraphicsBuffer(buffer);
++}
++
++void DG_DrawFrame()
++{
++  for(uint32_t y = 0; y < DOOMGENERIC_RESY; y++)
++  {
++    memcpy(buffer + y * bufferWidth * sizeof(uint32_t), DG_ScreenBuffer + y * DOOMGENERIC_RESX, DOOMGENERIC_RESX * sizeof(uint32_t));
++  }
++
++  ToastSetGraphicsBuffer(buffer);
++
++  handleKeyInput();
++}
++
++void DG_SleepMs(uint32_t ms)
++{
++  //TODO
++}
++
++uint32_t DG_GetTicksMs()
++{
++  struct timespec currentTime;
++  clock_gettime(CLOCK_MONOTONIC, &currentTime);
++
++  return currentTime.tv_sec * 1000 + currentTime.tv_nsec / 1000000;
++}
++
++int DG_GetKey(int* pressed, unsigned char* doomKey)
++{
++  if (s_KeyQueueReadIndex == s_KeyQueueWriteIndex){
++    //key queue is empty
++    return 0;
++  }else{
++    unsigned short keyData = s_KeyQueue[s_KeyQueueReadIndex];
++    s_KeyQueueReadIndex++;
++    s_KeyQueueReadIndex %= KEYQUEUE_SIZE;
++
++    *pressed = keyData >> 8;
++    *doomKey = keyData & 0xFF;
++
++    return 1;
++  }
++
++  return 0;
++}
++
++void DG_SetWindowTitle(const char * title)
++{
++}
+-- 
+2.25.1
+

@@ -6,8 +6,8 @@ extern "C" {
 
 enum 
 {
-    GRAPHICS_TYPE_CONSOLE,
-    GRAPHICS_TYPE_GUI,
+    TOAST_GRAPHICS_TYPE_CONSOLE,
+    TOAST_GRAPHICS_TYPE_GUI,
 };
 
 void ToastSetGraphicsType(int type);
