@@ -42,12 +42,6 @@ using namespace FileSystem;
     \
     DEBUG_OUT("Initializing fork %p for process %llu: rsp: %p; rip: %p; cr3: %p", task, task->process->ID, task->rsp, task->rip, task->cr3); \
     \
-    LoadFSBase(task->fsBase); \
-    \
-    UPDATE_PROCESS_ACTIVE_PERMISSIONS(task); \
-    \
-    UPDATETSS(task); \
-    \
     lock.Unlock(); \
     \
     SwapTasks(task);
@@ -72,15 +66,7 @@ using namespace FileSystem;
 ProcessManager *globalProcessManager;
 uint64_t processIDCounter = 0;
 
-extern "C" void SwitchToUsermode(void *instructionPointer, void *stackPointer);
 extern "C" void SwitchTasks(ProcessControlBlock* next);
-
-void SwapTasks(ProcessControlBlock *next)
-{
-    //DEBUG_OUT("Swapping to task with RIP %p RSP %p and CR3 %p", next->rip, next->rsp, next->cr3);
-
-    SwitchTasks(next);
-}
 
 void SwitchProcess(InterruptStack *stack)
 {
@@ -183,13 +169,7 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
 
         DEBUG_OUT("Initializing task %p for process %llu: rsp: %p; rip: %p; cr3: %p", next, next->process->ID, next->rsp, next->rip, next->cr3);
 
-        LoadFSBase(next->fsBase);
-
-        UPDATE_PROCESS_ACTIVE_PERMISSIONS(next);
-
         scheduler->Advance();
-        
-        UPDATETSS(next);
 
         lock.Unlock();
 
@@ -205,17 +185,24 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
         next->process->ID, next->State().data(), next->rsp, next->rip, next->cr3, next->cs, next->ss);
     */
 
-    LoadFSBase(next->fsBase);
-
-    UPDATE_PROCESS_ACTIVE_PERMISSIONS(next);
-
     scheduler->Advance();
-
-    UPDATETSS(next);
 
     lock.Unlock();
 
     SwapTasks(next);
+}
+
+void ProcessManager::SwapTasks(ProcessControlBlock *next)
+{
+    //DEBUG_OUT("Swapping to task with RIP %p RSP %p and CR3 %p", next->rip, next->rsp, next->cr3);
+
+    LoadFSBase(next->fsBase);
+
+    UPDATE_PROCESS_ACTIVE_PERMISSIONS(next);
+
+    UPDATETSS(next);
+
+    SwitchTasks(next);
 }
 
 ProcessManager::ProcessPair *ProcessManager::CurrentProcess()
@@ -317,6 +304,7 @@ ProcessManager::ProcessPair *ProcessManager::CreateFromEntryPoint(uint64_t entry
     auto pcb = scheduler->AddProcess(newProcess);
 
     ProcessPair pair;
+
     pair.isValid = true;
     pair.info = newProcess;
     pair.pcb = pcb;
@@ -571,8 +559,8 @@ ProcessManager::ProcessPair *ProcessManager::LoadImage(const void *image, const 
     ProcessPair pair;
 
     pair.isValid = true;
-    pair.pcb = pcb;
     pair.info = newProcess;
+    pair.pcb = pcb;
 
     auto outPair = &processes.push_back(pair);
 
@@ -606,8 +594,6 @@ void ProcessManager::Exit(int exitCode, bool forceRemove)
         if(forceRemove)
         {
             DEBUG_OUT("Process %llu is being force removed", pcb->process->ID);
-
-            pcb->process->ID = (uint64_t)-1;
         }
         else
         {
@@ -624,8 +610,6 @@ void ProcessManager::Exit(int exitCode, bool forceRemove)
     auto pcb = scheduler->CurrentProcess();
 
     DEBUG_OUT("Swapping to process %llu (rip: %p, rsp: %p, cr3: %p)", pcb->process->ID, pcb->process->rip, pcb->process->rsp, pcb->process->cr3);
-
-    UPDATETSS(pcb);
 
     lock.Unlock();
 
@@ -841,10 +825,11 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
 
     currentPageManager.Duplicate(higherPageTableFrame);
 
-    auto pair = ProcessPair();
+    ProcessPair pair;
+
+    pair.isValid = true;
     pair.info = newProcess;
     pair.pcb = pcb;
-    pair.isValid = true;
 
     processes.push_back(pair);
 
@@ -882,10 +867,10 @@ ProcessManager::ProcessPair *ProcessManager::GetProcess(pid_t pid)
 
     for(auto &pair : processes)
     {
-        if(!pair.isValid)
-         {
-             continue;
-         }
+        if(!pair.isValid || pair.info->state == PROCESS_STATE_DEAD)
+        {
+            continue;
+        }
 
         if(pair.info->ID == pid)
         {

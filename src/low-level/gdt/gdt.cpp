@@ -3,6 +3,7 @@
 #include "debug.hpp"
 
 static uint8_t tssStack[0x100000];
+static uint8_t ist2Stack[0x100000];
 
 TSS tss = { 0 };
 
@@ -81,6 +82,7 @@ void LoadGDT()
     };
 
     tss.rsp0 = (uint64_t)&tssStack[sizeof(tssStack)];
+    tss.ist2 = (uint64_t)&ist2Stack[sizeof(ist2Stack)];
 
     DEBUG_OUT("%s", "GDT Offsets:");
     DEBUG_OUT("GDT Null: 0x%llx", (uint64_t)&gdt.null - (uint64_t)&gdt);

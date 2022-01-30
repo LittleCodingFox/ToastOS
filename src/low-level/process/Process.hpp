@@ -46,9 +46,11 @@ struct ProcessInfo
     uint64_t sleepTicks;
     uint64_t fsBase;
     sigaction sigHandlers[SIGNAL_MAX];
+
     uid_t uid;
     gid_t gid;
     pid_t ppid;
+
     sigset_t sigprocmask;
     uint64_t state;
     int exitCode;
@@ -142,6 +144,8 @@ public:
 private:
     IScheduler *scheduler;
     vector<ProcessPair> processes;
+
+    void SwapTasks(ProcessControlBlock *next);
 public:
     struct ProcessPair
     {

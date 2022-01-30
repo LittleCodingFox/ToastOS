@@ -40,7 +40,7 @@ int64_t SyscallWaitPID(InterruptStack *stack)
             return -EINTR;
         }
 
-        *retpid = children[children.size() - 1].info->ID;
+        *retpid = child.info->ID;
     }
     else if(pid == 0)
     {
@@ -58,7 +58,7 @@ int64_t SyscallWaitPID(InterruptStack *stack)
             return -EINTR;
         }
         
-        *retpid = children[children.size() - 1].info->ID;
+        *retpid = child.info->ID;
     }
     else if(pid > 0)
     {
