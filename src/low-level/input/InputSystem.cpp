@@ -13,15 +13,15 @@ bool InputSystem::Poll(InputEvent *event)
 {
     Threading::ScopedLock lock(this->lock);
 
-    if(events.size() == 0)
+    if(event == NULL || events.size() == 0)
     {
         return false;
     }
 
-    memcpy(event, &events[0], sizeof(InputEvent));
+    *event = events[0];
 
     //Very ineffective, but will do for now
-    auto newEvents = vector<InputEvent>();
+    vector<InputEvent> newEvents;
 
     for(size_t i = 1; i < events.size(); i++)
     {

@@ -85,6 +85,9 @@ KeyInfo keys[] =
 bool isLeftShiftPressed;
 bool isRightShiftPressed;
 
+bool gotKeyboardInput = false;
+char keyboardInput;
+
 struct KeyboardLayoutItem
 {
     uint32_t scancode;
@@ -301,6 +304,7 @@ extern "C" void InitializeKeyboard()
 {
     DEBUG_OUT("Initializing keyboard", 0);
 
+#if USE_INPUT_SYSTEM
     auto handle = vfs->OpenFile("/system/kbd/active", 0, NULL);
 
     if(vfs->FileType(handle) == FILE_HANDLE_FILE)
@@ -337,11 +341,25 @@ extern "C" void InitializeKeyboard()
             DEBUG_OUT("Successfully loaded layout!", 0);
         }
     }
+
+#endif
 }
 
 extern "C" const char *GetKeyboardLayoutName()
 {
     return currentLayout.valid() ? currentLayout->name.data() : "";
+}
+
+extern "C" bool GotKeyboardInput()
+{
+    return gotKeyboardInput;
+}
+
+extern "C" char KeyboardInput()
+{
+    gotKeyboardInput = false;
+    
+    return keyboardInput;
 }
 
 InputEvent MakeKeyboardEvent(uint8_t scancode, uint16_t character, uint8_t key, bool leftShift, bool rightShift)
@@ -357,6 +375,7 @@ InputEvent MakeKeyboardEvent(uint8_t scancode, uint16_t character, uint8_t key, 
 
 extern "C" void HandleKeyboardKeyPress(uint8_t scancode)
 {
+#if USE_INPUT_SYSTEM
     if(currentLayout.valid() && currentLayout->items.size() != 0)
     {
         if(currentLayout->lshiftKey != NULL)
@@ -442,4 +461,55 @@ extern "C" void HandleKeyboardKeyPress(uint8_t scancode)
             }
         }
     }
+#else
+
+    switch (scancode)
+    {
+        case Enter:
+            gotKeyboardInput = true;
+            keyboardInput = '\n';
+
+            return;
+
+        case Spacebar:
+            gotKeyboardInput = true;
+            keyboardInput = ' ';
+
+            return;
+
+        case BackSpace:
+            gotKeyboardInput = true;
+            keyboardInput = '\b';
+
+            return;
+
+        case LeftShift:
+            isLeftShiftPressed = true;
+
+            return;
+
+        case LeftShift + 0x80:
+            isLeftShiftPressed = false;
+
+            return;
+
+        case RightShift:
+            isRightShiftPressed = true;
+
+            return;
+
+        case RightShift + 0x80:
+            isRightShiftPressed = false;
+
+            return;
+    }
+
+    char ascii = QWERTYKeyboard::Translate(scancode, isLeftShiftPressed | isRightShiftPressed);
+
+    if (ascii != 0)
+    {
+        gotKeyboardInput = true;
+        keyboardInput = ascii;
+    }
+#endif
 }

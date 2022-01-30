@@ -9,6 +9,8 @@
 
 using namespace FileSystem;
 
+extern bool InputEnabled;
+
 int64_t SyscallRead(InterruptStack *stack)
 {
     int fd = stack->rsi;
@@ -21,6 +23,9 @@ int64_t SyscallRead(InterruptStack *stack)
 
     if(fd == 0) //stdin
     {
+        uint8_t *ptr = (uint8_t *)buffer;
+
+        #if USE_INPUT_SYSTEM
         InputEvent event;
 
         while(!globalInputSystem->Poll(&event) || event.type != TOAST_INPUT_EVENT_KEYDOWN || event.keyEvent.character == '\0')
@@ -29,8 +34,14 @@ int64_t SyscallRead(InterruptStack *stack)
         }
 
         char keyboardInput = (char)event.keyEvent.character;
+        #else
+        while(!GotKeyboardInput())
+        {
+            ProcessYield();
+        }
 
-        uint8_t *ptr = (uint8_t *)buffer;
+        char keyboardInput = KeyboardInput();
+        #endif
 
         *ptr = keyboardInput;
 

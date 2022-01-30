@@ -33,6 +33,13 @@ int64_t SyscallWaitPID(InterruptStack *stack)
             return -EINTR;
         }
 
+        auto child = children[children.size() - 1];
+
+        if(child.info->state != PROCESS_STATE_DEAD)
+        {
+            return -EINTR;
+        }
+
         *retpid = children[children.size() - 1].info->ID;
     }
     else if(pid == 0)
@@ -44,13 +51,20 @@ int64_t SyscallWaitPID(InterruptStack *stack)
             return -EINTR;
         }
 
+        auto child = children[children.size() - 1];
+
+        if(child.info->state != PROCESS_STATE_DEAD)
+        {
+            return -EINTR;
+        }
+        
         *retpid = children[children.size() - 1].info->ID;
     }
     else if(pid > 0)
     {
         auto process = globalProcessManager->GetProcess(pid);
 
-        if(process == NULL || process->isValid == false)
+        if(process == NULL || process->isValid == false || process->info->state != PROCESS_STATE_DEAD)
         {
             return -EINTR;
         }

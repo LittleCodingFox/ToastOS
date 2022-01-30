@@ -117,3 +117,25 @@ extern "C" void __ubsan_handle_vla_bound_not_positive(ubsan_overflow_data_t *dat
 {
     ubsanPanicAt(&data->location, "Negative VLA size");
 }
+
+extern "C" void __ubsan_handle_alignment_assumption(void *data, uintptr_t pointer, uint32_t align, uint32_t offset)
+{
+    ubsan_alignment_assumption_data_t *alignmentData = (ubsan_alignment_assumption_data_t *)data;
+    uintptr_t realPtr;
+
+    if(offset)
+    {
+        DEBUG_OUT("[UBSAN] assumption of %lu byte alignment (with offset %lu byte) for pointer of type %s failed", align, offset, alignmentData->type->name);
+    }
+    else
+    {
+        DEBUG_OUT("[UBSAN] assumption of %lu byte alignment for pointer of type %s failed", align, alignmentData->type->name);
+    }
+
+    realPtr = pointer - offset;
+
+    DEBUG_OUT("%s address misalignment offset is %lu bytes",
+        offset ? "offset" : "", realPtr & (align - 1));
+
+    ubsanPanicAt(&alignmentData->assumption_location, "byte alignment failed");
+}

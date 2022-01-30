@@ -16,6 +16,11 @@ void HandleKeyboardKeyPress(uint8_t scancode);
 void SetKeyboardLayout(const char *name);
 const char *GetKeyboardLayoutName();
 
+#if !USE_INPUT_SYSTEM
+bool GotKeyboardInput();
+char KeyboardInput();
+#endif
+
 #ifdef __cplusplus
 }
 #endif
