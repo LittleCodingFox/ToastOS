@@ -3,7 +3,7 @@ export PATH := $(PATH):../../toolchain/tools/host-binutils/bin:../../toolchain/t
 CC				= x86_64-toast-g++
 AR				= x86_64-toast-ar
 
-PROGRAM_NAME	= toastgraphics
+PROGRAM_NAME	= ToastGraphics
 SRCDIR			= src
 OBJDIR			= obj/$(PROGRAM_NAME)
 
@@ -28,7 +28,7 @@ makedirs:
 
 $(PROGRAM_NAME): makedirs $(COBJECTS)
 	$(AR) rcs "$(DESTDIR)/usr/lib/lib$@.a" $(COBJECTS)
-	cp -Rf ../../userland/include/* $(DESTDIR)/usr/include/toast/
+	cp -Rf ../../userland/include/* $(DESTDIR)/usr/include/
 
 $(COBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
 	mkdir -p $(shell dirname $@)
