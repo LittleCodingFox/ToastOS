@@ -134,7 +134,7 @@ index 0000000..5e658fc
 +      key = KEY_RSHIFT;
 +      break;
 +    default:
-+      key = tolower(character);
++      key = character;
 +      break;
 +    }
 +

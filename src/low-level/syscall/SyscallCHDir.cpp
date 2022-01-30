@@ -13,7 +13,7 @@ int64_t SyscallCHDir(InterruptStack *stack)
     char *path = (char *)stack->rsi;
 
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: chdir path: %s", path, size);
+    DEBUG_OUT("Syscall: chdir path: %s", path);
 #endif
 
     auto process = globalProcessManager->CurrentProcess();
@@ -37,7 +37,12 @@ int64_t SyscallCHDir(InterruptStack *stack)
         return ENOTDIR;
     }
 
-    process->info->cwd = vfs->GetFilePath(handle);
+    process->info->cwd = string("/") + vfs->GetFilePath(handle);
+
+    if(process->info->cwd[process->info->cwd.size() - 1] != '/')
+    {
+        process->info->cwd += "/";
+    }
 
     vfs->CloseFile(handle);
 

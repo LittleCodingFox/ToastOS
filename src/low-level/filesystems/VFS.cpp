@@ -192,9 +192,18 @@ namespace FileSystem
     {
         frg::string<frg_allocator> targetPath = path;
 
-        if(targetPath.size() > 0 && targetPath[0] != '/' && currentProcess != NULL)
+        if(targetPath.size() > 0 && currentProcess != NULL)
         {
-            targetPath = currentProcess->cwd + targetPath;
+            if(targetPath.size() >= 2 && targetPath[0] == '.' && targetPath[1] == '/')
+            {
+                auto pathView = frg::string_view(targetPath);
+
+                targetPath = currentProcess->cwd + pathView.sub_string(2, pathView.size() - 2);
+            }
+            else if(targetPath[0] != '/')
+            {
+                targetPath = currentProcess->cwd + targetPath;
+            }
         }
 
         if(targetPath.size() == 0)

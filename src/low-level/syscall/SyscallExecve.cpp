@@ -44,6 +44,8 @@ int64_t SyscallExecve(InterruptStack *stack)
 
         delete [] buffer;
 
+        vfs->CloseFile(handle);
+
         return EIO;
     }
 
@@ -54,6 +56,8 @@ int64_t SyscallExecve(InterruptStack *stack)
     pair->info->gid = process->info->gid;
 
     delete [] buffer;
+
+    vfs->CloseFile(handle);
 
     globalProcessManager->Exit(0, true);
 
