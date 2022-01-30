@@ -85,8 +85,6 @@ struct ProcessControlBlock
 
     uint64_t cr3;
 
-    uint64_t stack[PROCESS_STACK_SIZE];
-
     uint64_t fsBase;
 
     ProcessInfo *process;

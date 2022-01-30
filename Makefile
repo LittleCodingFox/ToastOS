@@ -152,7 +152,7 @@ bootstrap:
 	cd toolchain && xbstrap init ..
 	cd toolchain && xbstrap install-tool --all
 	cd toolchain && xbstrap install mlibc
-	cd toolchain && xbstrap install -u --all
+	cd toolchain && xbstrap install --all
 
 rebuild-bootstrap: clean-bootstrap bootstrap
 
