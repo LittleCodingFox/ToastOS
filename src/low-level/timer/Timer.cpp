@@ -3,7 +3,7 @@
 #include "debug.hpp"
 #include <stdlib.h>
 
-#define TIMER_FREQUENCY 60 // in Hz
+#define TIMER_FREQUENCY 200 // in Hz
 #define TIMER_QUOTIENT  1193180
 
 #define PIT_0           0x40

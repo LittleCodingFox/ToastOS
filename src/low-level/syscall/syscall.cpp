@@ -40,6 +40,8 @@ int64_t SyscallSetGraphicsBuffer(InterruptStack *stack);
 int64_t SyscallGetGraphicsSize(InterruptStack *stack);
 int64_t SyscallExecve(InterruptStack *stack);
 int64_t SyscallPollInput(InterruptStack *stack);
+int64_t SyscallCWD(InterruptStack *stack);
+int64_t SyscallCHDir(InterruptStack *stack);
 
 SyscallPointer syscallHandlers[] =
 {
@@ -76,6 +78,8 @@ SyscallPointer syscallHandlers[] =
     [SYSCALL_SETGRAPHICSBUFFER] = (SyscallPointer)SyscallSetGraphicsBuffer,
     [SYSCALL_EXECVE] = (SyscallPointer)SyscallExecve,
     [SYSCALL_POLLINPUT] = (SyscallPointer)SyscallPollInput,
+    [SYSCALL_CWD] = (SyscallPointer)SyscallCWD,
+    [SYSCALL_CHDIR] = (SyscallPointer)SyscallCHDir,
 };
 
 void SyscallHandler(InterruptStack *stack)

@@ -37,3 +37,5 @@
 #define SYSCALL_SETGRAPHICSBUFFER   32
 #define SYSCALL_EXECVE              33
 #define SYSCALL_POLLINPUT           34
+#define SYSCALL_CWD                 35
+#define SYSCALL_CHDIR               36
