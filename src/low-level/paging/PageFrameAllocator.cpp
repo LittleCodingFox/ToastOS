@@ -134,8 +134,6 @@ void PageFrameAllocator::InitBitmap(size_t bitmapSize, void* bufferAddress)
 
 void* PageFrameAllocator::RequestPage()
 {
-    Threading::ScopedLock lock(this->lock);
-
     for (uint64_t i = 0; i < PageBitmap.size * 8; i++)
     {
         if (PageBitmap[i] == true) continue;
@@ -150,8 +148,6 @@ void* PageFrameAllocator::RequestPage()
 
 void *PageFrameAllocator::RequestPages(uint32_t count)
 {
-    Threading::ScopedLock lock(this->lock);
-
     uint32_t freeCount = 0;
 
     for (uint32_t i = 0; i < PageBitmap.size * 8; i++)
@@ -180,8 +176,6 @@ void *PageFrameAllocator::RequestPages(uint32_t count)
 
 void PageFrameAllocator::FreePage(void* address)
 {
-    Threading::ScopedLock lock(this->lock);
-
     uint64_t index = (uint64_t)address / 0x1000;
 
     if (PageBitmap[index] == false)
@@ -230,8 +224,6 @@ void PageFrameAllocator::LockPages(void* address, uint64_t pageCount)
 
 void PageFrameAllocator::UnreservePage(void* address)
 {
-    Threading::ScopedLock lock(this->lock);
-
     uint64_t index = (uint64_t)address / 0x1000;
 
     if (PageBitmap[index] == false) return;
@@ -253,8 +245,6 @@ void PageFrameAllocator::UnreservePages(void* address, uint64_t pageCount)
 
 void PageFrameAllocator::ReservePage(void* address)
 {
-    Threading::ScopedLock lock(this->lock);
-
     uint64_t index = (uint64_t)address / 0x1000;
 
     if (PageBitmap[index] == true) return;

@@ -7,7 +7,11 @@
 #include "interrupts/Interrupts.hpp"
 #include "kernel.h"
 
-constexpr int PROCESS_STACK_SIZE = 4 * 1024 * 1024;
+constexpr int PROCESS_STACK_SIZE = 0x4000;
+
+static_assert((PROCESS_STACK_SIZE * sizeof(uint64_t)) % 0x1000 == 0, "Misaligned process stack size");
+
+constexpr int PROCESS_STACK_PAGE_COUNT = PROCESS_STACK_SIZE * sizeof(uint64_t) / 0x1000;
 
 enum ProcessPermissionLevel
 {
@@ -32,7 +36,9 @@ struct ProcessInfo
     string name;
     char **argv;
     char **environment;
-    uint64_t stack[PROCESS_STACK_SIZE];
+    uint64_t *kernelStack;
+    uint64_t *istStack;
+    uint64_t *stack;
     uint64_t rip;
     uint64_t rsp;
     uint64_t cr3;

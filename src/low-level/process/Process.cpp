@@ -13,6 +13,7 @@
 #include "syscall/syscall.hpp"
 #include "stacktrace/stacktrace.hpp"
 #include "filesystems/VFS.hpp"
+#include "tss/tss.hpp"
 
 using namespace FileSystem;
 
@@ -32,6 +33,10 @@ using namespace FileSystem;
             break;\
     }
 
+#define UPDATETSS(task) \
+    tss.rsp0 = (uint64_t)&task->process->kernelStack[PROCESS_STACK_SIZE]; \
+    tss.ist1 = (uint64_t)&task->process->istStack[PROCESS_STACK_SIZE];
+
 #define HANDLEFORK(task) \
     task->state = PROCESS_STATE_RUNNING; \
     \
@@ -41,9 +46,25 @@ using namespace FileSystem;
     \
     UPDATE_PROCESS_ACTIVE_PERMISSIONS(task); \
     \
+    UPDATETSS(task); \
+    \
     lock.Unlock(); \
     \
-    SwitchTasks(task);
+    SwapTasks(task);
+
+#define MAPSTACK(stack) \
+    page = (uint64_t)stack / 0x1000; \
+    pageCount = PROCESS_STACK_PAGE_COUNT; \
+    \
+    for(uint64_t i = 0; i < pageCount; i++) \
+    { \
+        currentPageManager.MapMemory((void *)(uint64_t)((page + i) * 0x1000), \
+            (void *)((uint64_t)TranslateToPhysicalMemoryAddress((page + i) * 0x1000)), \
+            PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE); \
+        \
+        userPageManager.IdentityMap((void *)(uint64_t)TranslateToPhysicalMemoryAddress((page + i) * 0x1000), \
+            PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE); \
+    }
 
 #define LD_BASE 0x40000000
 #define push(stack, value) *(--stack) = (value)
@@ -53,6 +74,13 @@ uint64_t processIDCounter = 0;
 
 extern "C" void SwitchToUsermode(void *instructionPointer, void *stackPointer);
 extern "C" void SwitchTasks(ProcessControlBlock* next);
+
+void SwapTasks(ProcessControlBlock *next)
+{
+    //DEBUG_OUT("Swapping to task with RIP %p RSP %p and CR3 %p", next->rip, next->rsp, next->cr3);
+
+    SwitchTasks(next);
+}
 
 void SwitchProcess(InterruptStack *stack)
 {
@@ -87,7 +115,7 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
 
     lock.Lock();
 
-    interrupts.DisableInterrupts(); //Will be enabled in the switch task call
+    interrupts.DisableInterrupts();
 
     ProcessControlBlock *current = scheduler->CurrentProcess();
     ProcessControlBlock *next = scheduler->NextProcess();
@@ -160,10 +188,12 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
         UPDATE_PROCESS_ACTIVE_PERMISSIONS(next);
 
         scheduler->Advance();
+        
+        UPDATETSS(next);
 
         lock.Unlock();
 
-        SwitchTasks(next);
+        SwapTasks(next);
 
         return;
     }
@@ -181,9 +211,11 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
 
     scheduler->Advance();
 
+    UPDATETSS(next);
+
     lock.Unlock();
 
-    SwitchTasks(next);
+    SwapTasks(next);
 }
 
 ProcessManager::ProcessPair *ProcessManager::CurrentProcess()
@@ -210,16 +242,21 @@ ProcessManager::ProcessPair *ProcessManager::CreateFromEntryPoint(uint64_t entry
 
     PageTable *pageTableFrame = (PageTable *)globalAllocator.RequestPage();
 
-    globalPageTableManager->MapMemory((void *)TranslateToHighHalfMemoryAddress((uint64_t)pageTableFrame),
+    PageTableManager currentPageManager;
+    currentPageManager.p4 = (PageTable *)Registers::ReadCR3();
+
+    currentPageManager.MapMemory((void *)TranslateToHighHalfMemoryAddress((uint64_t)pageTableFrame),
         pageTableFrame, PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
 
     PageTable *higherPageTableFrame = (PageTable *)TranslateToHighHalfMemoryAddress((uint64_t)pageTableFrame);
 
     memset(higherPageTableFrame, 0, sizeof(PageTable));
+
+    auto higherCurrentP4 = (PageTable *)TranslateToHighHalfMemoryAddress((uint64_t)currentPageManager.p4);
     
     for(uint64_t i = 256; i < 512; i++)
     {
-        higherPageTableFrame->entries[i] = globalPageTableManager->p4->entries[i];
+        higherPageTableFrame->entries[i] = higherCurrentP4->entries[i];
     }
 
     PageTableManager userPageManager;
@@ -234,34 +271,27 @@ ProcessManager::ProcessPair *ProcessManager::CreateFromEntryPoint(uint64_t entry
 
     for(uint64_t i = 0; i < pageCount; i++)
     {
-        globalPageTableManager->MapMemory((void *)((uint64_t)TranslateToHighHalfMemoryAddress((page + i) * 0x1000)),
+        currentPageManager.MapMemory((void *)((uint64_t)TranslateToHighHalfMemoryAddress((page + i) * 0x1000)),
             (void *)((uint64_t)(page + i) * 0x1000),
             PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
     }
 
     newProcess = (ProcessInfo *)TranslateToHighHalfMemoryAddress((uint64_t)newProcess);
 
-    page = (uint64_t)newProcess->stack / 0x1000;
-    offset = (uint64_t)newProcess->stack % 0x1000;
-    pageCount = (sizeof(newProcess->stack) + offset) / 0x1000 + 1;
-
-    for(uint64_t i = 0; i < pageCount; i++)
-    {
-        globalPageTableManager->MapMemory((void *)(uint64_t)((page + i) * 0x1000),
-            (void *)((uint64_t)TranslateToPhysicalMemoryAddress((page + i) * 0x1000)),
-            PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
-
-        //Do the same for the user
-        userPageManager.MapMemory((void *)(uint64_t)((page + i) * 0x1000),
-            (void *)((uint64_t)TranslateToPhysicalMemoryAddress((page + i) * 0x1000)),
-            PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
-    }
-
     memset(newProcess, 0, sizeof(ProcessInfo));
+
     newProcess->ID = ++processIDCounter;
     newProcess->permissionLevel = newProcess->activePermissionLevel = permissionLevel;
     newProcess->cwd = cwd;
     newProcess->state = PROCESS_STATE_NEEDS_INIT;
+
+    newProcess->kernelStack = (uint64_t *)TranslateToHighHalfMemoryAddress((uint64_t)globalAllocator.RequestPages(PROCESS_STACK_PAGE_COUNT));
+    newProcess->istStack = (uint64_t *)TranslateToHighHalfMemoryAddress((uint64_t)globalAllocator.RequestPages(PROCESS_STACK_PAGE_COUNT));
+    newProcess->stack = (uint64_t *)TranslateToHighHalfMemoryAddress((uint64_t)globalAllocator.RequestPages(PROCESS_STACK_PAGE_COUNT));
+
+    MAPSTACK(newProcess->kernelStack);
+    MAPSTACK(newProcess->istStack);
+    MAPSTACK(newProcess->stack);
 
     newProcess->name = name;
 
@@ -343,21 +373,6 @@ ProcessManager::ProcessPair *ProcessManager::LoadImage(const void *image, const 
 
     newProcess = (ProcessInfo *)TranslateToHighHalfMemoryAddress((uint64_t)newProcess);
 
-    page = (uint64_t)newProcess->stack / 0x1000;
-    offset = (uint64_t)newProcess->stack % 0x1000;
-    pageCount = (sizeof(newProcess->stack) + offset) / 0x1000 + 1;
-
-    for(uint64_t i = 0; i < pageCount; i++)
-    {
-        currentPageManager.MapMemory((void *)(uint64_t)((page + i) * 0x1000),
-            (void *)((uint64_t)TranslateToPhysicalMemoryAddress((page + i) * 0x1000)),
-            PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
-
-        //Map as identity for the process page table
-        userPageManager.IdentityMap((void *)(uint64_t)TranslateToPhysicalMemoryAddress((page + i) * 0x1000),
-            PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
-    }
-
     userPageManager.MapMemory((void *)TranslateToHighHalfMemoryAddress((uint64_t)pageTableFrame), pageTableFrame,
         PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
 
@@ -369,6 +384,14 @@ ProcessManager::ProcessPair *ProcessManager::LoadImage(const void *image, const 
     newProcess->state = PROCESS_STATE_NEEDS_INIT;
 
     newProcess->name = name;
+
+    newProcess->kernelStack = (uint64_t *)TranslateToHighHalfMemoryAddress((uint64_t)globalAllocator.RequestPages(PROCESS_STACK_PAGE_COUNT));
+    newProcess->istStack = (uint64_t *)TranslateToHighHalfMemoryAddress((uint64_t)globalAllocator.RequestPages(PROCESS_STACK_PAGE_COUNT));
+    newProcess->stack = (uint64_t *)TranslateToHighHalfMemoryAddress((uint64_t)globalAllocator.RequestPages(PROCESS_STACK_PAGE_COUNT));
+
+    MAPSTACK(newProcess->kernelStack);
+    MAPSTACK(newProcess->istStack);
+    MAPSTACK(newProcess->stack);
 
     newProcess->rflags = 0x202;
 
@@ -600,11 +623,13 @@ void ProcessManager::Exit(int exitCode, bool forceRemove)
 
     auto pcb = scheduler->CurrentProcess();
 
-    DEBUG_OUT("Swapping to process %llu", pcb->process->ID);
+    DEBUG_OUT("Swapping to process %llu (rip: %p, rsp: %p, cr3: %p)", pcb->process->ID, pcb->process->rip, pcb->process->rsp, pcb->process->cr3);
+
+    UPDATETSS(pcb);
 
     lock.Unlock();
 
-    SwitchTasks(pcb);
+    SwapTasks(pcb);
 }
 
 void ProcessManager::Sigaction(int signum, sigaction *act, sigaction *oldact)
@@ -700,7 +725,6 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
 
     PageTable *pageTableFrame = (PageTable *)globalAllocator.RequestPage();
     PageTable *currentTable = (PageTable *)Registers::ReadCR3();
-    PageTable *higherCurrentTable = (PageTable *)TranslateToHighHalfMemoryAddress((uint64_t)currentTable);
     PageTableManager currentPageManager;
     currentPageManager.p4 = currentTable;
 
@@ -710,11 +734,6 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
     PageTable *higherPageTableFrame = (PageTable *)TranslateToHighHalfMemoryAddress((uint64_t)pageTableFrame);
 
     memset(higherPageTableFrame, 0, sizeof(PageTable));
-
-    for(uint64_t i = 0; i < 512; i++)
-    {
-        higherPageTableFrame->entries[i] = higherCurrentTable->entries[i];
-    }
 
     PageTableManager userPageManager;
     userPageManager.p4 = pageTableFrame;
@@ -758,6 +777,14 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
     newProcess->cwd = current->process->cwd;
     newProcess->rflags = 0x202;
     newProcess->cr3 = (uint64_t)pageTableFrame;
+
+    newProcess->kernelStack = (uint64_t *)TranslateToHighHalfMemoryAddress((uint64_t)globalAllocator.RequestPages(PROCESS_STACK_PAGE_COUNT));
+    newProcess->istStack = (uint64_t *)TranslateToHighHalfMemoryAddress((uint64_t)globalAllocator.RequestPages(PROCESS_STACK_PAGE_COUNT));
+    newProcess->stack = (uint64_t *)TranslateToHighHalfMemoryAddress((uint64_t)globalAllocator.RequestPages(PROCESS_STACK_PAGE_COUNT));
+
+    MAPSTACK(newProcess->kernelStack);
+    MAPSTACK(newProcess->istStack);
+    MAPSTACK(newProcess->stack);
 
     if(current->process->name.size() > 0)
     {

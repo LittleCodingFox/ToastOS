@@ -2,12 +2,10 @@
 #include <stivale2.h>
 #include <stdint.h>
 #include "Bitmap.hpp"
-#include "../lock.hpp"
 
 class PageFrameAllocator
 {
 public:
-    Threading::AtomicLock lock;
     Bitmap PageBitmap;
 
     void ReadMemoryMap(stivale2_struct_tag_memmap *memmap);

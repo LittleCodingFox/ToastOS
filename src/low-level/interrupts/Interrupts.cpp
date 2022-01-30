@@ -121,7 +121,7 @@ void Interrupts::Init()
 
     // Custom interrupts
     idt.RegisterInterrupt(0x30, (uint64_t)exc48); //Yield
-    idt.RegisterInterrupt(0x80, (uint64_t)exc128, 3); //Syscalls
+    idt.RegisterInterrupt(0x80, (uint64_t)exc128, 3, 1); //Syscalls
 
     // Hardware interrupts
     idt.RegisterInterrupt(IRQ0, (uint64_t)irq0);
