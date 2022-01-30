@@ -121,11 +121,11 @@ void Interrupts::Init()
 
     // Custom interrupts
     idt.RegisterInterrupt(0x30, (uint64_t)exc48); //Yield
-    idt.RegisterInterrupt(0x80, (uint64_t)exc128, 3, 2); //Syscalls
+    idt.RegisterInterrupt(0x80, (uint64_t)exc128, 3); //Syscalls
 
     // Hardware interrupts
     idt.RegisterInterrupt(IRQ0, (uint64_t)irq0);
-    idt.RegisterInterrupt(IRQ1, (uint64_t)irq1, 0, 0);
+    idt.RegisterInterrupt(IRQ1, (uint64_t)irq1);
     idt.RegisterInterrupt(IRQ2, (uint64_t)irq2);
     idt.RegisterInterrupt(IRQ3, (uint64_t)irq3);
     idt.RegisterInterrupt(IRQ4, (uint64_t)irq4);
@@ -159,6 +159,13 @@ void Interrupts::EnableInterrupts()
 void Interrupts::DisableInterrupts()
 {
     __asm__("cli");
+}
+
+bool Interrupts::InterruptsEnabled()
+{
+    uint64_t rflags = Registers::ReadRFlags();
+
+    return rflags & (1 << 9);
 }
 
 void interruptIntHandler(InterruptStack stack)

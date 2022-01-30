@@ -9,7 +9,7 @@ FramebufferRenderer* globalRenderer;
 
 void RefreshFramebuffer(InterruptStack *stack)
 {
-    globalRenderer->SwapBuffers();
+    //globalRenderer->SwapBuffers();
 }
 
 FramebufferRenderer::FramebufferRenderer(Framebuffer* targetFramebuffer, psf2_font_t* font) : lockedCount(0),

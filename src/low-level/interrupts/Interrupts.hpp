@@ -139,6 +139,7 @@ private:
     HandlerInfo argHandlers[256];
 public:
     void Init();
+    bool InterruptsEnabled();
     void EnableInterrupts();
     void DisableInterrupts();
     void RegisterHandler(uint64_t id, InterruptHandler handler);
