@@ -389,3 +389,37 @@ packages:
         - '-j@PARALLELISM@'
       - args: ['make', 'install', 'INSTALL_TOP=@THIS_COLLECT_DIR@/usr']
         quiet: true
+
+  - name: toastgraphics
+    source:
+      subdir: ''
+      git: 'https://github.com/LittleCodingFox/ToastOS.git'
+      branch: 'master'
+      rolling_version: true
+      version: '0.0pl@ROLLING_ID@'
+    tools_required:
+      - host-gcc
+    pkgs_required:
+      - mlibc
+      - binutils
+    build:
+      - args: |
+          cd "@THIS_SOURCE_DIR@/klibs/toastgraphics"
+          make DESTDIR="@THIS_COLLECT_DIR@"
+
+  - name: toastinput
+    source:
+      subdir: ''
+      git: 'https://github.com/LittleCodingFox/ToastOS.git'
+      branch: 'master'
+      rolling_version: true
+      version: '0.0pl@ROLLING_ID@'
+    tools_required:
+      - host-gcc
+    pkgs_required:
+      - mlibc
+      - binutils
+    build:
+      - args: |
+          cd "@THIS_SOURCE_DIR@/klibs/toastinput"
+          make DESTDIR="@THIS_COLLECT_DIR@"
