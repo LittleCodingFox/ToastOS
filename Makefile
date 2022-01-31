@@ -163,6 +163,7 @@ clean-bootstrap:
 rebuild-mlibc:
 	cd toolchain && xbstrap build mlibc-headers --reconfigure
 	cd toolchain && xbstrap build mlibc --reconfigure
+	cd toolchain && xbstrap install mlibc-headers
 	cd toolchain && xbstrap install mlibc
 
 clean:
