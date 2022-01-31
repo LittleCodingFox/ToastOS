@@ -95,7 +95,7 @@ int ToastCreateCenteredGraphicsContext(int width, int height)
 
     OSMesaContext GLContext = OSMesaCreateContext(OSMESA_BGRA, NULL);
 
-    if (!OSMesaMakeCurrent(GLContext, mesaBuffer, GL_UNSIGNED_BYTE, width, height))
+    if (!OSMesaMakeCurrent(GLContext, mesaBuffer, GL_UNSIGNED_BYTE, graphicsWidth, graphicsHeight))
     {
         printf("Failed to create OSMesa buffer\n");
 
@@ -110,11 +110,11 @@ int ToastCreateCenteredGraphicsContext(int width, int height)
 
 	OSMesaPixelStore(OSMESA_Y_UP, 0);
 
-    glViewport(0, 0, width, height);
+    glViewport(0, 0, graphicsWidth, graphicsWidth);
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0, width, height, 0, -1, 1);
+    glOrtho(0, graphicsWidth, graphicsWidth, 0, -1, 1);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
