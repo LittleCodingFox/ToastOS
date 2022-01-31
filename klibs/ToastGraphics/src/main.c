@@ -44,8 +44,8 @@ void ToastSetGraphicsBuffer(const void *buffer)
 
         glColor3f(1, 1, 1);
 
-        float width = centeredGraphicsWidth * scaleFactor;
-        float height =  centeredGraphicsHeight * scaleFactor;
+        float width = graphicsWidth * scaleFactor;
+        float height = graphicsHeight * scaleFactor;
 
         glBegin(GL_QUADS);
         glVertex2f(offsetX, offsetY);
