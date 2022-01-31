@@ -43,6 +43,8 @@ void ToastSetGraphicsBuffer(const void *buffer)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glColor3f(1, 1, 1);
+        glPushMatrix();
+        glTranslatef(graphicsWidth / 2, graphicsHeight / 2, 0);
 
         float width = graphicsWidth * scaleFactor;
         float height = graphicsHeight * scaleFactor;
@@ -53,6 +55,8 @@ void ToastSetGraphicsBuffer(const void *buffer)
         glVertex2f(offsetX + width, offsetY + height);
         glVertex2f(offsetX + width, offsetY);
         glEnd();
+
+        glPopMatrix();
 
         glFinish();
 
@@ -71,9 +75,9 @@ int ToastCreateCenteredGraphicsContext(int width, int height)
         return 0;
     }
 
-    printf("Creating centered graphics context with size %ix%i", width, height);
+    printf("ToastGraphics: Creating centered graphics context with size %ix%i\n", width, height);
 
-    printf("Set graphics type to GUI\n");
+    printf("ToastGraphics: Set graphics type to GUI\n");
 
     ToastSetGraphicsType(TOAST_GRAPHICS_TYPE_GUI);
 
@@ -81,7 +85,7 @@ int ToastCreateCenteredGraphicsContext(int width, int height)
 
     ToastGetGraphicsSize(&graphicsWidth, &graphicsHeight, &bpp);
 
-    printf("Got graphics size of %ix%ix%i\n", graphicsWidth, graphicsHeight, bpp);
+    printf("ToastGraphics: Got graphics size of %ix%ix%i\n", graphicsWidth, graphicsHeight, bpp);
 
     int bufferByteSize = sizeof(uint32_t) * graphicsWidth * graphicsHeight;
 
@@ -89,7 +93,7 @@ int ToastCreateCenteredGraphicsContext(int width, int height)
 
     memset(mesaBuffer, 128, bufferByteSize);
 
-    printf("Allocated buffer of size %i\n", bufferByteSize);
+    printf("ToastGraphics: Allocated buffer of size %i\n", bufferByteSize);
 
     ToastSetGraphicsBuffer(mesaBuffer);
 
@@ -97,7 +101,7 @@ int ToastCreateCenteredGraphicsContext(int width, int height)
 
     if (!OSMesaMakeCurrent(GLContext, mesaBuffer, GL_UNSIGNED_BYTE, graphicsWidth, graphicsHeight))
     {
-        printf("Failed to create OSMesa buffer\n");
+        printf("ToastGraphics: Failed to create OSMesa buffer\n");
 
         ToastSetGraphicsType(TOAST_GRAPHICS_TYPE_CONSOLE);
 
@@ -106,7 +110,7 @@ int ToastCreateCenteredGraphicsContext(int width, int height)
 		return 0;
     }
 
-    printf("Finalizing setup\n");
+    printf("ToastGraphics: Finalizing setup\n");
 
 	OSMesaPixelStore(OSMESA_Y_UP, 0);
 
@@ -158,7 +162,7 @@ int ToastCreateCenteredGraphicsContext(int width, int height)
     centeredGraphicsHeight = height;
     usingCenteredGraphicsContext = true;
 
-    printf("Context created with size %ix%i and offset %.02fx%.02f and scale factor %i%%\n", width, height, offsetX, offsetY, (int)(scaleFactor * 100));
+    printf("ToastGraphics: Context created with size %ix%i and offset %.02fx%.02f and scale factor %i%%\n", width, height, offsetX, offsetY, (int)(scaleFactor * 100));
 
     return 1;
 }
