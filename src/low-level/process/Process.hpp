@@ -5,6 +5,7 @@
 #include "elf/elf.hpp"
 #include "lock.hpp"
 #include "interrupts/Interrupts.hpp"
+#include "filesystems/VFS.hpp"
 #include "kernel.h"
 
 constexpr int PROCESS_STACK_SIZE = 0x4000;
@@ -12,6 +13,39 @@ constexpr int PROCESS_STACK_SIZE = 0x4000;
 static_assert((PROCESS_STACK_SIZE * sizeof(uint64_t)) % 0x1000 == 0, "Misaligned process stack size");
 
 constexpr int PROCESS_STACK_PAGE_COUNT = PROCESS_STACK_SIZE * sizeof(uint64_t) / 0x1000;
+
+enum ProcessFDType
+{
+    PROCESS_FD_UNKNOWN,
+    PROCESS_FD_HANDLE,
+    PROCESS_FD_PIPE,
+};
+
+class IProcessFD
+{
+public:
+    virtual uint64_t Write(const void *buffer, uint64_t size) = 0;
+    virtual uint64_t Read(void *buffer, uint64_t size) = 0;
+    virtual int64_t Seek(uint64_t offset, int whence) = 0;
+    virtual dirent *ReadEntries() = 0;
+    virtual stat Stat() = 0;
+};
+
+struct ProcessFD
+{
+    int fd;
+    int type;
+    bool isValid;
+    IProcessFD *impl;
+
+    ProcessFD() : fd(0), type(0), isValid(false), impl(NULL) {}
+    ProcessFD(int fd, int type, bool isValid, IProcessFD *impl) : fd(fd), type(type), isValid(isValid), impl(impl) {}
+};
+
+#include "fd/ProcessFDStderr.hpp"
+#include "fd/ProcessFDStdin.hpp"
+#include "fd/ProcessFDStdout.hpp"
+#include "fd/ProcessFDVFS.hpp"
 
 enum ProcessPermissionLevel
 {
@@ -46,6 +80,9 @@ struct ProcessInfo
     uint64_t sleepTicks;
     uint64_t fsBase;
     sigaction sigHandlers[SIGNAL_MAX];
+    vector<ProcessFD> fds;
+
+    int fdCounter;
 
     uid_t uid;
     gid_t gid;
@@ -58,6 +95,9 @@ struct ProcessInfo
     string cwd;
 
     Elf::ElfHeader *elf;
+
+    int AddFD(int type, IProcessFD *impl);
+    ProcessFD *GetFD(int fd);
 };
 
 struct ProcessControlBlock

@@ -3,7 +3,7 @@
 
 namespace GPT
 {
-    PartitionTable::PartitionTable(Devices::GenericIODevice *device) : device(device)
+    PartitionTable::PartitionTable(GenericIODevice *device) : device(device)
     {
     }
 
@@ -56,7 +56,7 @@ namespace GPT
         return true;
     }
 
-    Devices::GenericIODevice *PartitionTable::GetDevice() const
+    GenericIODevice *PartitionTable::GetDevice() const
     {
         return device;
     }

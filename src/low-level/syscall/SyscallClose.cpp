@@ -5,8 +5,6 @@
 #include "debug.hpp"
 #include "errno.h"
 
-using namespace FileSystem;
-
 int64_t SyscallClose(InterruptStack *stack)
 {
     int fd = (int)stack->rsi;
@@ -15,19 +13,22 @@ int64_t SyscallClose(InterruptStack *stack)
     DEBUG_OUT("Syscall: close fd: %i", fd);
 #endif
 
-    if(fd < 3)
-    {
-        return -EPERM;
-    }
 
-    FILE_HANDLE handle = fd - 3;
+    auto current = globalProcessManager->CurrentProcess();
 
-    if(vfs->FileType(handle) == FILE_HANDLE_UNKNOWN)
+    if(current == NULL || current->isValid == false)
     {
         return -EBADF;
     }
 
-    vfs->CloseFile(handle);
+    auto procfd = current->info->GetFD(fd);
+
+    if(procfd == NULL)
+    {
+        return -EBADF;
+    }
+
+    procfd->isValid = false;
 
     return 0;
 }

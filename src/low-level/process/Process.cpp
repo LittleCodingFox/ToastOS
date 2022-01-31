@@ -15,8 +15,6 @@
 #include "filesystems/VFS.hpp"
 #include "tss/tss.hpp"
 
-using namespace FileSystem;
-
 #define UPDATE_PROCESS_ACTIVE_PERMISSIONS(pcb) \
     switch(pcb->process->activePermissionLevel)\
     {\
@@ -76,6 +74,26 @@ void SwitchProcess(InterruptStack *stack)
     }
 
     globalProcessManager->SwitchProcess(stack, true);
+}
+
+int ProcessInfo::AddFD(int type, IProcessFD *impl)
+{
+    fds.push_back(ProcessFD(fdCounter++, type, true, impl));
+
+    return fdCounter - 1;
+}
+
+ProcessFD *ProcessInfo::GetFD(int fd)
+{
+    for(auto &procfd : fds)
+    {
+        if(procfd.fd == fd && procfd.isValid)
+        {
+            return &procfd;
+        }
+    }
+
+    return NULL;
 }
 
 ProcessManager::ProcessManager(IScheduler *scheduler) : scheduler(scheduler)
@@ -300,6 +318,10 @@ ProcessManager::ProcessPair *ProcessManager::CreateFromEntryPoint(uint64_t entry
     newProcess->rflags = 0x202;
 
     newProcess->cr3 = (uint64_t)pageTableFrame;
+
+    newProcess->AddFD(PROCESS_FD_PIPE, new ProcessFDStdin());
+    newProcess->AddFD(PROCESS_FD_PIPE, new ProcessFDStdout());
+    newProcess->AddFD(PROCESS_FD_PIPE, new ProcessFDStderr());
 
     auto pcb = scheduler->AddProcess(newProcess);
 
@@ -556,6 +578,10 @@ ProcessManager::ProcessPair *ProcessManager::LoadImage(const void *image, const 
 
     auto pcb = scheduler->AddProcess(newProcess);
 
+    newProcess->AddFD(PROCESS_FD_PIPE, new ProcessFDStdin());
+    newProcess->AddFD(PROCESS_FD_PIPE, new ProcessFDStdout());
+    newProcess->AddFD(PROCESS_FD_PIPE, new ProcessFDStderr());
+
     ProcessPair pair;
 
     pair.isValid = true;
@@ -798,6 +824,8 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
     newProcess->ppid = current->process->ID;
 
     auto pcb = scheduler->AddProcess(newProcess);
+
+    newProcess->fds = current->process->fds;
 
     pcb->fsBase = current->fsBase;
     pcb->r10 = interruptStack->r10;

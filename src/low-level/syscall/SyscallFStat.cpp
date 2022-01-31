@@ -5,30 +5,30 @@
 #include "debug.hpp"
 #include "errno.h"
 
-using namespace FileSystem;
-
 int64_t SyscallFStat(InterruptStack *stack)
 {
-    FileSystemStat *stat = (FileSystemStat *)stack->rsi;
+    struct stat *stat = (struct stat *)stack->rsi;
     int fd = (int)stack->rdx;
 
 #if KERNEL_DEBUG_SYSCALLS
     DEBUG_OUT("Syscall: fstat stat: %p; fd: %i", stat, fd);
 #endif
 
-    if(fd < 3)
+    auto current = globalProcessManager->CurrentProcess();
+
+    if(current == NULL || current->isValid == false)
     {
-        return -1;
+        return -EBADF;
     }
 
-    FILE_HANDLE handle = fd - 3;
+    auto procfd = current->info->GetFD(fd);
 
-    if(vfs->FileType(handle) == FILE_HANDLE_UNKNOWN)
+    if(procfd == NULL)
     {
-        return -1;
+        return -EBADF;
     }
 
-    *stat = vfs->Stat(handle);
+    *stat = procfd->impl->Stat();
 
     return 0;
 }

@@ -6,11 +6,9 @@
 #include "errno.h"
 #include "fcntl.h"
 
-using namespace FileSystem;
-
 int64_t SyscallStat(InterruptStack *stack)
 {
-    FileSystemStat *stat = (FileSystemStat *)stack->rsi;
+    struct stat *stat = (struct stat *)stack->rsi;
     const char *path = (const char *)stack->rdx;
 
 #if KERNEL_DEBUG_SYSCALLS

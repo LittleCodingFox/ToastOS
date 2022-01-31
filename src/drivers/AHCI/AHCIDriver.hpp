@@ -253,7 +253,7 @@ namespace Drivers
 
         static_assert(sizeof(FISIdentify) == 512, "struct has invalid size");
 
-        class AHCIDriver : public Devices::GenericIODevice
+        class AHCIDriver : public GenericIODevice
         {
         public:
             volatile HBAPort *port;
@@ -276,9 +276,9 @@ namespace Drivers
                 return model;
             }
 
-            inline Devices::DeviceType type() const override
+            inline DeviceType type() const override
             {
-                return Devices::DEVICE_TYPE_DISK;
+                return DEVICE_TYPE_DISK;
             }
         };
 

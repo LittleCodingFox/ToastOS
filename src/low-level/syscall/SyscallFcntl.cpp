@@ -6,8 +6,6 @@
 #include "fcntl.h"
 #include "filesystems/VFS.hpp"
 
-using namespace FileSystem;
-
 int64_t SyscallFcntl(InterruptStack *stack)
 {
     int fd = stack->rsi;

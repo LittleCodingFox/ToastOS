@@ -4,24 +4,21 @@
 #include "gpt/GPT.hpp"
 #include "filesystems/FileSystem.hpp"
 
-namespace FileSystem
+class PartitionManager
 {
-    class PartitionManager
+private:
+    struct DiskInfo
     {
-    private:
-        struct DiskInfo
-        {
-            Devices::GenericIODevice *device;
-            GPT::PartitionTable *table;
-            FileSystem *fileSystem;
+        GenericIODevice *device;
+        GPT::PartitionTable *table;
+        FileSystem *fileSystem;
 
-            DiskInfo() : device(NULL), table(NULL), fileSystem(NULL) {}
-        };
-
-        frg::vector<DiskInfo, frg_allocator> disks;    
-    public:
-        void Initialize();
+        DiskInfo() : device(NULL), table(NULL), fileSystem(NULL) {}
     };
 
-    extern frg::manual_box<PartitionManager> globalPartitionManager;
-}
+    frg::vector<DiskInfo, frg_allocator> disks;    
+public:
+    void Initialize();
+};
+
+extern frg::manual_box<PartitionManager> globalPartitionManager;

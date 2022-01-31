@@ -21,6 +21,11 @@ typedef long time_t;
 extern "C" {
 #endif
 
+struct timespec {
+	time_t tv_sec;
+	long tv_nsec;
+};
+
 typedef long clock_t; // Matches Linux' ABI.
 
 struct tm {

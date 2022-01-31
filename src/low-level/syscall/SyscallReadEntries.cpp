@@ -6,8 +6,6 @@
 #include "debug.hpp"
 #include "errno.h"
 
-using namespace FileSystem;
-
 int64_t SyscallReadEntries(InterruptStack *stack)
 {
     int fd = stack->rsi;
@@ -19,13 +17,6 @@ int64_t SyscallReadEntries(InterruptStack *stack)
     DEBUG_OUT("Syscall: readentries fd: %i buffer %p maxSize %llu error %p", fd, buffer, maxSize, error);
 #endif
 
-    if(fd < 3)
-    {
-        *error = EBADF;
-
-        return -1;
-    }
-
     if(maxSize < sizeof(dirent))
     {
         *error = ENOENT;
@@ -33,9 +24,21 @@ int64_t SyscallReadEntries(InterruptStack *stack)
         return -1;
     }
 
-    FILE_HANDLE handle = fd - 3;
+    auto current = globalProcessManager->CurrentProcess();
 
-    dirent *entry = vfs->ReadEntries(handle);
+    if(current == NULL || current->isValid == false)
+    {
+        return -EBADF;
+    }
+
+    auto procfd = current->info->GetFD(fd);
+
+    if(procfd == NULL)
+    {
+        return -EBADF;
+    }
+
+    auto entry = procfd->impl->ReadEntries();
 
     //End of directory
     if(entry == NULL)

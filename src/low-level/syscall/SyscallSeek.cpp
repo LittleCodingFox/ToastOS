@@ -6,8 +6,6 @@
 #include "errno.h"
 #include "fcntl.h"
 
-using namespace FileSystem;
-
 int64_t SyscallSeek(InterruptStack *stack)
 {
     int fd = (int)stack->rsi;
@@ -18,42 +16,19 @@ int64_t SyscallSeek(InterruptStack *stack)
     DEBUG_OUT("Syscall: seek fd: %i; offset: %llu; whence: %x", fd, offset, whence);
 #endif
 
-    if(fd < 3)
-    {
-        return -ESPIPE;
-    }
+    auto current = globalProcessManager->CurrentProcess();
 
-    FILE_HANDLE handle = fd - 3;
-
-    if(vfs->FileType(handle) == FILE_HANDLE_UNKNOWN)
+    if(current == NULL || current->isValid == false)
     {
         return -EBADF;
     }
 
-    switch(whence)
+    auto procfd = current->info->GetFD(fd);
+
+    if(procfd == NULL)
     {
-        case SEEK_SET:
-
-            if(offset > vfs->FileLength(handle))
-            {
-                return -EINVAL;
-            }
-
-            return vfs->SeekFile(handle, offset);
-
-        case SEEK_CUR:
-
-            if(vfs->FileOffset(handle) + offset > vfs->FileLength(handle))
-            {
-                return -EINVAL;
-            }
-
-            return vfs->SeekFile(handle, vfs->FileOffset(handle) + offset);
-
-        case SEEK_END:
-
-            return vfs->SeekFileEnd(handle);
+        return -EBADF;
     }
 
-    return -EINVAL;
+    return procfd->impl->Seek(offset, whence);
 }

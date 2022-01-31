@@ -25,7 +25,7 @@ int main(int argc, char **argv)
 {
     printf("Setting graphics type to GUI\n");
 
-    ToastSetGraphicsType(GRAPHICS_TYPE_GUI);
+    ToastSetGraphicsType(TOAST_GRAPHICS_TYPE_GUI);
 
     int width, height, bpp;
 

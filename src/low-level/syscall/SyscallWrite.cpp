@@ -2,10 +2,9 @@
 #include "interrupts/Interrupts.hpp"
 #include "printf/printf.h"
 #include "filesystems/VFS.hpp"
+#include "process/Process.hpp"
 #include "debug.hpp"
 #include "errno.h"
-
-using namespace FileSystem;
 
 size_t SyscallWrite(InterruptStack *stack)
 {
@@ -17,33 +16,19 @@ size_t SyscallWrite(InterruptStack *stack)
     DEBUG_OUT("Syscall: write fd: %i buffer: %p count: %llu", fd, buffer, count);
 #endif
 
-    if(fd == 0) //stdin
-    {
-        //TODO
-    }
-    else if(fd == 1) //stdout
-    {
-        printf("%.*s", count, buffer);
+    auto current = globalProcessManager->CurrentProcess();
 
-        return count;
-    }
-    else if(fd == 2) //stderr
+    if(current == NULL || current->isValid == false)
     {
-        printf("%.*s", count, buffer);
-
-        return count;
-    }
-    else if(fd >= 3) //actual files
-    {
-        FILE_HANDLE handle = fd - 3;
-
-        if(vfs->FileType(handle) != FILE_HANDLE_UNKNOWN)
-        {
-            return -ENOENT;
-        }
-
-        return vfs->WriteFile(handle, buffer, count);
+        return -EBADF;
     }
 
-    return 0;
+    auto procfd = current->info->GetFD(fd);
+
+    if(procfd == NULL)
+    {
+        return -EBADF;
+    }
+
+    return procfd->impl->Write(buffer, count);
 }

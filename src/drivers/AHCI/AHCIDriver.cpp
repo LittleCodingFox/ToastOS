@@ -510,7 +510,7 @@ namespace Drivers
 
                 if(port->Configure())
                 {
-                    Devices::globalDeviceManager.AddDevice(port);
+                    globalDeviceManager.AddDevice(port);
                 }
             }
         }

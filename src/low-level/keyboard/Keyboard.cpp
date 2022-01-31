@@ -7,8 +7,6 @@
 
 #define LAYOUT_EXT "layout"
 
-using namespace FileSystem;
-
 struct KeyInfo
 {
     const char *text;

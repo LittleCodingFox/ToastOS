@@ -5,8 +5,6 @@
 #include "debug.hpp"
 #include "errno.h"
 
-using namespace FileSystem;
-
 int64_t SyscallOpen(InterruptStack *stack)
 {
     const char *path = (const char *)stack->rsi;
@@ -32,5 +30,5 @@ int64_t SyscallOpen(InterruptStack *stack)
         return -ENOENT;
     }
 
-    return handle + 3; //Ensure we're above the base fds for stdin, stdout, and stderr
+    return currentProcess->info->AddFD(PROCESS_FD_HANDLE, new ProcessFDVFS(handle));
 }

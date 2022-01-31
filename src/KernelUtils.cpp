@@ -233,7 +233,7 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
 
     PCI::EnumeratePCI(mcfg);
 
-    FileSystem::globalPartitionManager->Initialize();
+    globalPartitionManager->Initialize();
 }
 
 FramebufferRenderer r = FramebufferRenderer(NULL, NULL);
@@ -343,8 +343,8 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     timer->RegisterHandler(RefreshFramebuffer);
 
-    FileSystem::vfs.initialize();
-    FileSystem::globalPartitionManager.initialize();
+    vfs.initialize();
+    globalPartitionManager.initialize();
 
     InitializeACPI(rsdp);
 
@@ -354,14 +354,14 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     if(initrd != NULL)
     {
-        FileSystem::tarfs::TarFS *tarfs = new FileSystem::tarfs::TarFS((uint8_t *)initrd->begin);
+        auto tarfs = new tarfs::TarFS((uint8_t *)initrd->begin);
 
-        FileSystem::vfs->AddMountPoint("/", tarfs);
+        vfs->AddMountPoint("/", tarfs);
 
         //tarfs->DebugListDirectories();
     }
 
-    FileSystem::InitializeVirtualFiles();
+    InitializeVirtualFiles();
 
     InitializeKeyboard();
 

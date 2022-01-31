@@ -79,9 +79,9 @@ namespace GPT
     struct PartitionTable
     {
     public:
-        PartitionTable(Devices::GenericIODevice *device);
+        PartitionTable(GenericIODevice *device);
 
-        Devices::GenericIODevice *GetDevice() const;
+        GenericIODevice *GetDevice() const;
 
         bool Parse();
 
@@ -90,11 +90,11 @@ namespace GPT
         Partition &GetPartition(int index);
 
     private:
-        Devices::GenericIODevice *device;
+        GenericIODevice *device;
         frg::vector<Partition *, frg_allocator> partitions;
     };
 
-    class Partition : public Devices::GenericIODevice
+    class Partition : public GenericIODevice
     {
     public:
         Partition(PartitionTable &table, Guid ID, Guid type, uint64_t startLBA, uint64_t sectorCount);

@@ -6,8 +6,6 @@
 #include "errno.h"
 #include "kernel.h"
 
-using namespace FileSystem;
-
 int64_t SyscallExecve(InterruptStack *stack)
 {
     const char *path = (const char *)stack->rsi;

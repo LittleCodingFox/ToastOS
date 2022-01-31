@@ -6,8 +6,6 @@
 #include "errno.h"
 #include "kernel.h"
 
-using namespace FileSystem;
-
 int64_t SyscallCHDir(InterruptStack *stack)
 {
     char *path = (char *)stack->rsi;
