@@ -5,6 +5,7 @@
 #include <GL/gl.h>
 #include <GL/osmesa.h>
 #include <string.h>
+#include <stdio.h>
 
 bool usingCenteredGraphicsContext = false;
 int centeredGraphicsWidth = 0;
@@ -65,10 +66,14 @@ void ToastSetGraphicsBuffer(const void *buffer)
 
 int ToastCreateCenteredGraphicsContext(int width, int height)
 {
-    if(usingCenteredGraphicsContext)
+    if(usingCenteredGraphicsContext || width <= 0 || height <= 0)
     {
         return 0;
     }
+
+    printf("Creating centered graphics context with size %ix%i", width, height);
+
+    printf("Set graphics type to GUI\n");
 
     ToastSetGraphicsType(TOAST_GRAPHICS_TYPE_GUI);
 
@@ -76,11 +81,15 @@ int ToastCreateCenteredGraphicsContext(int width, int height)
 
     ToastGetGraphicsSize(&graphicsWidth, &graphicsHeight, &bpp);
 
-    int bufferByteSize = sizeof(uint32_t) * width * height;
+    printf("Got graphics size of %ix%ix%i\n", graphicsWidth, graphicsHeight, bpp);
+
+    int bufferByteSize = sizeof(uint32_t) * graphicsWidth * graphicsHeight;
 
     uint32_t *mesaBuffer = (uint32_t *)malloc(bufferByteSize);
 
     memset(mesaBuffer, 128, bufferByteSize);
+
+    printf("Allocated buffer of size %i\n", bufferByteSize);
 
     ToastSetGraphicsBuffer(mesaBuffer);
 
@@ -88,12 +97,16 @@ int ToastCreateCenteredGraphicsContext(int width, int height)
 
     if (!OSMesaMakeCurrent(GLContext, mesaBuffer, GL_UNSIGNED_BYTE, width, height))
     {
+        printf("Failed to create OSMesa buffer\n");
+
         ToastSetGraphicsType(TOAST_GRAPHICS_TYPE_CONSOLE);
 
         free(mesaBuffer);
 
 		return 0;
     }
+
+    printf("Finalizing setup\n");
 
 	OSMesaPixelStore(OSMESA_Y_UP, 0);
 
@@ -144,6 +157,8 @@ int ToastCreateCenteredGraphicsContext(int width, int height)
     centeredGraphicsWidth = width;
     centeredGraphicsHeight = height;
     usingCenteredGraphicsContext = true;
+
+    printf("Context created with size %ix%i and offset %ix%i and scale factor %.02f\n", width, height, offsetX, offsetY, scaleFactor);
 
     return 1;
 }
