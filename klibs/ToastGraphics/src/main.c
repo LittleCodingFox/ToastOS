@@ -44,6 +44,7 @@ void ToastSetGraphicsBuffer(const void *buffer)
 
         glColor3f(1, 1, 1);
 
+        /*
         float width = graphicsWidth * scaleFactor;
         float height = graphicsHeight * scaleFactor;
 
@@ -53,6 +54,18 @@ void ToastSetGraphicsBuffer(const void *buffer)
         glVertex2f(offsetX + width, offsetY + height);
         glVertex2f(offsetX + width, offsetY);
         glEnd();
+        */
+
+       glPushMatrix();
+       glTranslatef(graphicsWidth / 2, graphicsHeight / 2, 0);
+
+       glBegin(GL_QUADS);
+       glVertex2f(-50, -50);
+       glVertex2f(50, -50);
+       glVertex2f(50, 50);
+       glVertex2f(50, -50);
+       glEnd();
+       glPopMatrix();
 
         glFinish();
 
