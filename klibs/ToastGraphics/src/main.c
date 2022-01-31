@@ -40,33 +40,19 @@ void ToastSetGraphicsBuffer(const void *buffer)
 {
     if(usingCenteredGraphicsContext)
     {
-        glClearColor(0, 0, 0, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glColor3f(1, 1, 1);
-
-        glPushMatrix();
-        glTranslatef(graphicsWidth / 2, graphicsHeight / 2, 0);
 
         float width = graphicsWidth * scaleFactor;
         float height = graphicsHeight * scaleFactor;
 
         glBegin(GL_QUADS);
-        /*
         glVertex2f(offsetX, offsetY);
         glVertex2f(offsetX, offsetY + height);
         glVertex2f(offsetX + width, offsetY + height);
         glVertex2f(offsetX + width, offsetY);
-        */
-       glVertex2f(-50, -50);
-       glVertex2f(-50, 50);
-       glVertex2f(50,50);
-       glVertex2f(50, -50);
         glEnd();
-
-        printf("Drawing quad at %i,%i:%i,%i\n", (int)offsetX, (int)offsetY, (int)width, (int)height);
-
-        glPopMatrix();
 
         glFinish();
 
@@ -99,7 +85,7 @@ int ToastCreateCenteredGraphicsContext(int width, int height)
 
     int bufferByteSize = sizeof(uint32_t) * graphicsWidth * graphicsHeight;
 
-    uint32_t *mesaBuffer = (uint32_t *)malloc(bufferByteSize);
+    mesaBuffer = (uint32_t *)malloc(bufferByteSize);
 
     memset(mesaBuffer, 128, bufferByteSize);
 
