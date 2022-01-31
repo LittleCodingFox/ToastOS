@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <GL/gl.h>
 #include <GL/osmesa.h>
+#include <string.h>
 
 bool usingCenteredGraphicsContext = false;
 int centeredGraphicsWidth = 0;
