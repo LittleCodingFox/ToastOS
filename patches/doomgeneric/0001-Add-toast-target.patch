@@ -35,7 +35,7 @@ index 0000000..1a30e2c
 +CFLAGS+=-Os $(INCLUDES) --sysroot=../../toolchain/system-root/ -I../include
 +LDFLAGS+=-L../../toolchain/pkg-builds/mlibc/ -L../../toolchain/packages/mlibc/usr/lib -L../../dist/usr/lib
 +CFLAGS+=-Wall -DNORMALUNIX -DLINUX -DSNDSERV # -DUSEASM
-+LIBS+=-ltoastgraphics -ltoastinput -lm -lc ../../toolchain/packages/mlibc/usr/lib/crt0.o
++LIBS+=-lToastGraphics -lToastInput -lm -lc ../../toolchain/packages/mlibc/usr/lib/crt0.o
 +
 +# subdirectory for objects
 +OBJDIR=doomgeneric/build
