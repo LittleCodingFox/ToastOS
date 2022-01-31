@@ -61,7 +61,7 @@ void ToastSetGraphicsBuffer(const void *buffer)
 
        glBegin(GL_QUADS);
        glVertex2f(-50, -50);
-       glVertex2f(50, -50);
+       glVertex2f(-50, 50);
        glVertex2f(50, 50);
        glVertex2f(50, -50);
        glEnd();
@@ -132,7 +132,7 @@ int ToastCreateCenteredGraphicsContext(int width, int height)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    glClearColor(0.5f, 0.5f, 0.5f, 0.0f);
+    glClearColor(0, 1, 1, 0.0f);
 
     if(width > height)
     {
