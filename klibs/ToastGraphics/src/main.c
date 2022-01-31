@@ -43,8 +43,6 @@ void ToastSetGraphicsBuffer(const void *buffer)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glColor3f(1, 1, 1);
-        glPushMatrix();
-        glTranslatef(graphicsWidth / 2, graphicsHeight / 2, 0);
 
         float width = graphicsWidth * scaleFactor;
         float height = graphicsHeight * scaleFactor;
@@ -56,7 +54,7 @@ void ToastSetGraphicsBuffer(const void *buffer)
         glVertex2f(offsetX + width, offsetY);
         glEnd();
 
-        glPopMatrix();
+        printf("Drawing quad at %i,%i:%i,%i", (int)offsetX, (int)offsetY, (int)width, (int)height);
 
         glFinish();
 
@@ -114,11 +112,11 @@ int ToastCreateCenteredGraphicsContext(int width, int height)
 
 	OSMesaPixelStore(OSMESA_Y_UP, 0);
 
-    glViewport(0, 0, graphicsWidth, graphicsWidth);
+    glViewport(0, 0, graphicsWidth, graphicsHeight);
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0, graphicsWidth, graphicsWidth, 0, -1, 1);
+    glOrtho(0, graphicsWidth, graphicsHeight, 0, -1, 1);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
