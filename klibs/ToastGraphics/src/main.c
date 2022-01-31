@@ -44,6 +44,9 @@ void ToastSetGraphicsBuffer(const void *buffer)
 
         glColor3f(1, 1, 1);
 
+        glPushMatrix();
+        glTranslatef(graphicsWidth / 2, graphicsHeight / 2, 0);
+
         float width = graphicsWidth * scaleFactor;
         float height = graphicsHeight * scaleFactor;
 
@@ -54,7 +57,9 @@ void ToastSetGraphicsBuffer(const void *buffer)
         glVertex2f(offsetX + width, offsetY);
         glEnd();
 
-        printf("Drawing quad at %i,%i:%i,%i", (int)offsetX, (int)offsetY, (int)width, (int)height);
+        printf("Drawing quad at %i,%i:%i,%i\n", (int)offsetX, (int)offsetY, (int)width, (int)height);
+
+        glPopMatrix();
 
         glFinish();
 
