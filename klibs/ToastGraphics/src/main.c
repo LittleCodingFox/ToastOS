@@ -158,7 +158,7 @@ int ToastCreateCenteredGraphicsContext(int width, int height)
     centeredGraphicsHeight = height;
     usingCenteredGraphicsContext = true;
 
-    printf("Context created with size %ix%i and offset %ix%i and scale factor %.02f\n", width, height, offsetX, offsetY, scaleFactor);
+    printf("Context created with size %ix%i and offset %.02fx%.02f and scale factor %.02f\n", width, height, offsetX, offsetY, scaleFactor);
 
     return 1;
 }
