@@ -404,6 +404,7 @@ packages:
     pkgs_required:
       - mlibc
       - binutils
+      - mesa
     build:
       - args: |
           cd "@THIS_SOURCE_DIR@/klibs/ToastGraphics"
