@@ -25,7 +25,7 @@ LDFLAGS			= -L../../toolchain/pkg-builds/mlibc/ \
 				  -L../../dist/usr/lib \
 				  -L../../toolchain/system-root/usr/lib \
 				  -L../../toolchain/tools/host-gcc/x86_64-toast/lib64 \
-				  -ltoastgraphics -lGLESv1_CM -lOSMesa -lc -lstdc++ -lgcc_s -Map=linker.map
+				  -lToastGraphics -lGLESv1_CM -lOSMesa -lc -lstdc++ -lgcc_s -Map=linker.map
 
 default: $(PROGRAM_NAME)
 

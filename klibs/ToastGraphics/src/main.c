@@ -2,20 +2,37 @@
 #include <toast/graphics.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <GL/gl.h>
+#include <GLES/gl.h>
 #include <GL/osmesa.h>
 #include <string.h>
 #include <stdio.h>
 
+static float texcoords[8] = {
+
+    0, 0,
+    0, 1,
+    1, 1,
+    1, 0
+};
+
+struct CenteredGraphicsContext
+{
+    int centeredGraphicsWidth;
+    int centeredGraphicsHeight;
+    int graphicsWidth;
+    int graphicsHeight;
+    GLuint texID;
+    uint32_t *mesaBuffer;
+    float scaledWidth;
+    float scaledHeight;
+    float offsetX;
+    float offsetY;
+    float vertices[8];
+
+    OSMesaContext GLContext;
+}graphicsContext;
+
 bool usingCenteredGraphicsContext = false;
-int centeredGraphicsWidth = 0;
-int centeredGraphicsHeight = 0;
-int graphicsWidth = 0;
-int graphicsHeight = 0;
-uint32_t *mesaBuffer = NULL;
-float scaleFactor = 1.0f;
-float offsetX = 0;
-float offsetY = 0;
 
 void ToastSetGraphicsType(int type)
 {
@@ -26,8 +43,8 @@ void ToastGetGraphicsSize(int *width, int *height, int *bpp)
 {
     if(usingCenteredGraphicsContext)
     {
-        *width = centeredGraphicsWidth;
-        *height = centeredGraphicsHeight;
+        *width = graphicsContext.centeredGraphicsWidth;
+        *height = graphicsContext.centeredGraphicsHeight;
         *bpp = 32;
 
         return;
@@ -40,41 +57,30 @@ void ToastSetGraphicsBuffer(const void *buffer)
 {
     if(usingCenteredGraphicsContext)
     {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
+            graphicsContext.centeredGraphicsWidth, graphicsContext.centeredGraphicsHeight,
+            GL_BGRA, GL_UNSIGNED_BYTE, buffer);
 
         glColor3f(1, 1, 1);
 
-        /*
-        float width = graphicsWidth * scaleFactor;
-        float height = graphicsHeight * scaleFactor;
+        glVertexPointer(2, GL_FLOAT, 0, graphicsContext.vertices);
+        glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
 
-        glBegin(GL_QUADS);
-        glVertex2f(offsetX, offsetY);
-        glVertex2f(offsetX, offsetY + height);
-        glVertex2f(offsetX + width, offsetY + height);
-        glVertex2f(offsetX + width, offsetY);
-        glEnd();
-        */
-
-       glPushMatrix();
-       glTranslatef(graphicsWidth / 2, graphicsHeight / 2, 0);
-
-       glBegin(GL_QUADS);
-       glVertex2f(-50, -50);
-       glVertex2f(-50, 50);
-       glVertex2f(50, 50);
-       glVertex2f(50, -50);
-       glEnd();
-       glPopMatrix();
+        glDrawArrays(GL_QUADS, 0, 4);
 
         glFinish();
 
-        syscall(SYSCALL_SETGRAPHICSBUFFER, mesaBuffer);
+        syscall(SYSCALL_SETGRAPHICSBUFFER, graphicsContext.mesaBuffer);
 
         return;
     }
 
     syscall(SYSCALL_SETGRAPHICSBUFFER, buffer);
+}
+
+void ClearGraphicsType()
+{
+    ToastSetGraphicsType(TOAST_GRAPHICS_TYPE_CONSOLE);
 }
 
 int ToastCreateCenteredGraphicsContext(int width, int height)
@@ -84,94 +90,118 @@ int ToastCreateCenteredGraphicsContext(int width, int height)
         return 0;
     }
 
-    printf("ToastGraphics: Creating centered graphics context with size %ix%i\n", width, height);
-
-    printf("ToastGraphics: Set graphics type to GUI\n");
-
     ToastSetGraphicsType(TOAST_GRAPHICS_TYPE_GUI);
+
+    atexit(ClearGraphicsType);
 
     int bpp;
 
-    ToastGetGraphicsSize(&graphicsWidth, &graphicsHeight, &bpp);
+    ToastGetGraphicsSize(&graphicsContext.graphicsWidth, &graphicsContext.graphicsHeight, &bpp);
 
-    printf("ToastGraphics: Got graphics size of %ix%ix%i\n", graphicsWidth, graphicsHeight, bpp);
+    printf("Graphics Size is: %dx%d (%d)\n", graphicsContext.graphicsWidth, graphicsContext.graphicsHeight, bpp);
 
-    int bufferByteSize = sizeof(uint32_t) * graphicsWidth * graphicsHeight;
+    int bufferByteSize = sizeof(uint32_t) * graphicsContext.graphicsWidth * graphicsContext.graphicsHeight;
 
-    mesaBuffer = (uint32_t *)malloc(bufferByteSize);
+    graphicsContext.mesaBuffer = (uint32_t *)malloc(bufferByteSize);
 
-    memset(mesaBuffer, 128, bufferByteSize);
+    memset(graphicsContext.mesaBuffer, 128, bufferByteSize);
 
-    printf("ToastGraphics: Allocated buffer of size %i\n", bufferByteSize);
+    ToastSetGraphicsBuffer(graphicsContext.mesaBuffer);
 
-    ToastSetGraphicsBuffer(mesaBuffer);
+    printf("Making current\n");
 
-    OSMesaContext GLContext = OSMesaCreateContext(OSMESA_BGRA, NULL);
+    graphicsContext.GLContext = OSMesaCreateContext(OSMESA_BGRA, NULL);
 
-    if (!OSMesaMakeCurrent(GLContext, mesaBuffer, GL_UNSIGNED_BYTE, graphicsWidth, graphicsHeight))
+    if (!OSMesaMakeCurrent(graphicsContext.GLContext, graphicsContext.mesaBuffer, GL_UNSIGNED_BYTE, graphicsContext.graphicsWidth, graphicsContext.graphicsHeight))
     {
-        printf("ToastGraphics: Failed to create OSMesa buffer\n");
-
-        ToastSetGraphicsType(TOAST_GRAPHICS_TYPE_CONSOLE);
-
-        free(mesaBuffer);
+        printf("OSMesa failed to make current\n");
 
 		return 0;
     }
 
-    printf("ToastGraphics: Finalizing setup\n");
-
 	OSMesaPixelStore(OSMESA_Y_UP, 0);
 
-    glViewport(0, 0, graphicsWidth, graphicsHeight);
+    printf("Set viewport\n");
+
+    glViewport(0, 0, graphicsContext.graphicsWidth, graphicsContext.graphicsHeight);
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0, graphicsWidth, graphicsHeight, 0, -1, 1);
+
+    glOrtho(0, graphicsContext.graphicsWidth, graphicsContext.graphicsHeight, 0, -1, 1);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    glClearColor(0, 1, 1, 0.0f);
+    glClearColor(0.5f, 0.5f, 0.5f, 0.0f);
+
+    glShadeModel(GL_FLAT);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_DITHER);
+    glDisable(GL_COLOR_MATERIAL);
+    glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
+
+    glEnable(GL_TEXTURE_2D);
+
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+    glGenTextures(1, &graphicsContext.texID);
+    glBindTexture(GL_TEXTURE_2D, graphicsContext.texID);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    float scaleFactor = 1.0f;
 
     if(width > height)
     {
-        if(width > graphicsWidth)
-        {
-            scaleFactor = graphicsWidth / (float)width;
-        }
-        else
-        {
-            scaleFactor = width / (float)graphicsWidth;
-        }
+        scaleFactor = graphicsContext.graphicsWidth / (float)width;
     }
     else
     {
-        if(height > graphicsHeight)
-        {
-            scaleFactor = graphicsHeight / (float)height;
-        }
-        else
-        {
-            scaleFactor = height / (float)graphicsHeight;
-        }
+        scaleFactor = graphicsContext.graphicsHeight / (float)height;
     }
 
-    if(graphicsWidth > width)
+    if(height * scaleFactor > graphicsContext.graphicsHeight)
     {
-        offsetX = (graphicsWidth - width) / 2;
+        scaleFactor = graphicsContext.graphicsHeight / (float)height;
     }
 
-    if(graphicsHeight > height)
+    graphicsContext.scaledWidth = scaleFactor * width;
+    graphicsContext.scaledHeight = scaleFactor * height;
+
+    if(graphicsContext.graphicsWidth > graphicsContext.scaledWidth)
     {
-        offsetY = (graphicsHeight - height) / 2;
+        graphicsContext.offsetX = (graphicsContext.graphicsWidth - graphicsContext.scaledWidth) / 2;
     }
 
-    centeredGraphicsWidth = width;
-    centeredGraphicsHeight = height;
+    if(graphicsContext.graphicsHeight > graphicsContext.scaledHeight)
+    {
+        graphicsContext.offsetY = (graphicsContext.graphicsHeight - graphicsContext.scaledHeight) / 2;
+    }
+
+    graphicsContext.centeredGraphicsWidth = width;
+    graphicsContext.centeredGraphicsHeight = height;
+
+    float vertices[8] = {
+
+        graphicsContext.offsetX, graphicsContext.offsetY,
+        graphicsContext.offsetX, graphicsContext.offsetY + graphicsContext.scaledHeight,
+        graphicsContext.offsetX + graphicsContext.scaledWidth, graphicsContext.offsetY + graphicsContext.scaledHeight,
+        graphicsContext.offsetX + graphicsContext.scaledWidth, graphicsContext.offsetY,
+    };
+
+    memcpy(graphicsContext.vertices, vertices, sizeof(vertices));
+
     usingCenteredGraphicsContext = true;
 
-    printf("ToastGraphics: Context created with size %ix%i and offset %.02fx%.02f and scale factor %i%%\n", width, height, offsetX, offsetY, (int)(scaleFactor * 100));
+    printf("ToastGraphics: Context created with size %ix%i and offset %ix%i and scale factor %i%%\n", width, height,
+        (int)graphicsContext.offsetX, (int)graphicsContext.offsetY, (int)(scaleFactor * 100));
 
     return 1;
 }

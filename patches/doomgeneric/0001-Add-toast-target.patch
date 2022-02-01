@@ -1,21 +1,21 @@
-From d652a2f7f1d7c538115e1c3481abe3fe44d9f64a Mon Sep 17 00:00:00 2001
+From 403d78da81cea9b89644c20940b7a7da01d4ddda Mon Sep 17 00:00:00 2001
 From: Nuno Silva <little.coding.fox@gmail.com>
-Date: Sun, 30 Jan 2022 18:12:37 +0000
+Date: Tue, 1 Feb 2022 22:29:42 +0000
 Subject: [PATCH] Add toast target
 
 ---
- Makefile.toast                  |  54 +++++++++++
- doomgeneric/doomgeneric_toast.c | 155 ++++++++++++++++++++++++++++++++
- 2 files changed, 209 insertions(+)
+ Makefile.toast                  |  57 +++++++++++++
+ doomgeneric/doomgeneric_toast.c | 144 ++++++++++++++++++++++++++++++++
+ 2 files changed, 201 insertions(+)
  create mode 100644 Makefile.toast
  create mode 100644 doomgeneric/doomgeneric_toast.c
 
 diff --git a/Makefile.toast b/Makefile.toast
 new file mode 100644
-index 0000000..1a30e2c
+index 0000000..8496615
 --- /dev/null
 +++ b/Makefile.toast
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,57 @@
 +################################################################
 +#
 +# $Id:$
@@ -33,9 +33,12 @@ index 0000000..1a30e2c
 +CC=x86_64-toast-gcc  # gcc or g++
 +LD=x86_64-toast-ld
 +CFLAGS+=-Os $(INCLUDES) --sysroot=../../toolchain/system-root/ -I../include
-+LDFLAGS+=-L../../toolchain/pkg-builds/mlibc/ -L../../toolchain/packages/mlibc/usr/lib -L../../dist/usr/lib
++LDFLAGS+=-L../../toolchain/pkg-builds/mlibc/
++LDFLAGS+=-L../../toolchain/packages/mlibc/usr/lib
++LDFLAGS+=-L../../toolchain/system-root/usr/lib
++LDFLAGS+=-L../../toolchain/tools/host-gcc/x86_64-toast/lib64
 +CFLAGS+=-Wall -DNORMALUNIX -DLINUX -DSNDSERV # -DUSEASM
-+LIBS+=-lToastGraphics -lToastInput -lm -lc ../../toolchain/packages/mlibc/usr/lib/crt0.o
++LIBS+=-lToastGraphics -lToastInput -lm -lc -lGLESv1_CM -lOSMesa -lstdc++ -lgcc_s ../../toolchain/packages/mlibc/usr/lib/crt0.o
 +
 +# subdirectory for objects
 +OBJDIR=doomgeneric/build
@@ -72,10 +75,10 @@ index 0000000..1a30e2c
 +
 diff --git a/doomgeneric/doomgeneric_toast.c b/doomgeneric/doomgeneric_toast.c
 new file mode 100644
-index 0000000..5e658fc
+index 0000000..7b51771
 --- /dev/null
 +++ b/doomgeneric/doomgeneric_toast.c
-@@ -0,0 +1,155 @@
+@@ -0,0 +1,144 @@
 +//doomgeneric for soso os
 +
 +#include "doomkeys.h"
@@ -170,28 +173,17 @@ index 0000000..5e658fc
 +
 +void DG_Init()
 +{
-+  ToastSetGraphicsType(TOAST_GRAPHICS_TYPE_GUI);
++  if(!ToastCreateCenteredGraphicsContext(DOOMGENERIC_RESX, DOOMGENERIC_RESY))
++  {
++    ToastSetGraphicsType(TOAST_GRAPHICS_TYPE_CONSOLE);
 +
-+  int height, bpp;
-+
-+  ToastGetGraphicsSize(&bufferWidth, &height, &bpp);
-+
-+  bufferSize = sizeof(uint32_t) * bufferWidth * height;
-+
-+  buffer = (uint8_t *)malloc(bufferSize);
-+  memset(buffer, 128, bufferSize);
-+
-+  ToastSetGraphicsBuffer(buffer);
++    exit(1);
++  }
 +}
 +
 +void DG_DrawFrame()
 +{
-+  for(uint32_t y = 0; y < DOOMGENERIC_RESY; y++)
-+  {
-+    memcpy(buffer + y * bufferWidth * sizeof(uint32_t), DG_ScreenBuffer + y * DOOMGENERIC_RESX, DOOMGENERIC_RESX * sizeof(uint32_t));
-+  }
-+
-+  ToastSetGraphicsBuffer(buffer);
++  ToastSetGraphicsBuffer(DG_ScreenBuffer);
 +
 +  handleKeyInput();
 +}
