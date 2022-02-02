@@ -162,7 +162,6 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
         current->rsp = stack->stackPointer;
         current->rip = stack->instructionPointer;
         current->rflags = stack->cpuFlags;
-        current->fsBase = current->process->fsBase;
 
         UPDATE_PROCESS_ACTIVE_PERMISSIONS(current);
     }

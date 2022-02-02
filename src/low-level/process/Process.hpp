@@ -77,7 +77,6 @@ struct ProcessInfo
     uint64_t cr3;
     uint64_t rflags;
     uint64_t sleepTicks;
-    uint64_t fsBase;
     sigaction sigHandlers[SIGNAL_MAX];
     vector<ProcessFD> fds;
 

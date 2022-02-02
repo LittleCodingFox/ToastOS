@@ -10,16 +10,16 @@ int64_t SyscallTCBSet(InterruptStack *stack)
     DEBUG_OUT("Syscall: tcbset base %p", base);
 #endif
 
-    auto process = globalProcessManager->CurrentProcess();
+    auto thread = globalProcessManager->CurrentThread();
     
-    if(process == NULL || process->isValid == false)
+    if(thread == NULL)
     {
         return 0;
     }
 
-    process->info->fsBase = base;
+    thread->fsBase = base;
 
-    DEBUG_OUT("Setting process %llu fsbase to %p", process->info->ID, base);
+    DEBUG_OUT("Setting thread %i fsbase to %p", thread->tid, base);
 
     globalProcessManager->LoadFSBase(base);
 

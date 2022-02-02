@@ -183,6 +183,36 @@ void RoundRobinScheduler::ExitThread(ProcessControlBlock *thread)
         return;
     }
 
+    if(threads == thread)
+    {
+        ProcessControlBlock *p = threads;
+
+        do
+        {
+            if(p->next == thread)
+            {
+                break;
+            }
+
+            p = p->next;
+        } while(p != threads);
+
+        if(p == threads)
+        {
+            Panic("[RoundRobin] Unable to remove thread");
+        }
+
+        ProcessControlBlock *remove = p->next;
+        p->next = p->next->next;
+
+        if(remove == threads)
+        {
+            threads = p->next;
+        }
+
+        return;
+    }
+
     bool found = false;
 
     ProcessControlBlock *p = threads;

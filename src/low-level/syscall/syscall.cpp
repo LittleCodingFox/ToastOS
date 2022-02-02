@@ -105,6 +105,11 @@ void SyscallHandler(InterruptStack *stack)
 
         current->activePermissionLevel = PROCESS_PERMISSION_USER;
     }
+    else
+    {
+        //TEMPORARY
+        stack->rax = 0;
+    }
 }
 
 int64_t KNotImplemented(InterruptStack *stack)
