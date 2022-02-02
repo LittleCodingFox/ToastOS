@@ -16,7 +16,7 @@
 #include "tss/tss.hpp"
 
 #define UPDATE_PROCESS_ACTIVE_PERMISSIONS(pcb) \
-    switch(pcb->process->activePermissionLevel)\
+    switch(pcb->activePermissionLevel)\
     {\
         case PROCESS_PERMISSION_KERNEL:\
             pcb->cs = (GDTKernelBaseSelector + 0x00);\
@@ -38,7 +38,7 @@
 #define HANDLEFORK(task) \
     task->state = PROCESS_STATE_RUNNING; \
     \
-    DEBUG_OUT("Initializing fork %p for process %llu: rsp: %p; rip: %p; cr3: %p", task, task->process->ID, task->rsp, task->rip, task->cr3); \
+    DEBUG_OUT("Initializing fork %p for process %i: rsp: %p; rip: %p; cr3: %p", task, task->process->ID, task->rsp, task->rip, task->cr3); \
     \
     lock.Unlock(); \
     \
@@ -121,8 +121,8 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
 
     interrupts.DisableInterrupts();
 
-    ProcessControlBlock *current = scheduler->CurrentProcess();
-    ProcessControlBlock *next = scheduler->NextProcess();
+    ProcessControlBlock *current = scheduler->CurrentThread();
+    ProcessControlBlock *next = scheduler->NextThread();
 
     if(current == NULL || next == NULL)
     {
@@ -185,7 +185,7 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
     {
         next->state = PROCESS_STATE_RUNNING;
 
-        DEBUG_OUT("Initializing task %p for process %llu: rsp: %p; rip: %p; cr3: %p", next, next->process->ID, next->rsp, next->rip, next->cr3);
+        DEBUG_OUT("Initializing task %p for process %i: rsp: %p; rip: %p; cr3: %p", next, next->process->ID, next->rsp, next->rip, next->cr3);
 
         scheduler->Advance();
 
@@ -197,8 +197,8 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
     }
 
     /*
-    DEBUG_OUT("Switching tasks:\n\tID: %llu\n\tstate: %s\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%x\n\tss: 0x%x\n"
-        "next:\n\tID: %llu\n\tstate: %s\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%x\n\tss: 0x%x",
+    DEBUG_OUT("Switching tasks:\n\tID: %i\n\tstate: %s\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%x\n\tss: 0x%x\n"
+        "next:\n\tID: %i\n\tstate: %s\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%x\n\tss: 0x%x",
         current->process->ID, current->State().data(), current->rsp, current->rip, current->cr3, current->cs, current->ss,
         next->process->ID, next->State().data(), next->rsp, next->rip, next->cr3, next->cs, next->ss);
     */
@@ -229,9 +229,9 @@ ProcessManager::ProcessPair *ProcessManager::CurrentProcess()
 
     pid_t pid = 0;
 
-    if(scheduler != NULL && scheduler->CurrentProcess() != NULL)
+    if(scheduler != NULL && scheduler->CurrentThread() != NULL)
     {
-        pid = scheduler->CurrentProcess()->process->ID;
+        pid = scheduler->CurrentThread()->process->ID;
     }
 
     lock.Unlock();
@@ -241,7 +241,23 @@ ProcessManager::ProcessPair *ProcessManager::CurrentProcess()
     return current;
 }
 
-ProcessManager::ProcessPair *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const char *name, const char *cwd, uint64_t permissionLevel)
+ProcessControlBlock *ProcessManager::CurrentThread()
+{
+    lock.Lock();
+
+    ProcessControlBlock *pcb = NULL;
+
+    if(scheduler != NULL && scheduler->CurrentThread() != NULL)
+    {
+        pcb = scheduler->CurrentThread();
+    }
+
+    lock.Unlock();
+
+    return pcb;
+}
+
+ProcessControlBlock *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const char *name, const char *cwd, uint64_t permissionLevel)
 {
     lock.Lock();
 
@@ -286,7 +302,7 @@ ProcessManager::ProcessPair *ProcessManager::CreateFromEntryPoint(uint64_t entry
     memset(newProcess, 0, sizeof(ProcessInfo));
 
     newProcess->ID = ++processIDCounter;
-    newProcess->permissionLevel = newProcess->activePermissionLevel = permissionLevel;
+    newProcess->permissionLevel = permissionLevel;
     newProcess->cwd = cwd;
     newProcess->state = PROCESS_STATE_NEEDS_INIT;
 
@@ -323,24 +339,26 @@ ProcessManager::ProcessPair *ProcessManager::CreateFromEntryPoint(uint64_t entry
     newProcess->AddFD(PROCESS_FD_PIPE, new ProcessFDStdout());
     newProcess->AddFD(PROCESS_FD_PIPE, new ProcessFDStderr());
 
-    auto pcb = scheduler->AddProcess(newProcess);
+    auto pcb = scheduler->AddThread(newProcess, newProcess->rip, newProcess->rsp, newProcess->ID, true);
+
+    pcb->activePermissionLevel = newProcess->permissionLevel;
 
     ProcessPair pair;
 
     pair.isValid = true;
     pair.info = newProcess;
-    pair.pcb = pcb;
+    pair.threads.push_back(pcb);
 
-    auto outPair = &processes.push_back(pair);
+    processes.push_back(pair);
 
     DEBUG_OUT("Initializing entry point process at RIP %p; RSP: %p; CR3: %p", newProcess->rip, newProcess->rsp, newProcess->cr3);
 
     lock.Unlock();
 
-    return outPair;
+    return pcb;
 }
 
-ProcessManager::ProcessPair *ProcessManager::LoadImage(const void *image, const char *name, const char **argv, const char **envp, const char *cwd,
+ProcessControlBlock *ProcessManager::LoadImage(const void *image, const char *name, const char **argv, const char **envp, const char *cwd,
     uint64_t permissionLevel, uint64_t IDOverride)
 {
     lock.Lock();
@@ -389,7 +407,7 @@ ProcessManager::ProcessPair *ProcessManager::LoadImage(const void *image, const 
     memset(newProcess, 0, sizeof(ProcessInfo));
 
     newProcess->ID = IDOverride != 0 ? IDOverride : ++processIDCounter;
-    newProcess->permissionLevel = newProcess->activePermissionLevel = permissionLevel;
+    newProcess->permissionLevel = permissionLevel;
     newProcess->cwd = cwd;
     newProcess->state = PROCESS_STATE_NEEDS_INIT;
 
@@ -576,7 +594,9 @@ ProcessManager::ProcessPair *ProcessManager::LoadImage(const void *image, const 
 
     DEBUG_OUT("Initializing process at RIP %p auxval entry: %p RSP: %p; CR3: %p", rip, auxval.entry, newProcess->rsp, newProcess->cr3);
 
-    auto pcb = scheduler->AddProcess(newProcess);
+    auto pcb = scheduler->AddThread(newProcess, newProcess->rip, newProcess->rsp, newProcess->ID, true);
+
+    pcb->activePermissionLevel = newProcess->permissionLevel;
 
     newProcess->AddFD(PROCESS_FD_PIPE, new ProcessFDStdin());
     newProcess->AddFD(PROCESS_FD_PIPE, new ProcessFDStdout());
@@ -586,13 +606,13 @@ ProcessManager::ProcessPair *ProcessManager::LoadImage(const void *image, const 
 
     pair.isValid = true;
     pair.info = newProcess;
-    pair.pcb = pcb;
+    pair.threads.push_back(pcb);
 
-    auto outPair = &processes.push_back(pair);
+    processes.push_back(pair);
 
     lock.Unlock();
 
-    return outPair;
+    return pcb;
 }
 
 void ProcessManager::LoadFSBase(uint64_t base)
@@ -611,38 +631,38 @@ void ProcessManager::Exit(int exitCode, bool forceRemove)
         return;
     }
 
-    if(scheduler->CurrentProcess() != NULL)
+    if(scheduler->CurrentThread() != NULL)
     {
-        auto pcb = scheduler->CurrentProcess();
+        auto pcb = scheduler->CurrentThread();
 
-        pcb->state = pcb->process->state = PROCESS_STATE_DEAD;
+        pcb->process->state = PROCESS_STATE_DEAD;
 
         if(forceRemove)
         {
-            DEBUG_OUT("Process %llu is being force removed", pcb->process->ID);
+            DEBUG_OUT("Process %i is being force removed", pcb->process->ID);
         }
         else
         {
             pcb->process->exitCode = exitCode;
 
-            DEBUG_OUT("Process %llu exited with code %d", pcb->process->ID, exitCode);
+            DEBUG_OUT("Process %i exited with code %d", pcb->process->ID, exitCode);
         }
 
         scheduler->ExitProcess(pcb->process);
 
-        scheduler->DumpProcessList();
+        scheduler->DumpThreadList();
     }
 
-    auto pcb = scheduler->CurrentProcess();
+    auto pcb = scheduler->CurrentThread();
 
-    DEBUG_OUT("Swapping to process %llu (rip: %p, rsp: %p, cr3: %p)", pcb->process->ID, pcb->process->rip, pcb->process->rsp, pcb->process->cr3);
+    DEBUG_OUT("Swapping to thread %i (pid: %i, rip: %p, rsp: %p, cr3: %p)", pcb->tid, pcb->process->ID, pcb->process->rip, pcb->process->rsp, pcb->process->cr3);
 
     lock.Unlock();
 
     SwapTasks(pcb);
 }
 
-void ProcessManager::Sigaction(int signum, sigaction *act, sigaction *oldact)
+void ProcessManager::Sigaction(int signum, struct sigaction *act, struct sigaction *oldact)
 {
     if(signum < 0 || signum >= SIGNAL_MAX)
     {
@@ -731,7 +751,7 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
 {
     lock.Lock();
 
-    auto current = scheduler->CurrentProcess();
+    auto current = scheduler->CurrentThread();
 
     PageTable *pageTableFrame = (PageTable *)globalAllocator.RequestPage();
     PageTable *currentTable = (PageTable *)Registers::ReadCR3();
@@ -823,7 +843,7 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
     newProcess->sigprocmask = current->process->sigprocmask;
     newProcess->ppid = current->process->ID;
 
-    auto pcb = scheduler->AddProcess(newProcess);
+    auto pcb = scheduler->AddThread(newProcess, newProcess->rip, newProcess->rsp, current->tid, true);
 
     newProcess->fds = current->process->fds;
 
@@ -857,7 +877,7 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
 
     pair.isValid = true;
     pair.info = newProcess;
-    pair.pcb = pcb;
+    pair.threads.push_back(pcb);
 
     processes.push_back(pair);
 
@@ -883,10 +903,23 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
     //Set the return value for the new process
     pcb->rax = 0;
 
-    DEBUG_OUT("Forking process %llu (%llu) cr3: %p, cs: %llx, ss: %llx, permission: %llx", current->process->ID, newProcess->ID, newProcess->cr3,
+    DEBUG_OUT("Forking process %i (%i) cr3: %p, cs: %llx, ss: %llx, permission: %llx", current->process->ID, newProcess->ID, newProcess->cr3,
         pcb->cs, pcb->ss, newProcess->permissionLevel);
 
     return 0;
+}
+
+ProcessControlBlock *ProcessManager::AddThread(uint64_t rip, uint64_t rsp)
+{
+    lock.Lock();
+
+    auto current = scheduler->CurrentThread();
+
+    auto thread = scheduler->AddThread(current->process, rip, rsp, ++processIDCounter, false);
+
+    lock.Unlock();
+
+    return thread;
 }
 
 ProcessManager::ProcessPair *ProcessManager::GetProcess(pid_t pid)
@@ -983,4 +1016,48 @@ void ProcessManager::Kill(pid_t pid, int signal)
                 return;
         }
     }
+}
+
+void ProcessManager::ExitThread()
+{
+    lock.Lock();
+
+    if(scheduler == NULL)
+    {
+        lock.Unlock();
+
+        return;
+    }
+
+    if(scheduler->CurrentThread() != NULL)
+    {
+        auto pcb = scheduler->CurrentThread();
+
+        DEBUG_OUT("Thread %i for process %i is being terminated", pcb->tid, pcb->process->ID);
+
+        if(pcb->isMainThread)
+        {
+            pcb->process->state = PROCESS_STATE_DEAD;
+
+            pcb->process->exitCode = 0;
+
+            DEBUG_OUT("Main Thread terminated, terminating process", 0);
+
+            scheduler->ExitProcess(pcb->process);
+        }
+        else
+        {
+            scheduler->ExitThread(pcb);
+        }
+
+        scheduler->DumpThreadList();
+    }
+
+    auto pcb = scheduler->CurrentThread();
+
+    DEBUG_OUT("Swapping to thread %i (pid: %i, rip: %p, rsp: %p, cr3: %p)", pcb->tid, pcb->process->ID, pcb->process->rip, pcb->process->rsp, pcb->process->cr3);
+
+    lock.Unlock();
+
+    SwapTasks(pcb);
 }

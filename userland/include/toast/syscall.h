@@ -44,6 +44,13 @@ extern "C"
 #define SYSCALL_POLLINPUT           34
 #define SYSCALL_CWD                 35
 #define SYSCALL_CHDIR               36
+#define SYSCALL_SLEEP               37
+#define SYSCALL_SPAWN_THREAD        38
+#define SYSCALL_YIELD               39
+#define SYSCALL_THREAD_EXIT         40
+#define SYSCALL_GET_TID             41
+#define SYSCALL_FUTEX_WAIT          42
+#define SYSCALL_FUTEX_WAKE          43
 
 static int64_t syscall(uint64_t id, ...)
 {

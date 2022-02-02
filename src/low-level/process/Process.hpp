@@ -28,7 +28,7 @@ public:
     virtual uint64_t Read(void *buffer, uint64_t size) = 0;
     virtual int64_t Seek(uint64_t offset, int whence) = 0;
     virtual dirent *ReadEntries() = 0;
-    virtual stat Stat() = 0;
+    virtual struct stat Stat() = 0;
 };
 
 struct ProcessFD
@@ -64,9 +64,8 @@ enum ProcessState
 
 struct ProcessInfo
 {
-    uint64_t ID;
+    pid_t ID;
     uint64_t permissionLevel;
-    uint64_t activePermissionLevel;
     string name;
     char **argv;
     char **environment;
@@ -133,6 +132,12 @@ struct ProcessControlBlock
 
     uint64_t state;
 
+    pid_t tid;
+
+    uint64_t activePermissionLevel;
+
+    bool isMainThread;
+
     ProcessControlBlock *next;
 
     inline string State() const
@@ -169,12 +174,13 @@ struct ProcessControlBlock
 class IScheduler
 {
 public:
-    virtual ProcessControlBlock *CurrentProcess() = 0;
-    virtual ProcessControlBlock *AddProcess(ProcessInfo *process) = 0;
-    virtual ProcessControlBlock *NextProcess() = 0;
+    virtual ProcessControlBlock *CurrentThread() = 0;
+    virtual ProcessControlBlock *AddThread(ProcessInfo *process, uint64_t rip, uint64_t rsp, pid_t tid, bool isMainThread) = 0;
+    virtual ProcessControlBlock *NextThread() = 0;
     virtual void Advance() = 0;
-    virtual void DumpProcessList() = 0;
+    virtual void DumpThreadList() = 0;
     virtual void ExitProcess(ProcessInfo *process) = 0;
+    virtual void ExitThread(ProcessControlBlock *pcb) = 0;
 };
 
 class ProcessManager
@@ -190,7 +196,7 @@ public:
     struct ProcessPair
     {
         ProcessInfo *info;
-        ProcessControlBlock *pcb;
+        vector<ProcessControlBlock *> threads;
         bool isValid;
     };
 
@@ -198,11 +204,12 @@ public:
 
     ProcessManager(IScheduler *scheduler);
 
-    ProcessPair *LoadImage(const void *image, const char *name, const char **argv, const char **envp, const char *cwd,
+    ProcessControlBlock *LoadImage(const void *image, const char *name, const char **argv, const char **envp, const char *cwd,
         uint64_t permissionLevel, uint64_t IDOverride = 0);
-    ProcessPair *CreateFromEntryPoint(uint64_t entryPoint, const char *name, const char *cwd, uint64_t permissionLevel);
+    ProcessControlBlock *CreateFromEntryPoint(uint64_t entryPoint, const char *name, const char *cwd, uint64_t permissionLevel);
 
     ProcessPair *CurrentProcess();
+    ProcessControlBlock *CurrentThread();
     ProcessPair *GetProcess(pid_t pid);
     vector<ProcessPair> GetChildProcesses(pid_t ppid);
 
@@ -212,11 +219,15 @@ public:
 
     void LoadFSBase(uint64_t base);
 
-    void Sigaction(int signum, sigaction *act, sigaction *oldact);
+    void Sigaction(int signum, struct sigaction *act, struct sigaction *oldact);
 
     void Kill(pid_t pid, int signal);
 
     void Exit(int exitCode, bool forceRemove = false);
+
+    void ExitThread();
+
+    ProcessControlBlock *AddThread(uint64_t rip, uint64_t rsp);
 
     void SetUID(pid_t pid, uid_t uid);
 

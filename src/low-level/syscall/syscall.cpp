@@ -42,6 +42,10 @@ int64_t SyscallExecve(InterruptStack *stack);
 int64_t SyscallPollInput(InterruptStack *stack);
 int64_t SyscallCWD(InterruptStack *stack);
 int64_t SyscallCHDir(InterruptStack *stack);
+int64_t SyscallSpawnThread(InterruptStack *stack);
+int64_t SyscallYield(InterruptStack *stack);
+int64_t SyscallExitThread(InterruptStack *stack);
+int64_t SyscallGetTID(InterruptStack *stack);
 
 SyscallPointer syscallHandlers[] =
 {
@@ -80,22 +84,26 @@ SyscallPointer syscallHandlers[] =
     [SYSCALL_POLLINPUT] = (SyscallPointer)SyscallPollInput,
     [SYSCALL_CWD] = (SyscallPointer)SyscallCWD,
     [SYSCALL_CHDIR] = (SyscallPointer)SyscallCHDir,
+    [SYSCALL_SPAWN_THREAD] = (SyscallPointer)SyscallSpawnThread,
+    [SYSCALL_YIELD] = (SyscallPointer)SyscallYield,
+    [SYSCALL_THREAD_EXIT] = (SyscallPointer)SyscallExitThread,
+    [SYSCALL_GET_TID] = (SyscallPointer)SyscallGetTID,
 };
 
 void SyscallHandler(InterruptStack *stack)
 {
     if(stack->rdi <= sizeof(syscallHandlers) / sizeof(SyscallPointer) && syscallHandlers[stack->rdi] != NULL)
     {
-        auto current = globalProcessManager->CurrentProcess();
+        auto current = globalProcessManager->CurrentThread();
 
-        current->info->activePermissionLevel = PROCESS_PERMISSION_KERNEL;
+        current->activePermissionLevel = PROCESS_PERMISSION_KERNEL;
 
         auto handler = syscallHandlers[stack->rdi];
         auto result = handler(stack);
 
         stack->rax = result;
 
-        current->info->activePermissionLevel = PROCESS_PERMISSION_USER;
+        current->activePermissionLevel = PROCESS_PERMISSION_USER;
     }
 }
 

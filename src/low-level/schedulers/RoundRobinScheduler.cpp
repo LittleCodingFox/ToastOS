@@ -5,19 +5,19 @@
 #include "registers/Registers.hpp"
 #include "Panic.hpp"
 
-ProcessControlBlock *RoundRobinScheduler::CurrentProcess()
+ProcessControlBlock *RoundRobinScheduler::CurrentThread()
 {
     Threading::ScopedLock lock(this->lock);
     
-    if(processes != NULL)
+    if(threads != NULL)
     {
-        return processes;
+        return threads;
     }
 
     return NULL;
 }
 
-ProcessControlBlock *RoundRobinScheduler::AddProcess(ProcessInfo *process)
+ProcessControlBlock *RoundRobinScheduler::AddThread(ProcessInfo *process, uint64_t rip, uint64_t rsp, pid_t tid, bool isMainThread)
 {
     lock.Lock();
     
@@ -25,10 +25,12 @@ ProcessControlBlock *RoundRobinScheduler::AddProcess(ProcessInfo *process)
 
     memset(node, 0, sizeof(ProcessControlBlock));
 
-    node->rip = process->rip;
-    node->rsp = process->rsp;
+    node->rip = rip;
+    node->rsp = rsp;
     node->cr3 = process->cr3;
     node->rflags = process->rflags;
+    node->tid = tid;
+    node->isMainThread = isMainThread;
 
     if(process->permissionLevel == PROCESS_PERMISSION_KERNEL)
     {
@@ -43,25 +45,25 @@ ProcessControlBlock *RoundRobinScheduler::AddProcess(ProcessInfo *process)
 
     node->process = process;
 
-    if(processes == NULL)
+    if(threads == NULL)
     {
         node->next = node;
-        processes = node;
+        threads = node;
     }
     else
     {
-        ProcessControlBlock *p = processes;
+        ProcessControlBlock *p = threads;
 
-        if(p->next == processes)
+        if(p->next == threads)
         {
-            ProcessControlBlock *next = processes->next;
+            ProcessControlBlock *next = threads->next;
 
-            processes->next = node;
+            threads->next = node;
             node->next = next;
         }
         else
         {
-            while(p->next != processes)
+            while(p->next != threads)
             {
                 p = p->next;
             }
@@ -73,36 +75,36 @@ ProcessControlBlock *RoundRobinScheduler::AddProcess(ProcessInfo *process)
         }
     }
 
-    DEBUG_OUT("Added process %p (%llu)", node, node->process->ID);
+    DEBUG_OUT("Added thread %p (tid: %i, pid: %i)", node, node->tid, node->process->ID);
 
     lock.Unlock();
 
-    DumpProcessList();
+    DumpThreadList();
 
     return node;
 }
 
-ProcessControlBlock *RoundRobinScheduler::NextProcess()
+ProcessControlBlock *RoundRobinScheduler::NextThread()
 {
     Threading::ScopedLock lock(this->lock);
     
-    if(processes == NULL)
+    if(threads == NULL)
     {
         return NULL;
     }
 
-    ProcessControlBlock *p = processes;
+    ProcessControlBlock *p = threads;
 
     do
     {
         if(p->next->process->sleepTicks == 0)
         {
-            if(p->next == processes)
+            if(p->next == threads)
             {
-                return processes;
+                return threads;
             }
 
-            if(p->next == processes->next)
+            if(p->next == threads->next)
             {
                 break;
             }
@@ -112,25 +114,25 @@ ProcessControlBlock *RoundRobinScheduler::NextProcess()
 
         p = p->next;
     }
-    while(p != processes);
+    while(p != threads);
 
-    processes = processes->next;
+    threads = threads->next;
 
-    return processes;
+    return threads;
 }
 
 void RoundRobinScheduler::Advance()
 {
     lock.Lock();
 
-    if(processes == NULL)
+    if(threads == NULL)
     {
         lock.Unlock();
 
         return;
     }
 
-    ProcessControlBlock *p = processes;
+    ProcessControlBlock *p = threads;
 
     do
     {
@@ -140,74 +142,167 @@ void RoundRobinScheduler::Advance()
         }
         else
         {
-            if(p->next == processes)
+            if(p->next == threads)
             {
                 lock.Unlock();
 
                 return;
             }
 
-            if(p->next == processes->next)
+            if(p->next == threads->next)
             {
                 break;
             }
 
             ProcessControlBlock *previous = p;
             ProcessControlBlock *next = p->next;
-            ProcessControlBlock *moved = processes->next;
+            ProcessControlBlock *moved = threads->next;
 
             previous->next = next->next;
             next->next = moved;
-            processes->next = next;
+            threads->next = next;
 
             break;
         }
 
         p = p->next;
     }
-    while(p != processes);
+    while(p != threads);
 
     lock.Unlock();
 }
 
-void RoundRobinScheduler::ExitProcess(ProcessInfo *process)
+void RoundRobinScheduler::ExitThread(ProcessControlBlock *thread)
 {
     Threading::ScopedLock lock(this->lock);
-    
-    ProcessControlBlock *p = processes;
 
-    if(processes == processes->next)
+    if(thread->isMainThread)
     {
-        Panic("[RoundRobin] Cyclical error!");
+        ExitProcess(thread->process);
+
+        return;
     }
 
-    while(p->next->process != process)
+    bool found = false;
+
+    ProcessControlBlock *p = threads;
+
+    do
     {
-        p = p->next;
+        if(p->next == thread)
+        {
+            found = true;
+
+            break;
+        }
+
+    } while(p != threads);
+
+    if(!found)
+    {
+        return;
     }
 
     ProcessControlBlock *remove = p->next;
     p->next = p->next->next;
 
-    if(remove == processes)
+    if(remove == threads)
     {
-        processes = p->next;
+        threads = p->next;
     }
-
-    delete remove;
 }
 
-void RoundRobinScheduler::DumpProcessList()
+void RoundRobinScheduler::ExitProcess(ProcessInfo *process)
 {
     Threading::ScopedLock lock(this->lock);
 
-    DEBUG_OUT("Dumping Process List:", 0);
-    
-    ProcessControlBlock *p = processes;
-
-    if(processes == processes->next)
+    if(threads == threads->next)
     {
-        DEBUG_OUT("Single Process!", 0);
+        Panic("[RoundRobin] Cyclical error!");
+    }
+
+    for(;;)
+    {
+        bool found = false;
+    
+        ProcessControlBlock *p = threads;
+
+        for(;;)
+        {
+            p = threads;
+
+            if(threads->process == process)
+            {
+                do
+                {
+                    if(p->next == threads)
+                    {
+                        break;
+                    }
+
+                    p = p->next;
+                } while(p != threads);
+
+                if(p == threads)
+                {
+                    Panic("[RoundRobin] Unable to remove thread");
+                }
+
+                ProcessControlBlock *remove = p->next;
+                p->next = p->next->next;
+
+                if(remove == threads)
+                {
+                    threads = p->next;
+                }
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        do
+        {
+            if(p->next->process == process)
+            {
+                found = true;
+
+                break;
+            }
+
+        } while(p != threads);
+
+        if(!found)
+        {
+            break;
+        }
+
+        DEBUG_OUT("Removing thread %i from process %i", p->next->tid, p->next->process->ID);
+
+        ProcessControlBlock *remove = p->next;
+        p->next = p->next->next;
+
+        if(remove == threads)
+        {
+            threads = p->next;
+        }
+    }
+}
+
+void RoundRobinScheduler::DumpThreadList()
+{
+    Threading::ScopedLock lock(this->lock);
+
+    DEBUG_OUT("Dumping Thread List:", 0);
+    
+    ProcessControlBlock *p = threads;
+
+    if(threads == threads->next)
+    {
+        auto state = p->State();
+
+        DEBUG_OUT("pid: %i tid: %i (state: %s)", p->process->ID, p->tid, state.data());
 
         return;
     }
@@ -216,9 +311,9 @@ void RoundRobinScheduler::DumpProcessList()
     {
         auto state = p->State();
 
-        DEBUG_OUT("Process %llu (state: %s)", p->process->ID, state.data());
+        DEBUG_OUT("pid: %i tid: %i (state: %s)", p->process->ID, p->tid, state.data());
 
         p = p->next;
     }
-    while(p != processes);
+    while(p != threads);
 }

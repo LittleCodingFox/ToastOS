@@ -49,9 +49,9 @@ int64_t SyscallExecve(InterruptStack *stack)
 
     auto pair = globalProcessManager->LoadImage(buffer, path, argv, envp, process->info->cwd.data(), PROCESS_PERMISSION_USER, process->info->ID);
 
-    pair->info->ppid = process->info->ppid;
-    pair->info->uid = process->info->uid;
-    pair->info->gid = process->info->gid;
+    pair->process->ppid = process->info->ppid;
+    pair->process->uid = process->info->uid;
+    pair->process->gid = process->info->gid;
 
     delete [] buffer;
 
