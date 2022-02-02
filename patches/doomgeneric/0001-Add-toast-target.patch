@@ -78,7 +78,7 @@ new file mode 100644
 index 0000000..5e658fc
 --- /dev/null
 +++ b/doomgeneric/doomgeneric_toast.c
-@@ -0,0 +1,155 @@
+@@ -0,0 +1,162 @@
 +//doomgeneric for soso os
 +
 +#include "doomkeys.h"
@@ -171,9 +171,16 @@ index 0000000..5e658fc
 +  }
 +}
 +
++void Reset()
++{
++    ToastSetGraphicsType(TOAST_GRAPHICS_TYPE_CONSOLE);
++}
++
 +void DG_Init()
 +{
 +  ToastSetGraphicsType(TOAST_GRAPHICS_TYPE_GUI);
++
++  atexit(Reset);
 +
 +  int height, bpp;
 +
