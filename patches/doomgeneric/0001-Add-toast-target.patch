@@ -15,7 +15,7 @@ new file mode 100644
 index 0000000..1a30e2c
 --- /dev/null
 +++ b/Makefile.toast
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,57 @@
 +################################################################
 +#
 +# $Id:$
@@ -33,9 +33,12 @@ index 0000000..1a30e2c
 +CC=x86_64-toast-gcc  # gcc or g++
 +LD=x86_64-toast-ld
 +CFLAGS+=-Os $(INCLUDES) --sysroot=../../toolchain/system-root/ -I../include
-+LDFLAGS+=-L../../toolchain/pkg-builds/mlibc/ -L../../toolchain/packages/mlibc/usr/lib -L../../dist/usr/lib
++LDFLAGS+=-L../../toolchain/pkg-builds/mlibc/
++LDFLAGS+=-L../../toolchain/packages/mlibc/usr/lib
++LDFLAGS+=-L../../toolchain/system-root/usr/lib
++LDFLAGS+=-L../../toolchain/tools/host-gcc/x86_64-toast/lib64
 +CFLAGS+=-Wall -DNORMALUNIX -DLINUX -DSNDSERV # -DUSEASM
-+LIBS+=-lToastGraphics -lToastInput -lm -lc ../../toolchain/packages/mlibc/usr/lib/crt0.o
++LIBS+=-lToastGraphics -lToastInput -lGLESv1_CM -lOSMesa -lstdc++ -lgcc_s -lm -lc ../../toolchain/packages/mlibc/usr/lib/crt0.o
 +
 +# subdirectory for objects
 +OBJDIR=doomgeneric/build
