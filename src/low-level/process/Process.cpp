@@ -14,6 +14,7 @@
 #include "stacktrace/stacktrace.hpp"
 #include "filesystems/VFS.hpp"
 #include "tss/tss.hpp"
+#include "Panic.hpp"
 
 #define UPDATE_PROCESS_ACTIVE_PERMISSIONS(pcb) \
     switch(pcb->activePermissionLevel)\
@@ -58,6 +59,29 @@
             PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE); \
     }
 
+#define SAVE_TASK_STATE(task, stack) \
+        task->r10 = stack->r10; \
+        task->r11 = stack->r11; \
+        task->r12 = stack->r12; \
+        task->r13 = stack->r13; \
+        task->r14 = stack->r14; \
+        task->r15 = stack->r15; \
+        task->r8 = stack->r8; \
+        task->r9 = stack->r9; \
+        task->rax = stack->rax; \
+        task->rbp = stack->rbp; \
+        task->rbx = stack->rbx; \
+        task->rcx = stack->rcx; \
+        task->rdi = stack->rdi; \
+        task->rdx = stack->rdx; \
+        task->rsi = stack->rsi; \
+        task->rsp = stack->stackPointer; \
+        task->rip = stack->instructionPointer; \
+        task->rflags = stack->cpuFlags; \
+        \
+        UPDATE_PROCESS_ACTIVE_PERMISSIONS(task);
+
+
 #define LD_BASE 0x40000000
 #define push(stack, value) *(--stack) = (value)
 
@@ -96,7 +120,7 @@ ProcessFD *ProcessInfo::GetFD(int fd)
     return NULL;
 }
 
-ProcessManager::ProcessManager(IScheduler *scheduler) : scheduler(scheduler)
+ProcessManager::ProcessManager(IScheduler *scheduler) : scheduler(scheduler), futexes(NULL)
 {
     if(timer)
     {
@@ -133,6 +157,13 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
         return;
     }
 
+    while(next->state == PROCESS_STATE_BLOCKED && next != current)
+    {
+        scheduler->Advance();
+
+        next = scheduler->NextThread();
+    }
+
     if(current == next)
     {
         lock.Unlock();
@@ -144,26 +175,7 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
 
     if(current->state == PROCESS_STATE_RUNNING)
     {
-        current->r10 = stack->r10;
-        current->r11 = stack->r11;
-        current->r12 = stack->r12;
-        current->r13 = stack->r13;
-        current->r14 = stack->r14;
-        current->r15 = stack->r15;
-        current->r8 = stack->r8;
-        current->r9 = stack->r9;
-        current->rax = stack->rax;
-        current->rbp = stack->rbp;
-        current->rbx = stack->rbx;
-        current->rcx = stack->rcx;
-        current->rdi = stack->rdi;
-        current->rdx = stack->rdx;
-        current->rsi = stack->rsi;
-        current->rsp = stack->stackPointer;
-        current->rip = stack->instructionPointer;
-        current->rflags = stack->cpuFlags;
-
-        UPDATE_PROCESS_ACTIVE_PERMISSIONS(current);
+        SAVE_TASK_STATE(current, stack);
     }
 
     //Forked processes are added as the current process, so must init them properly
@@ -1017,8 +1029,105 @@ void ProcessManager::Kill(pid_t pid, int signal)
     }
 }
 
+bool ProcessManager::RemoveFutex(FutexPair *futex)
+{
+    while(futex->threads != NULL)
+    {
+        RemoveFutexThread(futex, futex->threads->pcb);
+    }
+
+    auto pointer = futex->pointer;
+
+    if(futex == futexes)
+    {
+       auto next = futex->next;
+
+        delete futex;
+
+        futexes = next;
+
+        DEBUG_OUT("Futex: Deleted futex for pointer %p (first)", pointer);
+
+        return true;
+    }
+    else
+    {
+        auto previous = futexes;
+
+        while(previous->next != NULL && previous->next != futex)
+        {
+            previous = previous->next;
+        }            
+
+        if(previous->next != futex)
+        {
+            Panic("Failed to delete a futex pair!");
+        }
+
+        auto next = futex->next;
+
+        delete futex;
+
+        previous->next = next;
+
+        DEBUG_OUT("Futex: Deleted futex for pointer %p", pointer);
+    }
+
+    return false;
+}
+
+void ProcessManager::RemoveFutexThread(FutexPair *futex, ProcessControlBlock *pcb)
+{
+    auto thread = futex->threads;
+
+    while(thread->pcb != pcb && thread->next != NULL)
+    {
+        thread = thread->next;
+    }
+
+    if(thread->pcb != pcb)
+    {
+        DEBUG_OUT("Futex: Failed to delete thread %p (pid: %i, tid: %i)", pcb, pcb->process->ID, pcb->tid);
+
+        return;
+    }
+
+    if(thread == futex->threads)
+    {
+        auto next = thread->next;
+
+        futex->threads = next;
+
+        delete thread;
+
+        DEBUG_OUT("Futex: Deleted thread at futex for pointer %p (first)", futex->pointer);
+    }
+    else
+    {
+        auto previous = futex->threads;
+
+        while(previous->next != NULL && previous->next != thread)
+        {
+            previous = previous->next;
+        }
+
+        if(previous->next == thread)
+        {
+            auto next = thread->next;
+
+            previous->next = next;
+
+            delete thread;
+
+            DEBUG_OUT("Futex: Deleted thread at futex for pointer %p", futex->pointer);
+        }
+    }
+}
+
 void ProcessManager::ExitThread()
 {
+    auto currentProcess = CurrentProcess();
+
     lock.Lock();
 
     if(scheduler == NULL)
@@ -1043,10 +1152,53 @@ void ProcessManager::ExitThread()
             DEBUG_OUT("Main Thread terminated, terminating process", 0);
 
             scheduler->ExitProcess(pcb->process);
+
+            auto futex = futexes;
+
+            while(futex != NULL)
+            {
+                for(auto &thread : currentProcess->threads)
+                {
+                    RemoveFutexThread(futex, thread);
+                }
+
+                if(futex->threads == NULL)
+                {
+                    RemoveFutex(futex);
+
+                    futex = futexes;
+
+                    continue;
+                }
+
+                futex = futex->next;
+            }
+
+            DumpFutexStats();
         }
         else
         {
             scheduler->ExitThread(pcb);
+
+            auto futex = futexes;
+
+            while(futex != NULL)
+            {
+                RemoveFutexThread(futex, pcb);
+
+                if(futex->threads == NULL)
+                {
+                    RemoveFutex(futex);
+
+                    futex = futexes;
+
+                    continue;
+                }
+
+                futex = futex->next;
+            }
+
+            DumpFutexStats();
         }
 
         scheduler->DumpThreadList();
@@ -1059,4 +1211,189 @@ void ProcessManager::ExitThread()
     lock.Unlock();
 
     SwapTasks(pcb);
+}
+
+void ProcessManager::FutexWait(int *pointer, int expected, InterruptStack *stack)
+{
+    if(*pointer == expected)
+    {
+        DEBUG_OUT("Futex: pointer %p is as expected", pointer);
+
+        DumpFutexStats();
+
+        return;
+    }
+
+    auto currentThread = CurrentThread();
+
+    DEBUG_OUT("Futex: Preparing to block current thread %p", currentThread);
+
+    lock.Lock();
+
+    #define ADDTHREAD(thread) \
+        thread->next = NULL; \
+        thread->pcb = currentThread; \
+        \
+        currentThread->state = PROCESS_STATE_BLOCKED;\
+
+    if(futexes == NULL)
+    {
+        futexes = new FutexPair();
+
+        futexes->next = NULL;
+        futexes->pointer = pointer;
+
+        futexes->threads = new FutexThread();
+
+        ADDTHREAD(futexes->threads);
+
+        DEBUG_OUT("Futex: Added first thread to futexes", 0);
+    }
+    else
+    {
+        auto futex = futexes;
+        bool found = false;
+
+        do
+        {
+            if(futex->pointer == pointer)
+            {
+                found = true;
+
+                break;
+            }
+
+        } while(futex->next != NULL);
+
+        if(found)
+        {
+            DEBUG_OUT("Futex: Found futex for pointer %p", pointer);
+
+            auto thread = futex->threads;
+
+            while(thread->next != NULL)
+            {
+                thread = thread->next;
+            }
+
+            thread->next = new FutexThread();
+
+            ADDTHREAD(thread->next);
+        }
+        else
+        {
+            DEBUG_OUT("Futex: Adding futex for pointer %p", pointer);
+
+            auto newFutex = new FutexPair();
+            newFutex->next = NULL;
+            newFutex->pointer = pointer;
+            newFutex->threads = new FutexThread();
+
+            futex->next = newFutex;
+
+            ADDTHREAD(newFutex->threads);
+        }
+    }
+
+    auto next = scheduler->NextThread();
+
+    while(next->state == PROCESS_STATE_BLOCKED && next != currentThread)
+    {
+        scheduler->Advance();
+
+        next = scheduler->NextThread();
+    }
+
+    if(next == currentThread)
+    {
+        Panic("All threads blocked!");
+    }
+
+    SAVE_TASK_STATE(currentThread, stack);
+
+    DEBUG_OUT("Current thread %p (pid: %i, tid: %i) has been blocked, swapping to %p (pid: %i, tid: %i)",
+        currentThread, currentThread->process->ID, currentThread->tid,
+        next, next->process->ID, next->tid);
+
+    DumpFutexStats();
+
+    lock.Unlock();
+
+    SwapTasks(next);
+}
+
+void ProcessManager::FutexWake(int *pointer)
+{
+    Threading::ScopedLock lock(this->lock);
+
+    if(futexes == NULL)
+    {
+        return;
+    }
+
+    auto futex = futexes;
+
+    while(futex->next != NULL && futex->pointer != pointer)
+    {
+        futex = futex->next;
+    }
+
+    if(futex->pointer != pointer)
+    {
+        DEBUG_OUT("Futex: wake from futex that doesn't exist", 0);
+
+        return;
+    }
+
+    auto thread = futex->threads;
+
+    thread->pcb->state = PROCESS_STATE_RUNNING;
+
+    if(thread->next == NULL)
+    {
+        RemoveFutex(futex);
+    }
+    else
+    {
+        RemoveFutexThread(futex, thread->pcb);
+    }
+
+    DumpFutexStats();
+}
+
+void ProcessManager::DumpFutexStats()
+{
+    DEBUG_OUT("Futex: Dumping futex stats", 0);
+
+    auto futex = futexes;
+
+    if(futex == NULL)
+    {
+        DEBUG_OUT("Futex: No futexes allocated", 0);
+
+        return;
+    }
+
+    do
+    {
+        DEBUG_OUT("  Futex for %p:", futex->pointer);
+
+        auto thread = futex->threads;
+
+        if(thread == NULL)
+        {
+            DEBUG_OUT("    Invalid starting thread (corruption?)", 0);
+        }
+        else
+        {
+            do
+            {
+                DEBUG_OUT("    Thread %p (pid: %i, tid: %i)", thread->pcb->process->ID, thread->pcb->tid);
+
+                thread = thread->next;
+            } while(thread != NULL);
+        }
+
+        futex = futex->next;
+    } while(futex != NULL);
 }

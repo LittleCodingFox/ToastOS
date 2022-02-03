@@ -46,6 +46,8 @@ int64_t SyscallSpawnThread(InterruptStack *stack);
 int64_t SyscallYield(InterruptStack *stack);
 int64_t SyscallExitThread(InterruptStack *stack);
 int64_t SyscallGetTID(InterruptStack *stack);
+int64_t SyscallFutexWait(InterruptStack *stack);
+int64_t SyscallFutexWake(InterruptStack *stack);
 
 SyscallPointer syscallHandlers[] =
 {
@@ -88,6 +90,8 @@ SyscallPointer syscallHandlers[] =
     [SYSCALL_YIELD] = (SyscallPointer)SyscallYield,
     [SYSCALL_THREAD_EXIT] = (SyscallPointer)SyscallExitThread,
     [SYSCALL_GET_TID] = (SyscallPointer)SyscallGetTID,
+    [SYSCALL_FUTEX_WAIT] = (SyscallPointer)SyscallFutexWait,
+    [SYSCALL_FUTEX_WAKE] = (SyscallPointer)SyscallFutexWake,
 };
 
 void SyscallHandler(InterruptStack *stack)
@@ -104,11 +108,6 @@ void SyscallHandler(InterruptStack *stack)
         stack->rax = result;
 
         current->activePermissionLevel = PROCESS_PERMISSION_USER;
-    }
-    else
-    {
-        //TEMPORARY
-        stack->rax = 0;
     }
 }
 

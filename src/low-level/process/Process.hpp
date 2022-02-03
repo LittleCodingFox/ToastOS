@@ -57,6 +57,7 @@ enum ProcessState
 {
     PROCESS_STATE_NEEDS_INIT = 0,
     PROCESS_STATE_IDLE,
+    PROCESS_STATE_BLOCKED,
     PROCESS_STATE_RUNNING,
     PROCESS_STATE_FORKED,
     PROCESS_STATE_DEAD,
@@ -77,7 +78,7 @@ struct ProcessInfo
     uint64_t cr3;
     uint64_t rflags;
     uint64_t sleepTicks;
-    sigaction sigHandlers[SIGNAL_MAX];
+    struct sigaction sigHandlers[SIGNAL_MAX];
     vector<ProcessFD> fds;
 
     int fdCounter;
@@ -170,6 +171,22 @@ struct ProcessControlBlock
     }
 };
 
+struct FutexThread
+{
+    ProcessControlBlock *pcb;
+
+    FutexThread *next;
+};
+
+struct FutexPair
+{
+    int *pointer;
+
+    FutexThread *threads;
+
+    FutexPair *next;
+};
+
 class IScheduler
 {
 public:
@@ -189,8 +206,12 @@ public:
 private:
     IScheduler *scheduler;
     vector<ProcessPair> processes;
+    FutexPair *futexes;
 
     void SwapTasks(ProcessControlBlock *next);
+    void RemoveFutexThread(FutexPair *futex, ProcessControlBlock *thread);
+    bool RemoveFutex(FutexPair *futex);
+    void DumpFutexStats();
 public:
     struct ProcessPair
     {
@@ -225,6 +246,10 @@ public:
     void Exit(int exitCode, bool forceRemove = false);
 
     void ExitThread();
+
+    void FutexWait(int *pointer, int expected, InterruptStack *stack);
+
+    void FutexWake(int *pointer);
 
     ProcessControlBlock *AddThread(uint64_t rip, uint64_t rsp);
 
