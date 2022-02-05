@@ -15,6 +15,7 @@ int64_t SyscallOpen(InterruptStack *stack);
 int64_t SyscallSeek(InterruptStack *stack);
 int64_t SyscallAnonAlloc(InterruptStack *stack);
 int64_t SyscallVMMap(InterruptStack *stack);
+int64_t SyscallVMUnmap(InterruptStack *stack);
 int64_t SyscallTCBSet(InterruptStack *stack);
 int64_t SyscallSigaction(InterruptStack *stack);
 int64_t SyscallGetPID(InterruptStack *stack);
@@ -59,6 +60,7 @@ SyscallPointer syscallHandlers[] =
     [SYSCALL_SEEK] = (SyscallPointer)SyscallSeek,
     [SYSCALL_ANON_ALLOC] = (SyscallPointer)SyscallAnonAlloc,
     [SYSCALL_VM_MAP] = (SyscallPointer)SyscallVMMap,
+    [SYSCALL_VM_UNMAP] = (SyscallPointer)SyscallVMUnmap,
     [SYSCALL_TCB_SET] = (SyscallPointer)SyscallTCBSet,
     [SYSCALL_SIGACTION] = (SyscallPointer)SyscallSigaction,
     [SYSCALL_GETPID] = (SyscallPointer)SyscallGetPID,

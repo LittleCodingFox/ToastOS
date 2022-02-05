@@ -33,11 +33,13 @@ namespace Elf
         uint64_t startPage = address / 0x1000;
         uint64_t pageCount = ((address + memSize) / 0x1000) - (address / 0x1000) + 1;
 
+#if DEBUG_PROCESSES
         DEBUG_OUT("Load at address %p with %llu pages (%p-%p) (memsize: %llu; fileSize: %llu; offset: %p)",
             address, pageCount,
             (address / 0x1000) * 0x1000, ((address / 0x1000) + pageCount) * 0x1000,
             memSize, fileSize,
             offset);
+#endif
 
         auto cr3 = Registers::ReadCR3();
 
@@ -65,7 +67,9 @@ namespace Elf
 
     ElfHeader *LoadElf(const void *data, uint64_t base, Auxval *auxval)
     {
+#if DEBUG_PROCESSES
         DEBUG_OUT("Loading Elf at ptr %p", data);
+#endif
 
         if(data == NULL)
         {
@@ -84,13 +88,17 @@ namespace Elf
 
         if(header->headerSize != sizeof(ElfHeader))
         {
+#if DEBUG_PROCESSES
             DEBUG_OUT("%s", "[ELF] Invalid elf header size");
+#endif
 
             return NULL;
         }
         else if(header->phSize != sizeof(ElfProgramHeader))
         {
+#if DEBUG_PROCESSES
             DEBUG_OUT("%s", "[ELF] Invalid program header size");
+#endif
 
             return NULL;
         }
@@ -125,7 +133,9 @@ namespace Elf
             {
                 auxval->phdr = base + currentHeader->virtualAddress;
 
+#if DEBUG_PROCESSES
                 DEBUG_OUT("PHDR: %p", auxval->phdr);
+#endif
             }
             else if(currentHeader->type == ELF_PROGRAM_TYPE_INTERP)
             {

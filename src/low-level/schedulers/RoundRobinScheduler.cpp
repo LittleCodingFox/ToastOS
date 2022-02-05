@@ -75,7 +75,7 @@ ProcessControlBlock *RoundRobinScheduler::AddThread(ProcessInfo *process, uint64
         }
     }
 
-    DEBUG_OUT("Added thread %p (tid: %i, pid: %i)", node, node->tid, node->process->ID);
+    DEBUG_OUT("Added thread %p (pid: %i, tid: %i)", node, node->process->ID, node->tid);
 
     lock.Unlock();
 
@@ -97,26 +97,14 @@ ProcessControlBlock *RoundRobinScheduler::NextThread()
 
     do
     {
-        if(p->next->process->sleepTicks == 0)
+        if(p->next->process->sleepTicks == 0 && p != threads)
         {
-            if(p->next == threads)
-            {
-                return threads;
-            }
-
-            if(p->next == threads->next)
-            {
-                break;
-            }
-
-            break;
+            return p;
         }
 
         p = p->next;
     }
     while(p != threads);
-
-    threads = threads->next;
 
     return threads;
 }
@@ -140,27 +128,9 @@ void RoundRobinScheduler::Advance()
         {
             p->next->process->sleepTicks--;
         }
-        else
+        else if(p != threads)
         {
-            if(p->next == threads)
-            {
-                lock.Unlock();
-
-                return;
-            }
-
-            if(p->next == threads->next)
-            {
-                break;
-            }
-
-            ProcessControlBlock *previous = p;
-            ProcessControlBlock *next = p->next;
-            ProcessControlBlock *moved = threads->next;
-
-            previous->next = next->next;
-            next->next = moved;
-            threads->next = next;
+            threads = p;
 
             break;
         }

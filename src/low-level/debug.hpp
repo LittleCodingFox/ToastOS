@@ -4,7 +4,9 @@
 #include "serial/Serial.hpp"
 #endif
 
-#define KERNEL_DEBUG_SYSCALLS 0
+#define KERNEL_DEBUG_SYSCALLS   0
+#define DEBUG_PROCESSES         0
+#define DEBUG_PROCESSES_EXTRA   0
 
 #if __cplusplus
 extern "C" 

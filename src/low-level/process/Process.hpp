@@ -164,6 +164,10 @@ struct ProcessControlBlock
 
                 return "RUNNING";
 
+            case PROCESS_STATE_BLOCKED:
+
+                return "BLOCKED";
+
             default:
 
                 return "UNKNOWN (CORRUPTED?)";
@@ -209,7 +213,7 @@ private:
     FutexPair *futexes;
 
     void SwapTasks(ProcessControlBlock *next);
-    void RemoveFutexThread(FutexPair *futex, ProcessControlBlock *thread);
+    bool RemoveFutexThread(FutexPair *futex, ProcessControlBlock *thread);
     bool RemoveFutex(FutexPair *futex);
     void DumpFutexStats();
 public:
