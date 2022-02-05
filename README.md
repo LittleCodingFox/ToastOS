@@ -1,5 +1,13 @@
 # ToastOS
-x86_64 OS created from scratch
+x86_64 OS created from scratch (very incomplete)
+
+# Screenshots
+
+![Basic system usage](https://i.imgur.com/FpEcLRC.png)
+
+![Running some apps](https://i.imgur.com/JtBnvwo.png)
+
+![Doom!](https://i.imgur.com/UJlDDkt.jpg)
 
 # Features
 
@@ -8,6 +16,10 @@ x86_64 OS created from scratch
 * tarfs ramdisk
 * Hosted toolchain
 * mlibc-based usermode libc
+* PS/2 keyboard
+* Can run Doom
+* Coreutils (ls, cat, etc)
+* Runs on real hardware (somewhat)
 
 # Requirements
 
