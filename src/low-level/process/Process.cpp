@@ -213,10 +213,6 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
 
         scheduler->Advance();
 
-        auto pcb = scheduler->CurrentThread();
-
-        DEBUG_OUT("pcb: %p; next: %p", pcb, next);
-
         lock.Unlock();
 
         SwapTasks(next);
