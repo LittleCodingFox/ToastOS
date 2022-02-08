@@ -1,0 +1,16 @@
+[binaries]
+c = 'clang'
+cpp = 'clang++'
+ar = 'x86_64-toast-ar'
+strip = 'x86_64-toast-strip'
+pkgconfig = 'pkg-config'
+
+[built-in options]
+cpp_args = ['-fsized-deallocation', '-target', 'x86_64-toast', '-gcc-toolchain', '_BUILD_ROOT_/tools/host-gcc']
+cpp_link_args = ['-fsized-deallocation', '-target', 'x86_64-toast', '-gcc-toolchain', '_BUILD_ROOT_/tools/host-gcc']
+
+[host_machine]
+system = 'toast'
+cpu_family = 'x86_64'
+cpu = 'x86_64'
+endian = 'little'

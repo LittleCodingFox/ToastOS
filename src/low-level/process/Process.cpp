@@ -325,7 +325,7 @@ ProcessControlBlock *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, c
 
     newProcess = (ProcessInfo *)TranslateToHighHalfMemoryAddress((uint64_t)newProcess);
 
-    memset(newProcess, 0, sizeof(ProcessInfo));
+    new (newProcess) ProcessInfo();
 
     newProcess->ID = ++processIDCounter;
     newProcess->permissionLevel = permissionLevel;
@@ -432,7 +432,7 @@ ProcessControlBlock *ProcessManager::LoadImage(const void *image, const char *na
     userPageManager.MapMemory((void *)TranslateToHighHalfMemoryAddress((uint64_t)pageTableFrame), pageTableFrame,
         PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
 
-    memset(newProcess, 0, sizeof(ProcessInfo));
+    new (newProcess) ProcessInfo();
 
     newProcess->ID = IDOverride != 0 ? IDOverride : ++processIDCounter;
     newProcess->permissionLevel = permissionLevel;
@@ -861,7 +861,7 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
             PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
     }
 
-    memset(newProcess, 0, sizeof(ProcessInfo));
+    new (newProcess) ProcessInfo();
 
     newProcess->ID = ++processIDCounter;
     newProcess->permissionLevel = current->process->permissionLevel;
@@ -1534,4 +1534,47 @@ void ProcessManager::DumpFutexStats()
 
     scheduler->DumpThreadList();
 #endif
+}
+
+void ProcessManager::AddProcessVMMap(void *virt, void *physical, uint64_t pages)
+{
+    auto process = CurrentProcess();
+
+    Threading::ScopedLock lock(this->lock);
+
+    ProcessVMMap map;
+    map.virt = virt;
+    map.physical = physical;
+    map.pageCount = pages;
+
+    process->info->vmMapping.push_back(map);
+}
+
+void ProcessManager::ClearProcessVMMap(void *virt, uint64_t pages)
+{
+    auto process = CurrentProcess();
+
+    Threading::ScopedLock lock(this->lock);
+
+    for(auto &entry : process->info->vmMapping)
+    {
+        if(entry.virt == NULL || entry.virt != virt)
+        {
+            continue;
+        }
+
+        PageTableManager pageTableManger;
+        pageTableManger.p4 = (PageTable *)process->info->cr3;
+
+        auto target = (uint64_t)virt;
+
+        for(uint64_t i = 0; i < pages; i++)
+        {
+            pageTableManger.MapMemory((void *)((uint64_t)target + i * 0x1000), NULL, 0);
+        }
+
+        globalAllocator.FreePages(entry.physical, entry.pageCount);
+
+        entry.virt = NULL;
+    }
 }

@@ -1,0 +1,13 @@
+[binaries]
+c = 'x86_64-toast-gcc'
+cpp = 'x86_64-toast-g++'
+ar = 'x86_64-toast-ar'
+strip = 'x86_64-toast-strip'
+pkgconfig = 'x86_64-toast-pkg-config'
+# sed adds binaries here.
+
+[host_machine]
+system = 'toast'
+cpu_family = 'x86_64'
+cpu = 'x86_64'
+endian = 'little'

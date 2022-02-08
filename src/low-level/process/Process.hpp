@@ -63,6 +63,13 @@ enum ProcessState
     PROCESS_STATE_DEAD,
 };
 
+struct ProcessVMMap
+{
+    void *virt;
+    void *physical;
+    uint64_t pageCount;
+};
+
 struct ProcessInfo
 {
     pid_t ID;
@@ -80,6 +87,7 @@ struct ProcessInfo
     uint64_t sleepTicks;
     struct sigaction sigHandlers[SIGNAL_MAX];
     vector<ProcessFD> fds;
+    vector<ProcessVMMap> vmMapping;
 
     int fdCounter;
 
@@ -94,6 +102,10 @@ struct ProcessInfo
     string cwd;
 
     Elf::ElfHeader *elf;
+
+    ProcessInfo() : ID(0), permissionLevel(0), argv(NULL), environment(NULL), kernelStack(NULL), istStack(NULL), stack(NULL),
+        rip(0), rsp(0), cr3(0), rflags(0), sleepTicks(0), fdCounter(0), uid(0), gid(0), ppid(0), sigprocmask(0), state(PROCESS_STATE_NEEDS_INIT),
+        exitCode(0), elf(NULL) {}
 
     int AddFD(int type, IProcessFD *impl);
     ProcessFD *GetFD(int fd);
@@ -254,6 +266,10 @@ public:
     void FutexWait(int *pointer, int expected, InterruptStack *stack);
 
     void FutexWake(int *pointer);
+
+    void AddProcessVMMap(void *virt, void *physical, uint64_t pages);
+
+    void ClearProcessVMMap(void *virt, uint64_t pages);
 
     ProcessControlBlock *AddThread(uint64_t rip, uint64_t rsp);
 

@@ -126,17 +126,31 @@ packages:
       tools_required:
         - host-pkg-config
     tools_required:
-      - host-gcc
       - host-pkg-config
+      - host-gcc
+      - virtual: pkgconfig-for-target
+        triple: "x86_64-toast"
+      - virtual: pkgconfig-for-host
+        program_name: host-pkg-config
     pkgs_required:
       - mlibc
+      - llvm
+      - zlib
     configure:
+      - args: ['cp', '@SOURCE_ROOT@/scripts/meson-x86_64-toast.cross-file', 'meson.cross-file']
+      - args:
+        - 'sed'
+        - '-i'
+        - "/^# sed adds binaries here.$/a llvm-config = '@SOURCE_ROOT@/scripts/cross-llvm-config'"
+        - 'meson.cross-file'
       - args:
         - 'meson'
+        - '--native-file'
+        - '@SOURCE_ROOT@/scripts/meson.native-file'
         - '--cross-file'
-        - '@SOURCE_ROOT@/cross_file.txt'
-        - '-Dprefix=/usr'
-        - '@THIS_SOURCE_DIR@'
+        - 'meson.cross-file'
+        - '--prefix=/usr'
+        - '--libdir=lib'
         - '-Dplatforms=[]'
         - '-Dosmesa=true'
         - '-Dgallium-drivers=swrast'
@@ -145,8 +159,9 @@ packages:
         - '-Degl-native-platform=surfaceless'
         - '-Dopengl=true'
         - '-Dglx=disabled'
-        - '-Dllvm=disabled'
+        - '-Dllvm=enabled'
         - '-Dbuildtype=release'
+        - '@THIS_SOURCE_DIR@'
     build:
       - args: ['ninja' ]
       - args: ['ninja', 'install' ]
@@ -174,6 +189,7 @@ packages:
     pkgs_required:
       - mlibc
       - mesa
+      - llvm
     configure:
       - args:
         - '@THIS_SOURCE_DIR@/configure'

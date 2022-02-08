@@ -18,7 +18,7 @@ int64_t SyscallVMUnmap(InterruptStack *stack)
     DEBUG_OUT("Syscall: vmunmap pointer %p size %llu", pointer, size);
 #endif
 
-    //TODO
+    globalProcessManager->ClearProcessVMMap(ptr, size / 0x1000 + (size % 0x1000 != 0 ? 1 : 0));
 
     return 0;
 }

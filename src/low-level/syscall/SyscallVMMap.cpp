@@ -31,7 +31,7 @@ int64_t SyscallVMMap(InterruptStack *stack)
 
     (void)fd;
 
-    uint64_t pages = size / 0x1000 + 1;
+    uint64_t pages = size / 0x1000 + (size % 0x1000 != 0 ? 1 : 0);
 
     PageTableManager userManager;
     userManager.p4 = (PageTable *)Registers::ReadCR3();
@@ -52,22 +52,23 @@ int64_t SyscallVMMap(InterruptStack *stack)
     {
         if(flags & MAP_FIXED)
         {
+            void *physical = globalAllocator.RequestPages(pages);
+
             //TODO: Don't force hint/Add VMM
             for(uint64_t i = 0; i < pages; i++)
             {
-                void *physicalMemory = globalAllocator.RequestPage();
-                void *higher = (void *)TranslateToHighHalfMemoryAddress((uint64_t)physicalMemory);
+                auto target = (void *)((uint64_t)physical + i * 0x1000);
+                auto higher = (void *)TranslateToHighHalfMemoryAddress((uint64_t)target);
 
-                userManager.MapMemory(higher, physicalMemory,
+                userManager.MapMemory(higher, target,
                     PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
 
-                globalPageTableManager->MapMemory(higher, physicalMemory,
-                    PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
-
-                userManager.MapMemory((void *)((uint64_t)hint + i * 0x1000), physicalMemory, pagingFlags);
+                userManager.MapMemory((void *)((uint64_t)hint + i * 0x1000), target, pagingFlags);
 
                 memset(higher, 0, 0x1000);
             }
+
+            globalProcessManager->AddProcessVMMap(hint, physical, pages);
 
             //DEBUG_OUT("Mapping %p-%p with paging flags 0x%x", hint, (uint64_t)hint + pages * 0x1000, pagingFlags);
 
@@ -91,6 +92,8 @@ int64_t SyscallVMMap(InterruptStack *stack)
 
                     memset(higher, 0, 0x1000);
                 }
+
+                globalProcessManager->AddProcessVMMap(physical, physical, pages);
 
                 //DEBUG_OUT("Allocating %p-%p with paging flags 0x%x", physical, (uint64_t)physical + pages * 0x1000, pagingFlags);
 

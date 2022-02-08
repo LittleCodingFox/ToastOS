@@ -1,4 +1,10 @@
 sources:
+  - name: 'cmake'
+    subdir: 'ports'
+    git: 'https://gitlab.kitware.com/cmake/cmake.git'
+    tag: 'v3.22.0'
+    version: '3.22.0'
+
   - name: 'pkg-config'
     subdir: 'ports'
     git: 'https://gitlab.freedesktop.org/pkg-config/pkg-config.git'
@@ -14,6 +20,20 @@ sources:
           'NOCONFIGURE': 'yes'
 
 tools:
+  - name: host-cmake
+    architecture: noarch
+    from_source: cmake
+    configure:
+      - args:
+        - '@THIS_SOURCE_DIR@/bootstrap'
+        - '--prefix=@PREFIX@'
+        - '--parallel=@PARALLELISM@'
+    compile:
+      - args: ['make', '-j@PARALLELISM@']
+    install:
+      - args: ['make', 'install']
+      - args: ['ln', '-sf', '@SOURCE_ROOT@/scripts/toast.cmake', '@PREFIX@/share/cmake-3.22/Modules/Platform/']
+
   # We could run an external pkg-config; however, we need the aclocal files.
   # The easiest way to ensure that they are available is to just install pkg-config.
   - name: host-pkg-config

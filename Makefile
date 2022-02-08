@@ -141,7 +141,7 @@ debug-linux: run-linux
 run-qemu-linux:
 	qemu-system-x86_64 -drive file=$(BINDIR)/$(OS_NAME).img,format=raw,index=0,media=disk \
 	-bios /usr/share/qemu/OVMF.fd -display gtk $(QEMU_FLAGS) $(QEMU_EXTRA_FLAGS) \
-	-m 1G -cpu qemu64 -machine type=q35 -serial file:./debug.log -net none -d int --no-reboot 2>qemu.log
+	-m 2G -cpu qemu64 -machine type=q35 -serial file:./debug.log -net none -d int --no-reboot 2>qemu.log
 
 debug-qemu-linux: QEMU_FLAGS = -s -S
 debug-qemu-linux: run-qemu-linux
