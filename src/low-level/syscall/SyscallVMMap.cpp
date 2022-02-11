@@ -5,6 +5,7 @@
 #include "debug.hpp"
 #include "errno.h"
 #include "paging/PageFrameAllocator.hpp"
+#include "Panic.hpp"
 
 #define PROT_NONE       0x00
 #define PROT_READ       0x01
@@ -52,12 +53,12 @@ int64_t SyscallVMMap(InterruptStack *stack)
     {
         if(flags & MAP_FIXED)
         {
-            void *physical = globalAllocator.RequestPages(pages);
+            vector<void *> mappedPages;
 
             //TODO: Don't force hint/Add VMM
             for(uint64_t i = 0; i < pages; i++)
             {
-                auto target = (void *)((uint64_t)physical + i * 0x1000);
+                auto target = globalAllocator.RequestPage();
                 auto higher = (void *)TranslateToHighHalfMemoryAddress((uint64_t)target);
 
                 userManager.MapMemory(higher, target,
@@ -66,9 +67,11 @@ int64_t SyscallVMMap(InterruptStack *stack)
                 userManager.MapMemory((void *)((uint64_t)hint + i * 0x1000), target, pagingFlags);
 
                 memset(higher, 0, 0x1000);
+
+                mappedPages.push_back(target);
             }
 
-            globalProcessManager->AddProcessVMMap(hint, physical, pages);
+            globalProcessManager->AddProcessVMMap(hint, mappedPages);
 
             //DEBUG_OUT("Mapping %p-%p with paging flags 0x%x", hint, (uint64_t)hint + pages * 0x1000, pagingFlags);
 

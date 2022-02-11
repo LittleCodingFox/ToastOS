@@ -192,7 +192,7 @@ void PageFrameAllocator::FreePage(void* address)
 
 void PageFrameAllocator::FreePages(void* address, uint64_t pageCount)
 {
-    for (int t = 0; t < pageCount; t++)
+    for (uint64_t t = 0; t < pageCount; t++)
     {
         FreePage((void*)((uint64_t)address + (t * 0x1000)));
     }
@@ -216,7 +216,7 @@ void PageFrameAllocator::LockPage(void* address)
 
 void PageFrameAllocator::LockPages(void* address, uint64_t pageCount)
 {
-    for (int t = 0; t < pageCount; t++)
+    for (uint64_t t = 0; t < pageCount; t++)
     {
         LockPage((void*)((uint64_t)address + (t * 0x1000)));
     }

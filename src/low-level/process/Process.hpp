@@ -67,6 +67,7 @@ struct ProcessVMMap
 {
     void *virt;
     void *physical;
+    vector<void *> pages;
     uint64_t pageCount;
 };
 
@@ -268,6 +269,8 @@ public:
     void FutexWake(int *pointer);
 
     void AddProcessVMMap(void *virt, void *physical, uint64_t pages);
+
+    void AddProcessVMMap(void *virt, const vector<void *> &pages);
 
     void ClearProcessVMMap(void *virt, uint64_t pages);
 

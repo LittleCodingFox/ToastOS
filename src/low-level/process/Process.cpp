@@ -1550,6 +1550,21 @@ void ProcessManager::AddProcessVMMap(void *virt, void *physical, uint64_t pages)
     process->info->vmMapping.push_back(map);
 }
 
+void ProcessManager::AddProcessVMMap(void *virt, const vector<void *> &pages)
+{
+    auto process = CurrentProcess();
+
+    Threading::ScopedLock lock(this->lock);
+
+    ProcessVMMap map;
+    map.virt = virt;
+    map.physical = NULL;
+    map.pageCount = 0;
+    map.pages = pages;
+
+    process->info->vmMapping.push_back(map);
+}
+
 void ProcessManager::ClearProcessVMMap(void *virt, uint64_t pages)
 {
     auto process = CurrentProcess();
@@ -1568,12 +1583,24 @@ void ProcessManager::ClearProcessVMMap(void *virt, uint64_t pages)
 
         auto target = (uint64_t)virt;
 
-        for(uint64_t i = 0; i < pages; i++)
+        if(entry.pageCount == 0 && entry.pages.size() > 0)
         {
-            pageTableManger.MapMemory((void *)((uint64_t)target + i * 0x1000), NULL, 0);
-        }
+            for(uint64_t i = 0; i < entry.pages.size(); i++)
+            {
+                pageTableManger.UnmapMemory((void *)((uint64_t)target + i * 0x1000));
 
-        globalAllocator.FreePages(entry.physical, entry.pageCount);
+                globalAllocator.FreePage(entry.pages[i]);
+            }
+        }
+        else
+        {
+            for(uint64_t i = 0; i < pages; i++)
+            {
+                pageTableManger.UnmapMemory((void *)((uint64_t)target + i * 0x1000));
+            }
+
+            globalAllocator.FreePages(entry.physical, entry.pageCount);
+        }
 
         entry.virt = NULL;
     }
