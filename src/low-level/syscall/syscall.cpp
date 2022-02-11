@@ -49,6 +49,7 @@ int64_t SyscallExitThread(InterruptStack *stack);
 int64_t SyscallGetTID(InterruptStack *stack);
 int64_t SyscallFutexWait(InterruptStack *stack);
 int64_t SyscallFutexWake(InterruptStack *stack);
+int64_t SyscallSetKBLayout(InterruptStack *stack);
 
 SyscallPointer syscallHandlers[] =
 {
@@ -94,6 +95,7 @@ SyscallPointer syscallHandlers[] =
     [SYSCALL_GET_TID] = (SyscallPointer)SyscallGetTID,
     [SYSCALL_FUTEX_WAIT] = (SyscallPointer)SyscallFutexWait,
     [SYSCALL_FUTEX_WAKE] = (SyscallPointer)SyscallFutexWake,
+    [SYSCALL_SETKBLAYOUT] = (SyscallPointer)SyscallSetKBLayout,
 };
 
 void SyscallHandler(InterruptStack *stack)

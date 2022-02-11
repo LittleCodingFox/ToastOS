@@ -51,6 +51,7 @@ extern "C"
 #define SYSCALL_GET_TID             41
 #define SYSCALL_FUTEX_WAIT          42
 #define SYSCALL_FUTEX_WAKE          43
+#define SYSCALL_SETKBLAYOUT         44
 
 static int64_t syscall(uint64_t id, ...)
 {

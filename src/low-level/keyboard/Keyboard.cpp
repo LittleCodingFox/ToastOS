@@ -149,7 +149,7 @@ public:
     }
 };
 
-box<KeyboardLayout> currentLayout;
+KeyboardLayout *currentLayout = NULL;
 
 uint8_t KeyFromString(const string &key)
 {
@@ -191,16 +191,9 @@ bool LoadLayout(const string &name)
 
         vfs->CloseFile(handle);
 
-        if(!currentLayout.valid())
-        {
-            currentLayout.initialize();
-        }
-        else
-        {
-            currentLayout->Clear();
-        }
+        KeyboardLayout *layout = new KeyboardLayout();
 
-        currentLayout->name = name;
+        layout->name = name;
 
         size_t cursor = 0;
 
@@ -209,6 +202,8 @@ bool LoadLayout(const string &name)
         delete [] buffer;
 
         frg::string_view view(content);
+
+        bool error = false;
 
         for(;;)
         {
@@ -256,6 +251,8 @@ bool LoadLayout(const string &name)
                 {
                     printf("At line '%s': Missing key at right side\n");
 
+                    error = true;
+
                     if(needsQuit)
                     {
                         break;
@@ -275,7 +272,7 @@ bool LoadLayout(const string &name)
                 item.value = right;
                 item.key = KeyFromString(key);
 
-                currentLayout->items.push_back(item);
+                layout->items.push_back(item);
             }
 
             if(cursor >= view.size() || needsQuit)
@@ -284,7 +281,21 @@ bool LoadLayout(const string &name)
             }
         }
 
-        currentLayout->UpdateModifiers();
+        if(error)
+        {
+            delete layout;
+
+            return false;
+        }
+
+        layout->UpdateModifiers();
+
+        if(currentLayout != NULL)
+        {
+            delete currentLayout;
+        }
+
+        currentLayout = layout;
     }
     else
     {
@@ -343,9 +354,14 @@ extern "C" void InitializeKeyboard()
 #endif
 }
 
+extern "C" bool SetKeyboardLayout(const char *name)
+{
+    return LoadLayout(name);
+}
+
 extern "C" const char *GetKeyboardLayoutName()
 {
-    return currentLayout.valid() ? currentLayout->name.data() : "";
+    return currentLayout != NULL ? currentLayout->name.data() : "";
 }
 
 extern "C" bool GotKeyboardInput()
@@ -374,7 +390,7 @@ InputEvent MakeKeyboardEvent(uint8_t scancode, uint16_t character, uint8_t key, 
 extern "C" void HandleKeyboardKeyPress(uint8_t scancode)
 {
 #if USE_INPUT_SYSTEM
-    if(currentLayout.valid() && currentLayout->items.size() != 0)
+    if(currentLayout != NULL && currentLayout->items.size() != 0)
     {
         if(currentLayout->lshiftKey != NULL)
         {
