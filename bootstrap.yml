@@ -1,6 +1,7 @@
 imports:
   - file: bootstrap.d/apps-shells.yml
   - file: bootstrap.d/games-fps.yml
+  - file: bootstrap.d/dev-libs.yml
   - file: bootstrap.d/dev-util.yml
   - file: bootstrap.d/sys-apps.yml
   - file: bootstrap.d/sys-devel.yml
@@ -495,6 +496,42 @@ packages:
         - '-j@PARALLELISM@'
       - args: ['make', 'install', 'INSTALL_TOP=@THIS_COLLECT_DIR@/usr']
         quiet: true
+
+  - name: gcc
+    from_source: gcc
+    tools_required:
+      - tool: host-gcc
+      - host-automake-v1.15
+    pkgs_required:
+      - mlibc
+      - gmp
+      - mpfr
+      - mpc
+      - zlib
+    configure:
+      - args:
+        - '@THIS_SOURCE_DIR@/configure'
+        - '--host=x86_64-toast'
+        - '--prefix=/usr'
+        - '--target=x86_64-toast'
+        - '--with-sysroot=/'
+        - '--with-build-sysroot=@SYSROOT_DIR@'
+        - '--enable-languages=c,c++'
+        - '--enable-initfini-array'
+        - '--disable-multilib'
+        - '--disable-nls'
+        - '--enable-lto'
+        - '--with-system-zlib'
+        # -g blows up GCC's binary size.
+        - 'CFLAGS=-O2'
+        - 'CXXFLAGS=-O2'
+    build:
+      - args: ['make', 'all-gcc', 'all-target-libgcc', 'all-target-libstdc++-v3', '-j@PARALLELISM@']
+      - args: ['make', 'install-gcc', 'install-target-libgcc', 'install-target-libstdc++-v3']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+        quiet: true
+      - args: ['ln', '-sf', 'gcc', '@THIS_COLLECT_DIR@/usr/bin/cc']
 
   - name: toastgraphics
     source:

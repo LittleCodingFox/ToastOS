@@ -5,13 +5,13 @@ export OS_NAME=ToastOS
 
 rm -Rf $BINDIR/*.img
 
-dd if=/dev/zero of=$BINDIR/$OS_NAME.img bs=1M count=650 #1024
+dd if=/dev/zero of=$BINDIR/$OS_NAME.img bs=1M count=800 #1024
 
 (echo g
 echo n
 echo 1
 echo 2048
-echo +600M
+echo +780M
 echo t
 echo 1
 #echo n
