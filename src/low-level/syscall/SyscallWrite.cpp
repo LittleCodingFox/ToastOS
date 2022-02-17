@@ -30,5 +30,14 @@ size_t SyscallWrite(InterruptStack *stack)
         return -EBADF;
     }
 
-    return procfd->impl->Write(buffer, count);
+    int error = 0;
+
+    uint64_t write = procfd->impl->Write(buffer, count, &error);
+
+    if(error != 0)
+    {
+        return -error;
+    }
+
+    return write;
 }

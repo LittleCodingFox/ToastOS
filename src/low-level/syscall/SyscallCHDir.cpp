@@ -21,7 +21,9 @@ int64_t SyscallCHDir(InterruptStack *stack)
         return ENOENT;
     }
 
-    auto handle = vfs->OpenFile(path, 0, process->info);
+    int error = 0;
+
+    auto handle = vfs->OpenFile(path, 0, process->info, &error);
 
     if(vfs->FileType(handle) != FILE_HANDLE_DIRECTORY)
     {

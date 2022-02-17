@@ -477,9 +477,11 @@ ProcessControlBlock *ProcessManager::LoadImage(const void *image, const char *na
             DEBUG_OUT("Found LD for process: %s", ldPath);
 #endif
 
-            FILE_HANDLE ldHandle = vfs->OpenFile(ldPath, O_RDONLY, newProcess);
+            int error = 0;
 
-            if(vfs->FileType(ldHandle) != FILE_HANDLE_FILE)
+            FILE_HANDLE ldHandle = vfs->OpenFile(ldPath, O_RDONLY, newProcess, &error);
+
+            if(vfs->FileType(ldHandle) != FILE_HANDLE_FILE || error != 0)
             {
 #if DEBUG_PROCESSES
                 DEBUG_OUT("Failed to load ld binary at %s", ldPath);
@@ -501,7 +503,7 @@ ProcessControlBlock *ProcessManager::LoadImage(const void *image, const char *na
 
                 uint8_t *ldImage = new uint8_t[fileSize];
 
-                if(vfs->ReadFile(ldHandle, ldImage, fileSize) != fileSize)
+                if(vfs->ReadFile(ldHandle, ldImage, fileSize, &error) != fileSize || error != 0)
                 {
 #if DEBUG_PROCESSES
                     DEBUG_OUT("Failed to load ld binary at %s: I/O Error", ldPath);

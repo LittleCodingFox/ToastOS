@@ -30,5 +30,14 @@ int64_t SyscallSeek(InterruptStack *stack)
         return -EBADF;
     }
 
-    return procfd->impl->Seek(offset, whence);
+    int error = 0;
+
+    auto seek = procfd->impl->Seek(offset, whence, &error);
+
+    if(error != 0)
+    {
+        return -error;
+    }
+
+    return seek;
 }

@@ -33,5 +33,14 @@ int64_t SyscallRead(InterruptStack *stack)
         return -EBADF;
     }
 
-    return procfd->impl->Read(buffer, count);
+    int error = 0;
+
+    uint64_t read = procfd->impl->Read(buffer, count, &error);
+
+    if(error != 0)
+    {
+        return -error;
+    }
+
+    return read;
 }

@@ -28,7 +28,14 @@ int64_t SyscallFStat(InterruptStack *stack)
         return -EBADF;
     }
 
-    *stat = procfd->impl->Stat();
+    int error = 0;
+
+    *stat = procfd->impl->Stat(&error);
+
+    if(error != 0)
+    {
+        return -error;
+    }
 
     return 0;
 }

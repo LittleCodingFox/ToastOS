@@ -24,11 +24,11 @@ enum ProcessFDType
 class IProcessFD
 {
 public:
-    virtual uint64_t Write(const void *buffer, uint64_t size) = 0;
-    virtual uint64_t Read(void *buffer, uint64_t size) = 0;
-    virtual int64_t Seek(uint64_t offset, int whence) = 0;
+    virtual uint64_t Write(const void *buffer, uint64_t size, int *error) = 0;
+    virtual uint64_t Read(void *buffer, uint64_t size, int *error) = 0;
+    virtual int64_t Seek(uint64_t offset, int whence, int *error) = 0;
     virtual dirent *ReadEntries() = 0;
-    virtual struct stat Stat() = 0;
+    virtual struct stat Stat(int *error) = 0;
 };
 
 struct ProcessFD

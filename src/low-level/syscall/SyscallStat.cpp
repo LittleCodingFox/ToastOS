@@ -22,18 +22,27 @@ int64_t SyscallStat(InterruptStack *stack)
         return -1;
     }
 
-    FILE_HANDLE handle = vfs->OpenFile(path, O_RDONLY, currentProcess->info);
+    int error = 0;
+
+    FILE_HANDLE handle = vfs->OpenFile(path, O_RDONLY, currentProcess->info, &error);
     
-    if(vfs->FileType(handle) == FILE_HANDLE_UNKNOWN)
+    if(vfs->FileType(handle) == FILE_HANDLE_UNKNOWN || error != 0)
     {
-        DEBUG_OUT("Stat is unknown", 0);
+        DEBUG_OUT(error == 0 ? "Stat is unknown" : "Stat Error: %i", error);
 
         return -1;
     }
 
-    *stat = vfs->Stat(handle);
+    *stat = vfs->Stat(handle, &error);
 
     vfs->CloseFile(handle);
+
+    if(error != 0)
+    {
+        DEBUG_OUT("Stat Error: %i", error);
+
+        return -error;
+    }
 
     DEBUG_OUT("Stat OK!", 0);
 

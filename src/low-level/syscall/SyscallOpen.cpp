@@ -23,13 +23,22 @@ int64_t SyscallOpen(InterruptStack *stack)
         return -ENOENT;
     }
 
-    FILE_HANDLE handle = vfs->OpenFile(path, flags, currentProcess->info);
+    int error = 0;
+
+    FILE_HANDLE handle = vfs->OpenFile(path, flags, currentProcess->info, &error);
 
     if(handle == INVALID_FILE_HANDLE)
     {
-        DEBUG_OUT("syscall_open: Failed to open %s!", path);
+        DEBUG_OUT("syscall_open: Failed to open %s (flags: 0x%x)!", path, flags);
 
         return -ENOENT;
+    }
+
+    if(error != 0)
+    {
+        DEBUG_OUT("syscall_open: Failed to open %s (flags: 0x%x)!", path, flags);
+
+        return -error;
     }
 
     return currentProcess->info->AddFD(PROCESS_FD_HANDLE, new ProcessFDVFS(handle));

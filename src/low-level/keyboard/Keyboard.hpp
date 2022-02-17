@@ -13,7 +13,7 @@ extern "C" {
 
 void InitializeKeyboard();
 void HandleKeyboardKeyPress(uint8_t scancode);
-bool SetKeyboardLayout(const char *name);
+bool SetKeyboardLayout(const char *name, int *error);
 const char *GetKeyboardLayoutName();
 
 #if !USE_INPUT_SYSTEM

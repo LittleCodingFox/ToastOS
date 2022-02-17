@@ -2,7 +2,7 @@
 #include "keyboard/Keyboard.hpp"
 #include "input/InputSystem.hpp"
 
-uint64_t ReadDevTTY(void *buffer, uint64_t cursor, uint64_t length)
+uint64_t ReadDevTTY(void *buffer, uint64_t cursor, uint64_t length, int *error)
 {
     InputEvent event;
 
@@ -22,7 +22,7 @@ uint64_t ReadDevTTY(void *buffer, uint64_t cursor, uint64_t length)
     return 1;
 }
 
-uint64_t WriteDevTTY(const void *buffer, uint64_t cursor, uint64_t length)
+uint64_t WriteDevTTY(const void *buffer, uint64_t cursor, uint64_t length, int *error)
 {
     printf("%.*s", length, buffer);
 

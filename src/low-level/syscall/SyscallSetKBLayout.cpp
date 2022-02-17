@@ -20,5 +20,14 @@ int64_t SyscallSetKBLayout(InterruptStack *stack)
         return 0;
     }
 
-    return SetKeyboardLayout(name);
+    int error = 0;
+
+    bool result = SetKeyboardLayout(name, &error);
+
+    if(error != 0)
+    {
+        return error;
+    }
+
+    return result;
 }

@@ -6,21 +6,23 @@
 class ProcessFDStderr : public IProcessFD
 {
 public:
-    virtual uint64_t Read(void *buffer, uint64_t length) override
+    virtual uint64_t Read(void *buffer, uint64_t length, int *error) override
     {
         return 0;
     }
 
-    virtual uint64_t Write(const void *buffer, uint64_t length) override
+    virtual uint64_t Write(const void *buffer, uint64_t length, int *error) override
     {
         printf("%.*s", length, buffer);
 
         return length;
     }
 
-    virtual int64_t Seek(uint64_t offset, int whence) override
+    virtual int64_t Seek(uint64_t offset, int whence, int *error) override
     {
-        return -ESPIPE;
+        *error = ESPIPE;
+
+        return 0;
     }
 
     virtual dirent *ReadEntries() override
@@ -28,7 +30,7 @@ public:
         return NULL;
     }
 
-    virtual stat Stat() override
+    virtual struct stat Stat(int *error) override
     {
         return {};
     }

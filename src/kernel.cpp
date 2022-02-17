@@ -57,7 +57,9 @@ extern "C" void _start(stivale2_struct *stivale2Struct)
 
     printf("Starting app at %s\n", startAppPath);
 
-    FILE_HANDLE handle = vfs->OpenFile(startAppPath, O_RDONLY, NULL);
+    int error = 0;
+
+    FILE_HANDLE handle = vfs->OpenFile(startAppPath, O_RDONLY, NULL, &error);
 
     uint64_t length = vfs->FileLength(handle);
 
@@ -65,7 +67,7 @@ extern "C" void _start(stivale2_struct *stivale2Struct)
     {
         uint8_t *buffer = new uint8_t[length];
 
-        if(vfs->ReadFile(handle, buffer, length) == length)
+        if(vfs->ReadFile(handle, buffer, length, &error) == length)
         {
             vfs->CloseFile(handle);
 

@@ -10,14 +10,14 @@ uint64_t VirtualFile::Length() const
     return length != NULL ? length() : 0;
 }
 
-uint64_t VirtualFile::Read(void *buffer, uint64_t cursor, uint64_t size)
+uint64_t VirtualFile::Read(void *buffer, uint64_t cursor, uint64_t size, int *error)
 {
-    return read != NULL ? read(buffer, cursor, size) : 0;
+    return read != NULL ? read(buffer, cursor, size, error) : 0;
 }
 
-uint64_t VirtualFile::Write(const void *buffer, uint64_t cursor, uint64_t size)
+uint64_t VirtualFile::Write(const void *buffer, uint64_t cursor, uint64_t size, int *error)
 {
-    return write != NULL ? write(buffer, cursor, size) : 0;
+    return write != NULL ? write(buffer, cursor, size, error) : 0;
 }
 
 VFS::VFS() : fileHandleCounter(0) {}
@@ -185,7 +185,7 @@ void VFS::SetFileFlags(FILE_HANDLE handle, uint32_t flags)
     fileHandle->flags = flags;
 }
 
-FILE_HANDLE VFS::OpenFile(const char *path, uint32_t flags, ProcessInfo *currentProcess)
+FILE_HANDLE VFS::OpenFile(const char *path, uint32_t flags, ProcessInfo *currentProcess, int *error)
 {
     frg::string<frg_allocator> targetPath = path;
 
@@ -203,6 +203,8 @@ FILE_HANDLE VFS::OpenFile(const char *path, uint32_t flags, ProcessInfo *current
         }
     }
 
+    DEBUG_OUT("Opening file %s (flags: 0x%x)", targetPath.data(), flags);
+
     if(targetPath.size() == 0)
     {
         return INVALID_FILE_HANDLE;
@@ -212,6 +214,13 @@ FILE_HANDLE VFS::OpenFile(const char *path, uint32_t flags, ProcessInfo *current
     {
         if(file->path == targetPath)
         {
+            if((flags & O_DIRECTORY) == O_DIRECTORY && file->type != FILE_HANDLE_DIRECTORY)
+            {
+                *error = ENOTDIR;
+
+                return INVALID_FILE_HANDLE;
+            }
+
             FileHandle *handle = NewFileHandle();
 
             handle->path = file->path;
@@ -224,7 +233,7 @@ FILE_HANDLE VFS::OpenFile(const char *path, uint32_t flags, ProcessInfo *current
             handle->isValid = true;
             handle->flags = flags;
 
-            stat stat = {0};
+            struct stat stat = {0};
 
             stat.st_blksize = 512;
 
@@ -310,7 +319,7 @@ FILE_HANDLE VFS::OpenFile(const char *path, uint32_t flags, ProcessInfo *current
 
                     if(path.size() > 0 && path[0] == '/')
                     {
-                        return OpenFile(path.data(), flags, currentProcess);
+                        return OpenFile(path.data(), flags, currentProcess, error);
                     }
                     else
                     {
@@ -336,8 +345,15 @@ FILE_HANDLE VFS::OpenFile(const char *path, uint32_t flags, ProcessInfo *current
 
                         auto nextPath = frg::string<frg_allocator>(mountPoint->path) + linkPath;
 
-                        return OpenFile(nextPath.data(), flags, currentProcess);
+                        return OpenFile(nextPath.data(), flags, currentProcess, error);
                     }
+                }
+
+                if((flags & O_DIRECTORY) == O_DIRECTORY && mountPoint->fileSystem->FileHandleType(mountHandle) != FILE_HANDLE_DIRECTORY)
+                {
+                    *error = ENOTDIR;
+
+                    return INVALID_FILE_HANDLE;
                 }
 
                 FileHandle *handle = NewFileHandle();
@@ -365,7 +381,7 @@ FILE_HANDLE VFS::OpenFile(const char *path, uint32_t flags, ProcessInfo *current
     {
         targetPath += "/";
 
-        return OpenFile(targetPath.data(), flags, currentProcess);
+        return OpenFile(targetPath.data(), flags, currentProcess, error);
     }
 
     return INVALID_FILE_HANDLE;
@@ -405,12 +421,21 @@ uint64_t VFS::FileOffset(FILE_HANDLE handle)
     return fileHandle->cursor;
 }
 
-uint64_t VFS::ReadFile(FILE_HANDLE handle, void *buffer, uint64_t length)
+uint64_t VFS::ReadFile(FILE_HANDLE handle, void *buffer, uint64_t length, int *error)
 {
     FileHandle *fileHandle = GetFileHandle(handle);
 
     if(fileHandle == NULL || fileHandle->isValid == false)
     {
+        *error = ENOENT;
+
+        return 0;
+    }
+
+    if(fileHandle->fileType == FILE_HANDLE_DIRECTORY)
+    {
+        *error = EISDIR;
+
         return 0;
     }
 
@@ -424,7 +449,7 @@ uint64_t VFS::ReadFile(FILE_HANDLE handle, void *buffer, uint64_t length)
 
     if(fileHandle->virtualFile != NULL)
     {
-        done = fileHandle->virtualFile->Read(buffer, cursor, length);
+        done = fileHandle->virtualFile->Read(buffer, cursor, length, error);
     }
     else
     {
@@ -436,12 +461,21 @@ uint64_t VFS::ReadFile(FILE_HANDLE handle, void *buffer, uint64_t length)
     return done;
 }
 
-uint64_t VFS::WriteFile(FILE_HANDLE handle, const void *buffer, uint64_t length)
+uint64_t VFS::WriteFile(FILE_HANDLE handle, const void *buffer, uint64_t length, int *error)
 {
     FileHandle *fileHandle = GetFileHandle(handle);
 
     if(fileHandle == NULL || fileHandle->isValid == false)
     {
+        *error = ENOENT;
+
+        return 0;
+    }
+
+    if(fileHandle->fileType == FILE_HANDLE_DIRECTORY)
+    {
+        *error = EISDIR;
+
         return 0;
     }
 
@@ -450,7 +484,7 @@ uint64_t VFS::WriteFile(FILE_HANDLE handle, const void *buffer, uint64_t length)
 
     if(fileHandle->virtualFile != NULL)
     {
-        done = fileHandle->virtualFile->Write(buffer, cursor, length);
+        done = fileHandle->virtualFile->Write(buffer, cursor, length, error);
     }
     else
     {
@@ -463,12 +497,21 @@ uint64_t VFS::WriteFile(FILE_HANDLE handle, const void *buffer, uint64_t length)
     return done;
 }
 
-uint64_t VFS::SeekFile(FILE_HANDLE handle, uint64_t cursor)
+uint64_t VFS::SeekFile(FILE_HANDLE handle, uint64_t cursor, int *error)
 {
     FileHandle *fileHandle = GetFileHandle(handle);
 
     if(fileHandle == NULL || fileHandle->isValid == false)
     {
+        *error = ENOENT;
+
+        return 0;
+    }
+
+    if(fileHandle->fileType == FILE_HANDLE_DIRECTORY)
+    {
+        *error = EISDIR;
+
         return 0;
     }
 
@@ -482,12 +525,21 @@ uint64_t VFS::SeekFile(FILE_HANDLE handle, uint64_t cursor)
     return cursor;
 }
 
-uint64_t VFS::SeekFileBegin(FILE_HANDLE handle)
+uint64_t VFS::SeekFileBegin(FILE_HANDLE handle, int *error)
 {
     FileHandle *fileHandle = GetFileHandle(handle);
 
     if(fileHandle == NULL || fileHandle->isValid == false)
     {
+        *error = ENOENT;
+
+        return 0;
+    }
+
+    if(fileHandle->fileType == FILE_HANDLE_DIRECTORY)
+    {
+        *error = EISDIR;
+
         return 0;
     }
 
@@ -496,12 +548,21 @@ uint64_t VFS::SeekFileBegin(FILE_HANDLE handle)
     return fileHandle->cursor;
 }
 
-uint64_t VFS::SeekFileEnd(FILE_HANDLE handle)
+uint64_t VFS::SeekFileEnd(FILE_HANDLE handle, int *error)
 {
     FileHandle *fileHandle = GetFileHandle(handle);
 
     if(fileHandle == NULL || fileHandle->isValid == false)
     {
+        *error = ENOENT;
+
+        return 0;
+    }
+
+    if(fileHandle->fileType == FILE_HANDLE_DIRECTORY)
+    {
+        *error = EISDIR;
+
         return 0;
     }
 
@@ -531,13 +592,15 @@ VFS::FileHandle *VFS::ResolveSymlink(FileHandle *original, uint32_t flags)
 
     auto currentProcess = globalProcessManager->CurrentProcess();
 
+    int error = 0;
+
     while(original->fileType == FILE_HANDLE_SYMLINK)
     {
         auto path = original->mountPoint->fileSystem->FileLink(original->fsHandle);
 
-        auto handle = OpenFile(path.data(), flags, currentProcess != NULL ? currentProcess->info : NULL);
+        auto handle = OpenFile(path.data(), flags, currentProcess != NULL ? currentProcess->info : NULL, &error);
 
-        if(handle == INVALID_FILE_HANDLE)
+        if(handle == INVALID_FILE_HANDLE || error != 0)
         {
             return NULL;
         }
@@ -548,12 +611,14 @@ VFS::FileHandle *VFS::ResolveSymlink(FileHandle *original, uint32_t flags)
     return original;
 }
 
-stat VFS::Stat(FILE_HANDLE handle)
+struct stat VFS::Stat(FILE_HANDLE handle, int *error)
 {
     FileHandle *fileHandle = GetFileHandle(handle);
 
     if(fileHandle == NULL || fileHandle->isValid == false)
     {
+        *error = ENOENT;
+
         return {0};
     }
 

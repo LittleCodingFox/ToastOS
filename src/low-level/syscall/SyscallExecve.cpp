@@ -23,7 +23,9 @@ int64_t SyscallExecve(InterruptStack *stack)
         return ENOENT;
     }
 
-    FILE_HANDLE handle = vfs->OpenFile(path, 0, process->info);
+    int error = 0;
+
+    FILE_HANDLE handle = vfs->OpenFile(path, 0, process->info, &error);
 
     if(handle == INVALID_FILE_HANDLE)
     {
@@ -32,11 +34,16 @@ int64_t SyscallExecve(InterruptStack *stack)
         return ENOENT;
     }
 
+    if(error != 0)
+    {
+        return error;
+    }
+
     auto length = vfs->FileLength(handle);
 
     uint8_t *buffer = new uint8_t[length];
 
-    if(vfs->ReadFile(handle, buffer, length) != length)
+    if(vfs->ReadFile(handle, buffer, length, &error) != length)
     {
         DEBUG_OUT("Execve: Failed to read data for %s!", path);
 
@@ -44,7 +51,7 @@ int64_t SyscallExecve(InterruptStack *stack)
 
         vfs->CloseFile(handle);
 
-        return EIO;
+        return error != 0 ? error : EIO;
     }
 
     auto pair = globalProcessManager->LoadImage(buffer, path, argv, envp, process->info->cwd.data(), PROCESS_PERMISSION_USER, process->info->ID);

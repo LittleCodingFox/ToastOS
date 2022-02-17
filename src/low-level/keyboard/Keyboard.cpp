@@ -164,15 +164,15 @@ uint8_t KeyFromString(const string &key)
     return 0;
 }
 
-bool LoadLayout(const string &name)
+bool LoadLayout(const string &name, int *error)
 {
     DEBUG_OUT("Loading keyboard layout \"%s\"", name.data());
 
     auto path = string("/system/kbd/layouts/") + name + "." + LAYOUT_EXT;
 
-    auto handle = vfs->OpenFile(path.data(), 0, NULL);
+    auto handle = vfs->OpenFile(path.data(), 0, NULL, error);
 
-    if(vfs->FileType(handle) == FILE_HANDLE_FILE)
+    if(vfs->FileType(handle) == FILE_HANDLE_FILE || *error != 0)
     {
         auto length = vfs->FileLength(handle);
 
@@ -180,7 +180,7 @@ bool LoadLayout(const string &name)
 
         buffer[length] = '\0';
 
-        if(vfs->ReadFile(handle, buffer, length) != length)
+        if(vfs->ReadFile(handle, buffer, length, error) != length || *error != 0)
         {
             delete [] buffer;
             
@@ -314,9 +314,11 @@ extern "C" void InitializeKeyboard()
     DEBUG_OUT("Initializing keyboard", 0);
 
 #if USE_INPUT_SYSTEM
-    auto handle = vfs->OpenFile("/system/kbd/active", 0, NULL);
+    int error = 0;
 
-    if(vfs->FileType(handle) == FILE_HANDLE_FILE)
+    auto handle = vfs->OpenFile("/system/kbd/active", 0, NULL, &error);
+
+    if(vfs->FileType(handle) == FILE_HANDLE_FILE && error == 0)
     {
         auto length = vfs->FileLength(handle);
 
@@ -324,7 +326,7 @@ extern "C" void InitializeKeyboard()
 
         buffer[length] = '\0';
 
-        if(vfs->ReadFile(handle, buffer, length) != length)
+        if(vfs->ReadFile(handle, buffer, length, &error) != length || error != 0)
         {
             delete [] buffer;
 
@@ -335,7 +337,7 @@ extern "C" void InitializeKeyboard()
 
         vfs->CloseFile(handle);
 
-        if(!LoadLayout(buffer))
+        if(!LoadLayout(buffer, &error) || error != 0)
         {
             delete [] buffer;
 
@@ -354,9 +356,9 @@ extern "C" void InitializeKeyboard()
 #endif
 }
 
-extern "C" bool SetKeyboardLayout(const char *name)
+extern "C" bool SetKeyboardLayout(const char *name, int *error)
 {
-    return LoadLayout(name);
+    return LoadLayout(name, error);
 }
 
 extern "C" const char *GetKeyboardLayoutName()
