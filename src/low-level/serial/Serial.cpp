@@ -51,7 +51,7 @@ void Serial::Initialize()
 
 void Serial::Write(char c)
 {
-    Threading::ScopedLock lock(this->lock);
+    ScopedLock lock(this->lock);
 
     Initialize();
 

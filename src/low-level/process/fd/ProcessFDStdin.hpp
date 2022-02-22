@@ -9,6 +9,11 @@ extern "C" void ProcessYield();
 class ProcessFDStdin : public IProcessFD
 {
 public:
+    virtual void Close() override
+    {
+        refCount = 0;
+    }
+
     virtual uint64_t Read(void *buffer, uint64_t length, int *error) override
     {
         uint8_t *ptr = (uint8_t *)buffer;

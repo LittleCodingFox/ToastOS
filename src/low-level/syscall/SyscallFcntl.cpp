@@ -17,9 +17,18 @@ int64_t SyscallFcntl(InterruptStack *stack)
     DEBUG_OUT("Syscall: fcntl fd: %i; request: %i; arg: %llu; result: %p", fd, request, arg, result);
 #endif
 
+    auto process = globalProcessManager->CurrentProcess();
+
+    if(process == NULL || process->isValid == false)
+    {
+        return ENOENT;
+    }
+
     switch(request)
     {
         case F_DUPFD:
+
+            *result = process->info->DuplicateFD(fd, arg);
 
             break;
 

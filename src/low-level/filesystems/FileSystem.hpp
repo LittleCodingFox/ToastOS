@@ -29,7 +29,7 @@ class FileSystem
 protected:
     GPT::Partition *partition;
 public:
-    Threading::AtomicLock lock;
+    AtomicLock lock;
 
     FileSystem(GPT::Partition *partition);
 

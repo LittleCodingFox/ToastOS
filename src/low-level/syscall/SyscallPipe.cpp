@@ -2,32 +2,32 @@
 #include "keyboard/Keyboard.hpp"
 #include "process/Process.hpp"
 #include "filesystems/VFS.hpp"
+#include "input/InputSystem.hpp"
 #include "debug.hpp"
 #include "errno.h"
+#include "ctype.h"
 
-int64_t SyscallClose(InterruptStack *stack)
+extern bool InputEnabled;
+
+int64_t SyscallPipe(InterruptStack *stack)
 {
-    int fd = (int)stack->rsi;
+    int *fds = (int *)stack->rsi;
+    int flags = stack->rdx;
+
+    (void)flags;
 
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: close fd: %i", fd);
+    DEBUG_OUT("Syscall: Pipe fds: %p flags: %x", fds, flags);
 #endif
 
     auto current = globalProcessManager->CurrentProcess();
 
     if(current == NULL || current->isValid == false)
     {
-        return -EBADF;
+        return EFAULT;
     }
 
-    auto procfd = current->info->GetFD(fd);
-
-    if(procfd == NULL)
-    {
-        return -EBADF;
-    }
-
-    current->info->CloseFD(fd);
+    current->info->CreatePipe(fds);
 
     return 0;
 }

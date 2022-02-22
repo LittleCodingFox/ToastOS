@@ -7,7 +7,7 @@
 #include <frg/vector.hpp>
 #include <frg_allocator.hpp>
 
-struct ProcessInfo;
+struct Process;
 
 typedef uint64_t FILE_HANDLE;
 
@@ -65,7 +65,7 @@ public:
     void AddVirtualFile(const VirtualFile &file);
     void RemoveVirtualFile(const frg::string<frg_allocator> &path);
 
-    FILE_HANDLE OpenFile(const char *path, uint32_t flags, ProcessInfo *currentProcess, int *error);
+    FILE_HANDLE OpenFile(const char *path, uint32_t flags, Process *currentProcess, int *error);
     void CloseFile(FILE_HANDLE handle);
     int FileType(FILE_HANDLE handle);
     uint32_t FileFlags(FILE_HANDLE handle);

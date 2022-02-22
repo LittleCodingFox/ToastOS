@@ -24,7 +24,39 @@ int64_t SyscallWaitPID(InterruptStack *stack)
         return 0;
     }
 
-    if(pid == -1)
+    if(pid < -1)
+    {
+        pid = -pid;
+
+        auto children = globalProcessManager->GetChildProcesses(current->info->ID);
+
+        if(children.size() == 0)
+        {
+            return -EINTR;
+        }
+
+        for(auto &child : children)
+        {
+            if(child.info->state != PROCESS_STATE_DEAD)
+            {
+                return -EINTR;
+            }
+
+            if(child.info->didWaitPID || child.info->ID != pid)
+            {
+                continue;
+            }
+
+            child.info->didWaitPID = true;
+
+            *retpid = child.info->ID;
+
+            return 0;
+        }
+
+        return -EINTR;
+    }
+    else if(pid == -1)
     {
         auto children = globalProcessManager->GetChildProcesses(current->info->ID);
 
@@ -33,14 +65,26 @@ int64_t SyscallWaitPID(InterruptStack *stack)
             return -EINTR;
         }
 
-        auto child = children[children.size() - 1];
-
-        if(child.info->state != PROCESS_STATE_DEAD)
+        for(auto &child : children)
         {
-            return -EINTR;
+            if(child.info->state != PROCESS_STATE_DEAD)
+            {
+                return -EINTR;
+            }
+
+            if(child.info->didWaitPID)
+            {
+                continue;
+            }
+
+            child.info->didWaitPID = true;
+
+            *retpid = child.info->ID;
+
+            return 0;
         }
 
-        *retpid = child.info->ID;
+        return -EINTR;
     }
     else if(pid == 0)
     {
@@ -59,6 +103,8 @@ int64_t SyscallWaitPID(InterruptStack *stack)
         }
         
         *retpid = child.info->ID;
+
+        return 0;
     }
     else if(pid > 0)
     {
@@ -70,6 +116,8 @@ int64_t SyscallWaitPID(InterruptStack *stack)
         }
 
         *retpid = pid;
+
+        return 0;
     }
 
     return 0;

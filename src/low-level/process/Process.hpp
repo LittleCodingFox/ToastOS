@@ -6,7 +6,10 @@
 #include "lock.hpp"
 #include "interrupts/Interrupts.hpp"
 #include "filesystems/VFS.hpp"
+#include "pipe/pipe.hpp"
 #include "kernel.h"
+
+extern "C" void ProcessYield();
 
 constexpr int PROCESS_STACK_SIZE = 0x4000;
 
@@ -19,16 +22,42 @@ enum ProcessFDType
     PROCESS_FD_UNKNOWN,
     PROCESS_FD_HANDLE,
     PROCESS_FD_PIPE,
+    PROCESS_FD_STDIN,
+    PROCESS_FD_STDOUT,
+    PROCESS_FD_STDERR
 };
 
 class IProcessFD
 {
+protected:
+    int refCount;
 public:
+    IProcessFD() : refCount(1) {}
+    virtual ~IProcessFD() {}
     virtual uint64_t Write(const void *buffer, uint64_t size, int *error) = 0;
     virtual uint64_t Read(void *buffer, uint64_t size, int *error) = 0;
     virtual int64_t Seek(uint64_t offset, int whence, int *error) = 0;
     virtual dirent *ReadEntries() = 0;
     virtual struct stat Stat(int *error) = 0;
+    virtual void Close() = 0;
+
+    int RefCount()
+    {
+        return refCount;
+    }
+
+    void IncreaseRef()
+    {
+        refCount++;
+    }
+};
+
+struct ProcessPipe
+{
+    Pipe *pipe;
+    bool isValid;
+
+    ProcessPipe() : pipe(NULL), isValid(false) {}
 };
 
 struct ProcessFD
@@ -38,10 +67,11 @@ struct ProcessFD
     bool isValid;
     IProcessFD *impl;
 
-    ProcessFD() : fd(0), type(0), isValid(false), impl(NULL) {}
+    ProcessFD() : fd(0), type(PROCESS_FD_UNKNOWN), isValid(false), impl(NULL) {}
     ProcessFD(int fd, int type, bool isValid, IProcessFD *impl) : fd(fd), type(type), isValid(isValid), impl(impl) {}
 };
 
+#include "fd/ProcessFDPipe.hpp"
 #include "fd/ProcessFDStderr.hpp"
 #include "fd/ProcessFDStdin.hpp"
 #include "fd/ProcessFDStdout.hpp"
@@ -61,6 +91,7 @@ enum ProcessState
     PROCESS_STATE_RUNNING,
     PROCESS_STATE_FORKED,
     PROCESS_STATE_DEAD,
+    PROCESS_STATE_REMOVED
 };
 
 struct ProcessVMMap
@@ -71,7 +102,7 @@ struct ProcessVMMap
     uint64_t pageCount;
 };
 
-struct ProcessInfo
+struct Process
 {
     pid_t ID;
     uint64_t permissionLevel;
@@ -89,6 +120,7 @@ struct ProcessInfo
     struct sigaction sigHandlers[SIGNAL_MAX];
     vector<ProcessFD> fds;
     vector<ProcessVMMap> vmMapping;
+    vector<ProcessPipe> pipes;
 
     int fdCounter;
 
@@ -99,17 +131,26 @@ struct ProcessInfo
     sigset_t sigprocmask;
     uint64_t state;
     int exitCode;
+    bool didWaitPID;
 
     string cwd;
 
     Elf::ElfHeader *elf;
 
-    ProcessInfo() : ID(0), permissionLevel(0), argv(NULL), environment(NULL), kernelStack(NULL), istStack(NULL), stack(NULL),
+    AtomicLock lock;
+
+    Process() : ID(0), permissionLevel(0), argv(NULL), environment(NULL), kernelStack(NULL), istStack(NULL), stack(NULL),
         rip(0), rsp(0), cr3(0), rflags(0), sleepTicks(0), fdCounter(0), uid(0), gid(0), ppid(0), sigprocmask(0), state(PROCESS_STATE_NEEDS_INIT),
-        exitCode(0), elf(NULL) {}
+        exitCode(0), didWaitPID(false), elf(NULL) {}
 
     int AddFD(int type, IProcessFD *impl);
     ProcessFD *GetFD(int fd);
+    void CreatePipe(int *fds);
+    int DuplicateFD(int fd, size_t arg);
+    int DuplicateFD(int fd, int newfd);
+    void CloseFD(int fd);
+    void IncreaseFDRefs();
+    void DisposeFDs();
 };
 
 struct ProcessControlBlock
@@ -141,7 +182,7 @@ struct ProcessControlBlock
 
     uint64_t fsBase;
 
-    ProcessInfo *process;
+    Process *process;
 
     uint64_t state;
 
@@ -157,6 +198,10 @@ struct ProcessControlBlock
     {
         switch(state)
         {
+            case PROCESS_STATE_BLOCKED:
+
+                return "BLOCKED";
+
             case PROCESS_STATE_DEAD:
 
                 return "DEAD";
@@ -173,13 +218,13 @@ struct ProcessControlBlock
 
                 return "NEEDS INIT";
 
+            case PROCESS_STATE_REMOVED:
+
+                return "REMOVED";
+
             case PROCESS_STATE_RUNNING:
 
                 return "RUNNING";
-
-            case PROCESS_STATE_BLOCKED:
-
-                return "BLOCKED";
 
             default:
 
@@ -208,11 +253,11 @@ class IScheduler
 {
 public:
     virtual ProcessControlBlock *CurrentThread() = 0;
-    virtual ProcessControlBlock *AddThread(ProcessInfo *process, uint64_t rip, uint64_t rsp, pid_t tid, bool isMainThread) = 0;
+    virtual ProcessControlBlock *AddThread(Process *process, uint64_t rip, uint64_t rsp, pid_t tid, bool isMainThread) = 0;
     virtual ProcessControlBlock *NextThread() = 0;
     virtual void Advance() = 0;
     virtual void DumpThreadList() = 0;
-    virtual void ExitProcess(ProcessInfo *process) = 0;
+    virtual void ExitProcess(Process *process) = 0;
     virtual void ExitThread(ProcessControlBlock *pcb) = 0;
 };
 
@@ -232,12 +277,12 @@ private:
 public:
     struct ProcessPair
     {
-        ProcessInfo *info;
+        Process *info;
         vector<ProcessControlBlock *> threads;
         bool isValid;
     };
 
-    Threading::AtomicLock lock;
+    AtomicLock lock;
 
     ProcessManager(IScheduler *scheduler);
 
@@ -288,5 +333,3 @@ public:
 };
 
 extern ProcessManager *globalProcessManager;
-
-extern "C" void ProcessYield();

@@ -16,10 +16,22 @@ int64_t SyscallExecve(InterruptStack *stack)
     DEBUG_OUT("Syscall: execve path: %s argv: %p envp: %p", path, argv, envp);
 #endif
 
+    bool interruptsEnabled = interrupts.InterruptsEnabled();
+
+    if(interruptsEnabled)
+    {
+        interrupts.DisableInterrupts();
+    }
+
     auto process = globalProcessManager->CurrentProcess();
 
     if(process == NULL || process->isValid == false)
     {
+        if(interruptsEnabled)
+        {
+            interrupts.EnableInterrupts();
+        }
+
         return ENOENT;
     }
 
@@ -31,11 +43,21 @@ int64_t SyscallExecve(InterruptStack *stack)
     {
         DEBUG_OUT("Execve: Failed to open %s!", path);
 
+        if(interruptsEnabled)
+        {
+            interrupts.EnableInterrupts();
+        }
+
         return ENOENT;
     }
 
     if(error != 0)
     {
+        if(interruptsEnabled)
+        {
+            interrupts.EnableInterrupts();
+        }
+
         return error;
     }
 
@@ -46,6 +68,11 @@ int64_t SyscallExecve(InterruptStack *stack)
     if(vfs->ReadFile(handle, buffer, length, &error) != length)
     {
         DEBUG_OUT("Execve: Failed to read data for %s!", path);
+
+        if(interruptsEnabled)
+        {
+            interrupts.EnableInterrupts();
+        }
 
         delete [] buffer;
 
@@ -59,6 +86,10 @@ int64_t SyscallExecve(InterruptStack *stack)
     pair->process->ppid = process->info->ppid;
     pair->process->uid = process->info->uid;
     pair->process->gid = process->info->gid;
+    pair->process->fds = process->info->fds;
+    pair->process->pipes = process->info->pipes;
+
+    pair->process->IncreaseFDRefs();
 
     delete [] buffer;
 

@@ -7,7 +7,7 @@
 
 ProcessControlBlock *RoundRobinScheduler::CurrentThread()
 {
-    Threading::ScopedLock lock(this->lock);
+    ScopedLock lock(this->lock);
     
     if(threads != NULL)
     {
@@ -17,7 +17,7 @@ ProcessControlBlock *RoundRobinScheduler::CurrentThread()
     return NULL;
 }
 
-ProcessControlBlock *RoundRobinScheduler::AddThread(ProcessInfo *process, uint64_t rip, uint64_t rsp, pid_t tid, bool isMainThread)
+ProcessControlBlock *RoundRobinScheduler::AddThread(Process *process, uint64_t rip, uint64_t rsp, pid_t tid, bool isMainThread)
 {
     lock.Lock();
     
@@ -86,7 +86,7 @@ ProcessControlBlock *RoundRobinScheduler::AddThread(ProcessInfo *process, uint64
 
 ProcessControlBlock *RoundRobinScheduler::NextThread()
 {
-    Threading::ScopedLock lock(this->lock);
+    ScopedLock lock(this->lock);
     
     if(threads == NULL)
     {
@@ -144,7 +144,7 @@ void RoundRobinScheduler::Advance()
 
 void RoundRobinScheduler::ExitThread(ProcessControlBlock *thread)
 {
-    Threading::ScopedLock lock(this->lock);
+    ScopedLock lock(this->lock);
 
     if(thread->isMainThread)
     {
@@ -212,9 +212,9 @@ void RoundRobinScheduler::ExitThread(ProcessControlBlock *thread)
     }
 }
 
-void RoundRobinScheduler::ExitProcess(ProcessInfo *process)
+void RoundRobinScheduler::ExitProcess(Process *process)
 {
-    Threading::ScopedLock lock(this->lock);
+    ScopedLock lock(this->lock);
 
     if(threads == threads->next)
     {
@@ -292,7 +292,7 @@ void RoundRobinScheduler::ExitProcess(ProcessInfo *process)
 
 void RoundRobinScheduler::DumpThreadList()
 {
-    Threading::ScopedLock lock(this->lock);
+    ScopedLock lock(this->lock);
 
     DEBUG_OUT("Dumping Thread List:", 0);
     

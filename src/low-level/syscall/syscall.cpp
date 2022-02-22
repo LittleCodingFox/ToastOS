@@ -50,6 +50,8 @@ int64_t SyscallGetTID(InterruptStack *stack);
 int64_t SyscallFutexWait(InterruptStack *stack);
 int64_t SyscallFutexWake(InterruptStack *stack);
 int64_t SyscallSetKBLayout(InterruptStack *stack);
+int64_t SyscallPipe(InterruptStack *stack);
+int64_t SyscallDup2(InterruptStack *stack);
 
 SyscallPointer syscallHandlers[] =
 {
@@ -96,6 +98,8 @@ SyscallPointer syscallHandlers[] =
     [SYSCALL_FUTEX_WAIT] = (SyscallPointer)SyscallFutexWait,
     [SYSCALL_FUTEX_WAKE] = (SyscallPointer)SyscallFutexWake,
     [SYSCALL_SETKBLAYOUT] = (SyscallPointer)SyscallSetKBLayout,
+    [SYSCALL_PIPE] = (SyscallPointer)SyscallPipe,
+    [SYSCALL_DUP2] = (SyscallPointer)SyscallDup2,
 };
 
 void SyscallHandler(InterruptStack *stack)

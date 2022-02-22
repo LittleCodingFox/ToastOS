@@ -9,7 +9,7 @@ class InputSystem
 {
 private:
     vector<InputEvent> events;
-    Threading::AtomicLock lock;
+    AtomicLock lock;
 public:
     void AddEvent(const InputEvent &event);
     bool Poll(InputEvent *event);

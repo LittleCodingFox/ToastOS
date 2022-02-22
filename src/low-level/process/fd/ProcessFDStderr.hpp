@@ -6,6 +6,11 @@
 class ProcessFDStderr : public IProcessFD
 {
 public:
+    virtual void Close() override
+    {
+        refCount = 0;
+    }
+
     virtual uint64_t Read(void *buffer, uint64_t length, int *error) override
     {
         return 0;

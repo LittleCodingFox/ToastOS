@@ -19,7 +19,7 @@ enum SerialSpeeds
 class Serial
 {
 private:
-    Threading::AtomicLock lock;
+    AtomicLock lock;
 
 public:
     uint16_t port;

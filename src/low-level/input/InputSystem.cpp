@@ -4,14 +4,14 @@ box<InputSystem> globalInputSystem;
 
 void InputSystem::AddEvent(const InputEvent &event)
 {
-    Threading::ScopedLock lock(this->lock);
+    ScopedLock lock(this->lock);
 
     events.push_back(event);
 }
 
 bool InputSystem::Poll(InputEvent *event)
 {
-    Threading::ScopedLock lock(this->lock);
+    ScopedLock lock(this->lock);
 
     if(event == NULL || events.size() == 0)
     {

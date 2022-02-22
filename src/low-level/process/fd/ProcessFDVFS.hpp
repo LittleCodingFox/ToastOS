@@ -9,11 +9,17 @@ public:
     FILE_HANDLE handle;
 
     ProcessFDVFS(FILE_HANDLE handle) : handle(handle) {}
-    ~ProcessFDVFS()
+
+    virtual void Close() override
     {
-        if(vfs.valid())
+        refCount--;
+
+        if(refCount == 0)
         {
-            vfs->CloseFile(handle);
+            if(vfs.valid())
+            {
+                vfs->CloseFile(handle);
+            }
         }
     }
 

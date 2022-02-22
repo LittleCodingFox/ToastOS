@@ -47,3 +47,5 @@
 #define SYSCALL_FUTEX_WAIT          42
 #define SYSCALL_FUTEX_WAKE          43
 #define SYSCALL_SETKBLAYOUT         44
+#define SYSCALL_PIPE                45
+#define SYSCALL_DUP2                46

@@ -185,7 +185,7 @@ void VFS::SetFileFlags(FILE_HANDLE handle, uint32_t flags)
     fileHandle->flags = flags;
 }
 
-FILE_HANDLE VFS::OpenFile(const char *path, uint32_t flags, ProcessInfo *currentProcess, int *error)
+FILE_HANDLE VFS::OpenFile(const char *path, uint32_t flags, Process *currentProcess, int *error)
 {
     frg::string<frg_allocator> targetPath = path;
 
