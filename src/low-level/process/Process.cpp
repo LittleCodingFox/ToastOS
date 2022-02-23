@@ -20,9 +20,9 @@ int Process::AddFD(int type, IProcessFD *impl)
 {
     ScopedLock lock(this->lock);
 
-    fds.push_back(ProcessFD(fdCounter++, type, true, impl));
+    fds.push_back(ProcessFD(fdCounter, type, true, impl));
 
-    return fdCounter - 1;
+    return fdCounter++;
 }
 
 ProcessFD *Process::GetFD(int fd)

@@ -892,6 +892,7 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
 
     newProcess->fds = current->process->fds;
     newProcess->pipes = current->process->pipes;
+    newProcess->fdCounter = current->process->fdCounter;
 
     newProcess->IncreaseFDRefs();
 

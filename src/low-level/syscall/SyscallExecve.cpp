@@ -88,6 +88,7 @@ int64_t SyscallExecve(InterruptStack *stack)
     pair->process->gid = process->info->gid;
     pair->process->fds = process->info->fds;
     pair->process->pipes = process->info->pipes;
+    pair->process->fdCounter = process->info->fdCounter;
 
     pair->process->IncreaseFDRefs();
 
