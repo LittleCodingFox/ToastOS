@@ -4,11 +4,16 @@
 
 int64_t SyscallGetUID(InterruptStack *stack)
 {
-    pid_t pid = stack->rsi;
-
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: GetUID pid: %i", pid);
+    DEBUG_OUT("Syscall: GetUID");
 #endif
 
-    return globalProcessManager->GetUID(pid);
+    auto process = globalProcessManager->CurrentProcess();
+
+    if(process == NULL || process->isValid == false)
+    {
+        return 0;
+    }
+
+    return process->info->uid;
 }

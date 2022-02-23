@@ -736,9 +736,9 @@ void ProcessManager::Sigaction(int signum, struct sigaction *act, struct sigacti
     lock.Unlock();
 }
 
-void ProcessManager::SetUID(pid_t pid, uid_t uid)
+void ProcessManager::SetUID(uid_t uid)
 {
-    ProcessPair *process = GetProcess(pid);
+    ProcessPair *process = CurrentProcess();
 
     ScopedLock Lock(lock);
 
@@ -750,14 +750,15 @@ void ProcessManager::SetUID(pid_t pid, uid_t uid)
     process->info->uid = uid;
 }
 
-uid_t ProcessManager::GetUID(pid_t pid)
+uid_t ProcessManager::GetUID()
 {
-    ProcessPair *process = GetProcess(pid);
+    ProcessPair *process = CurrentProcess();
 
     ScopedLock Lock(lock);
 
     if(process == NULL || process->isValid == false)
     {
+
         return 0;
     }
 
@@ -778,9 +779,9 @@ void ProcessManager::SetGID(pid_t pid, gid_t gid)
     process->info->gid = gid;
 }
 
-uid_t ProcessManager::GetGID(pid_t pid)
+uid_t ProcessManager::GetGID()
 {
-    ProcessPair *process = GetProcess(pid);
+    ProcessPair *process = CurrentProcess();
 
     ScopedLock Lock(lock);
 

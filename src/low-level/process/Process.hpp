@@ -321,13 +321,13 @@ public:
 
     ProcessControlBlock *AddThread(uint64_t rip, uint64_t rsp);
 
-    void SetUID(pid_t pid, uid_t uid);
+    void SetUID(uid_t uid);
 
-    uid_t GetUID(pid_t pid);
+    uid_t GetUID();
 
     void SetGID(pid_t pid, gid_t gid);
 
-    gid_t GetGID(pid_t pid);
+    gid_t GetGID();
 
     int32_t Fork(InterruptStack *interruptStack, pid_t *child);
 };

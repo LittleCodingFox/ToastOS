@@ -23,8 +23,6 @@ void DeviceManager::AddDevice(GenericDevice *device)
     {
         device->ID = deviceCount;
         devices[deviceCount++] = device;
-
-        printf("Added device 0x%p (name: %s, type: 0x%x) with ID %u\n", device, device->name(), device->type(), device->ID);
     }
 }
 
@@ -46,8 +44,6 @@ GenericDevice *DeviceManager::GetDevice(uint32_t ID) const
 frg::vector<GenericDevice *, frg_allocator> DeviceManager::GetDevices(DeviceType type)
 {
     frg::vector<GenericDevice *, frg_allocator> outValue;
-
-    printf("Getting devices with type %x from %u devices\n", type, deviceCount);
 
     for(uint32_t i = 0; i < deviceCount; i++)
     {

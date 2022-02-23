@@ -4,14 +4,13 @@
 
 int64_t SyscallSetUID(InterruptStack *stack)
 {
-    pid_t pid = stack->rsi;
-    uid_t uid = (uid_t)stack->rdx;
+    uid_t uid = stack->rsi;
 
 #if KERNEL_DEBUG_SYSCALLS
     DEBUG_OUT("Syscall: SetUID pid: %i uid: %i", pid, uid);
 #endif
 
-    globalProcessManager->SetUID(pid, uid);
+    globalProcessManager->SetUID(uid);
 
     return 0;
 }
