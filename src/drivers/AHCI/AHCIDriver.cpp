@@ -32,7 +32,7 @@ namespace Drivers
 
             void ProbePorts();
 
-            PCI::Device *device;
+            PCIDevice *device;
             volatile HBAMemory *ABAR;
             AHCIDriver *ports[32];
             uint8_t portCount;
@@ -491,11 +491,14 @@ namespace Drivers
             return true;
         }
 
-        void HandleMassStorageDevice(PCI::Device *device)
+        void HandleMassStorageDevice(PCIDevice *device)
         {
+            auto name = PCIDeviceName(device->vendorID, device->deviceID);
+            auto vendor = PCIVendorName(device->vendorID);
+
             printf("Initializing AHCI device %s (vendor: %s)\n",
-                    PCI::DeviceName(device->vendorID, device->deviceID),
-                    PCI::VendorName(device->vendorID));
+                    name.data(),
+                    vendor.data());
 
             AHCIHolder holder;
 

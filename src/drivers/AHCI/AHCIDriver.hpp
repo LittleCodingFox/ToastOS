@@ -257,7 +257,7 @@ namespace Drivers
         {
         public:
             volatile HBAPort *port;
-            PCI::Device *device;
+            PCIDevice *device;
             PortType portType;
             uint8_t portNumber;
             FISIdentify identify;
@@ -282,6 +282,6 @@ namespace Drivers
             }
         };
 
-        void HandleMassStorageDevice(PCI::Device *device);
+        void HandleMassStorageDevice(PCIDevice *device);
     };
 };

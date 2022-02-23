@@ -181,7 +181,7 @@ void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_fr
 
 void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
 {
-    printf("Initializing ACPI\n");
+    printf("[ACPI] Initializing ACPI\n");
 
     if(rsdp == NULL)
     {
@@ -231,7 +231,9 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
         return;
     }
 
-    PCI::EnumeratePCI(mcfg);
+    SetPCIMCFG(mcfg);
+
+    EnumeratePCI();
 
     globalPartitionManager->Initialize();
 }
@@ -294,7 +296,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     InitializeMemory(memmap, framebuffer);
 
-    printf("Initializing Interrupts\n");
+    printf("[INTERRUPTS] Initializing Interrupts\n");
 
     interrupts.Init();
 
@@ -337,6 +339,8 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     globalInputSystem.initialize();
 
+    printf("[Timer] Initializing timer");
+
     timer.initialize();
 
     timer->Initialize();
@@ -344,11 +348,12 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
     timer->RegisterHandler(RefreshFramebuffer);
 
     vfs.initialize();
+
     globalPartitionManager.initialize();
 
     InitializeACPI(rsdp);
 
-    printf("Initializing cmos\n");
+    printf("[CMOS] Initializing cmos\n");
 
     cmos.Initialize();
 

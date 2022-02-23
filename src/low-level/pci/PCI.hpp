@@ -2,31 +2,41 @@
 #include "acpi/ACPI.hpp"
 
 #include <stdint.h>
+#include "kernel.h"
 
-namespace PCI
+struct PCIBar
 {
-    struct Bar
-    {
-        uint64_t address;
-        uint8_t type;
-        uint8_t layoutType;
-        bool prefetchable;
-    };
+    uint64_t address;
+    uint8_t type;
+    uint8_t layoutType;
+    bool prefetchable;
+};
 
-    struct Device
-    {
-        uint16_t vendorID;
-        uint16_t deviceID;
-        uint8_t classCode;
-        Bar bars[6];
-    };
+struct PCIDevice
+{
+    uint16_t deviceID;
+    uint16_t vendorID;
 
-    void EnumeratePCI(volatile MCFGHeader *mcfg);
+    uint8_t bus;
+    uint8_t slot;
+    uint8_t function;
 
-    extern const char *DeviceClasses[];
+    uint8_t classCode;
+    uint8_t subclass;
+    uint8_t progIf;
 
-    const char *VendorName(uint16_t vendorID);
-    const char *DeviceName(uint16_t vendorID, uint16_t deviceID);
-    const char *SubclassName(uint8_t classCode, uint8_t subclassCode);
-    const char *ProgIFName(uint8_t classCode, uint8_t subclassCode, uint8_t progIF);
-}
+    PCIBar bars[6];
+};
+
+void SetPCIMCFG(volatile MCFGHeader *mcfg);
+
+void EnumeratePCI();
+void EnumeratePCIDevices(uint16_t deviceID, uint16_t vendorID, void (*callback)(const PCIDevice &device));
+void EnumerateGenericPCIDevices(uint8_t classCode, uint8_t subclass, void (*callback)(const PCIDevice &device));
+
+extern const char *PCIDeviceClasses[];
+
+string PCIVendorName(uint16_t vendorID);
+string PCIDeviceName(uint16_t vendorID, uint16_t deviceID);
+string PCISubclassName(uint8_t classCode, uint8_t subclassCode);
+string PCIProgIFName(uint8_t classCode, uint8_t subclassCode, uint8_t progIF);
