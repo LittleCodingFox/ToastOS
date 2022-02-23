@@ -22,8 +22,6 @@ public:
 
     virtual int64_t Seek(uint64_t offset, int whence, int *error) override
     {
-        DEBUG_OUT("Seek: error: %p", error);
-
         *error = ESPIPE;
 
         return 0;

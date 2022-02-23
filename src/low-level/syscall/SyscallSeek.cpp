@@ -32,8 +32,6 @@ int64_t SyscallSeek(InterruptStack *stack)
 
     int error = 0;
 
-    DEBUG_OUT("procfd: %p impl: %p type: %i error: %p", procfd, procfd->impl, procfd->type, &error);
-
     auto seek = procfd->impl->Seek(offset, whence, &error);
 
     if(error != 0)
