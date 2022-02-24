@@ -4,7 +4,6 @@
 #include "devicemanager/DeviceManager.hpp"
 #include "printf/printf.h"
 #include "debug.hpp"
-#include <frg/formatting.hpp>
 
 struct PCIDeviceHeader
 {
@@ -60,7 +59,7 @@ const char* PCIDeviceClasses[]
     "Non Essential Instrumentation"
 };
 
-string PCIVendorName(uint16_t vendorID)
+const char *PCIVendorName(uint16_t vendorID)
 {
     switch (vendorID)
     {
@@ -74,14 +73,14 @@ string PCIVendorName(uint16_t vendorID)
             return "NVIDIA Corporation";
     }
 
-    char buffer[20];
+    char *buffer = new char[20];
 
     sprintf(buffer, "%x", vendorID);
 
     return buffer;
 }
 
-string PCIDeviceName(uint16_t vendorID, uint16_t deviceID)
+const char *PCIDeviceName(uint16_t vendorID, uint16_t deviceID)
 {
     switch (vendorID)
     {
@@ -104,14 +103,14 @@ string PCIDeviceName(uint16_t vendorID, uint16_t deviceID)
             break;
     }
 
-    char buffer[20];
+    char *buffer = new char[20];
 
     sprintf(buffer, "%x", deviceID);
 
     return buffer;
 }
 
-string MassStorageControllerSubclassName(uint8_t subclassCode)
+const char *MassStorageControllerSubclassName(uint8_t subclassCode)
 {
     switch (subclassCode)
     {
@@ -146,14 +145,14 @@ string MassStorageControllerSubclassName(uint8_t subclassCode)
             return "Other";
     }
 
-    char buffer[20];
+    char *buffer = new char[20];
 
     sprintf(buffer, "%x", subclassCode);
 
     return buffer;
 }
 
-string SerialBusControllerSubclassName(uint8_t subclassCode)
+const char *SerialBusControllerSubclassName(uint8_t subclassCode)
 {
     switch (subclassCode)
     {
@@ -191,14 +190,14 @@ string SerialBusControllerSubclassName(uint8_t subclassCode)
             return "SerialBusController - Other";
     }
 
-    char buffer[20];
+    char *buffer = new char[20];
 
     sprintf(buffer, "%x", subclassCode);
 
     return buffer;
 }
 
-string BridgeDeviceSubclassName(uint8_t subclassCode)
+const char *BridgeDeviceSubclassName(uint8_t subclassCode)
 {
     switch (subclassCode)
     {
@@ -239,14 +238,14 @@ string BridgeDeviceSubclassName(uint8_t subclassCode)
             return "Other";
     }
 
-    char buffer[20];
+    char *buffer = new char[20];
 
     sprintf(buffer, "%x", subclassCode);
 
     return buffer;
 }
 
-string PCISubclassName(uint8_t classCode, uint8_t subclassCode)
+const char *PCISubclassName(uint8_t classCode, uint8_t subclassCode)
 {
     switch (classCode)
     {
@@ -267,14 +266,14 @@ string PCISubclassName(uint8_t classCode, uint8_t subclassCode)
             return SerialBusControllerSubclassName(subclassCode);
     }
 
-    char buffer[20];
+    char *buffer = new char[20];
 
     sprintf(buffer, "%x", subclassCode);
 
     return buffer;
 }
 
-string PCIProgIFName(uint8_t classCode, uint8_t subclassCode, uint8_t progIF)
+const char *PCIProgIFName(uint8_t classCode, uint8_t subclassCode, uint8_t progIF)
 {
     switch (classCode)
     {
@@ -337,7 +336,7 @@ string PCIProgIFName(uint8_t classCode, uint8_t subclassCode, uint8_t progIF)
             }    
     }
 
-    char buffer[20];
+    char *buffer = new char[20];
 
     sprintf(buffer, "%x", progIF);
 
@@ -437,7 +436,8 @@ void EnumerateFunction(uint64_t bus, uint64_t deviceID, uint64_t deviceAddress, 
 
     for(uint32_t i = 0; i < 6; i++)
     {
-        device.bars[i] = DecodeBar(&barPtr);
+        //TODO: Ensure correct
+        //device.bars[i] = DecodeBar(&barPtr);
     }
 
     auto deviceName = PCIDeviceName(device.vendorID, device.deviceID);
@@ -446,11 +446,11 @@ void EnumerateFunction(uint64_t bus, uint64_t deviceID, uint64_t deviceAddress, 
     auto progIf = PCIProgIFName(device.classCode, device.subclass, device.progIf);
 
     printf("[PCI] Added device: %s (%s) class: %s subclass: %s progIf: %s\n",
-        deviceName.data(),
-        vendor.data(),
+        deviceName,
+        vendor,
         PCIDeviceClasses[device.classCode],
-        subclass.data(),
-        progIf.data());
+        subclass,
+        progIf);
 
     PCIDevices->devices.push_back(device);
 }

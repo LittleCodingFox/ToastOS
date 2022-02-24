@@ -36,7 +36,7 @@ void EnumerateGenericPCIDevices(uint8_t classCode, uint8_t subclass, void (*call
 
 extern const char *PCIDeviceClasses[];
 
-string PCIVendorName(uint16_t vendorID);
-string PCIDeviceName(uint16_t vendorID, uint16_t deviceID);
-string PCISubclassName(uint8_t classCode, uint8_t subclassCode);
-string PCIProgIFName(uint8_t classCode, uint8_t subclassCode, uint8_t progIF);
+const char *PCIVendorName(uint16_t vendorID);
+const char *PCIDeviceName(uint16_t vendorID, uint16_t deviceID);
+const char *PCISubclassName(uint8_t classCode, uint8_t subclassCode);
+const char *PCIProgIFName(uint8_t classCode, uint8_t subclassCode, uint8_t progIF);

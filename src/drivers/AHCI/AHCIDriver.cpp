@@ -497,8 +497,8 @@ namespace Drivers
             auto vendor = PCIVendorName(device->vendorID);
 
             printf("Initializing AHCI device %s (vendor: %s)\n",
-                    name.data(),
-                    vendor.data());
+                    name,
+                    vendor);
 
             AHCIHolder holder;
 
