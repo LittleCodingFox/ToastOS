@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdint.h>
+#include "kernel.h"
 #include "paging/PageTableManager.hpp"
 
 namespace Elf
@@ -28,7 +28,7 @@ namespace Elf
     #define AT_PHENT                        21
     #define AT_PHNUM                        22
 
-    struct __attribute__((packed)) ElfHeader
+    struct PACKED ElfHeader
     {
         uint8_t identity[16];
         uint16_t type;
@@ -46,7 +46,7 @@ namespace Elf
         uint16_t strtabIndex;
     };
 
-    struct __attribute__((packed)) ElfProgramHeader
+    struct PACKED ElfProgramHeader
     {
         uint32_t type;
         uint32_t flags;
@@ -58,7 +58,7 @@ namespace Elf
         uint64_t alignment;
     };
 
-    struct __attribute__((packed)) ElfSectionHeader
+    struct PACKED ElfSectionHeader
     {
         uint32_t name;
         uint32_t type;

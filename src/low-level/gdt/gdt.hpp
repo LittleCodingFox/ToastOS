@@ -1,5 +1,5 @@
 #pragma once
-#include <stdint.h>
+#include "kernel.h"
 
 #define GDTAccessDPL(n) (n << 5)
 
@@ -24,13 +24,13 @@ namespace GDTAccessFlag
 #define GDTAccessUserCode (GDTAccessFlag::ReadWrite | GDTAccessFlag::Execute | GDTAccessFlag::Segments | GDTAccessDPL(3) | GDTAccessFlag::Present)
 #define GDTAccessUserData (GDTAccessFlag::ReadWrite | GDTAccessFlag::Segments | GDTAccessDPL(3) | GDTAccessFlag::Present)
 
-struct __attribute__((packed)) GDTDescriptor
+struct PACKED GDTDescriptor
 {
     uint16_t size;
     uint64_t offset;
 };
 
-struct __attribute__((packed)) GDTEntry
+struct PACKED GDTEntry
 {
     uint16_t limitLow;
     uint16_t baseLow;
@@ -40,7 +40,7 @@ struct __attribute__((packed)) GDTEntry
     uint8_t baseHigh;
 };
 
-struct __attribute__((packed)) TSSDescriptor
+struct PACKED TSSDescriptor
 {
     uint16_t length;
     uint16_t baseLow;
@@ -52,7 +52,7 @@ struct __attribute__((packed)) TSSDescriptor
     uint32_t reserved0;
 };
 
-struct __attribute__((packed)) __attribute__((aligned(0x1000))) GDT
+struct PACKED __attribute__((aligned(0x1000))) GDT
 {
     GDTEntry null; //0x00
     GDTEntry kernelCode; //0x08

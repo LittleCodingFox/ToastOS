@@ -4,7 +4,7 @@
 #include <sys/types.h>
 #include <time.h>
 #include <sys/stat.h>
-#include "lock.hpp"
+#include "threading/lock.hpp"
 #include "devicemanager/GenericIODevice.hpp"
 #include "gpt/GPT.hpp"
 #include "frg/string.hpp"
@@ -55,7 +55,7 @@ public:
 
     virtual void DebugListDirectories() = 0;
 
-    virtual stat Stat(FileSystemHandle handle) = 0;
+    virtual struct stat Stat(FileSystemHandle handle) = 0;
 
     virtual dirent *ReadEntries(FileSystemHandle handle) = 0;
 

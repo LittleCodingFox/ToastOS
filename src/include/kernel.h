@@ -5,6 +5,8 @@
 
 #define USE_INPUT_SYSTEM 1
 
+#include "defines.h"
+
 #if __cplusplus
 #include <stddef.h>
 #include <stdint.h>

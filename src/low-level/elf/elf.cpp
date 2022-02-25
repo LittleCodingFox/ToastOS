@@ -1,8 +1,9 @@
+#include <string.h>
 #include "elf.hpp"
 #include "debug.hpp"
 #include "paging/PageTableManager.hpp"
 #include "paging/PageFrameAllocator.hpp"
-#include <string.h>
+#include "registers/Registers.hpp"
 
 namespace Elf
 {

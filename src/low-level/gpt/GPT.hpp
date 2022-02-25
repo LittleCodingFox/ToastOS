@@ -1,14 +1,13 @@
 #pragma once
 #include <stdint.h>
 #include <string.h>
-#include <frg_allocator.hpp>
 #include "printf/printf.h"
-#include "frg/vector.hpp"
+#include "kernel.h"
 #include "low-level/devicemanager/GenericIODevice.hpp"
 
 namespace GPT
 {
-    struct __attribute__((packed)) Guid
+    struct PACKED Guid
     {
         uint32_t a;
         uint16_t b;
@@ -41,7 +40,7 @@ namespace GPT
     constexpr Guid WindowsDataGuid { 0xEBD0A0A2, 0xB9E5, 0x4433, {0x87, 0xC0},
 			{0x68, 0xB6, 0xB7, 0x26, 0x99, 0xC7} };
 
-    struct __attribute__((packed)) DiskHeader
+    struct PACKED DiskHeader
     {
         uint64_t signature;
         uint32_t revision;
@@ -62,7 +61,7 @@ namespace GPT
 
     static_assert(sizeof(DiskHeader) == 512, "DiskHeader has invalid size");
 
-    struct __attribute__((packed)) DiskEntry
+    struct PACKED DiskEntry
     {
         Guid typeGuid;
         Guid uniqueGuid;

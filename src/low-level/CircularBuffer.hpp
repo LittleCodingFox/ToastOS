@@ -1,7 +1,7 @@
 #pragma once
 
 #include "kernel.h"
-#include "lock.hpp"
+#include "threading/lock.hpp"
 
 template<typename Element>
 class CircularBuffer

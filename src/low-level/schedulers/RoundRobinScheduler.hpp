@@ -1,7 +1,7 @@
 #pragma once
 
 #include "process/Process.hpp"
-#include "lock.hpp"
+#include "threading/lock.hpp"
 
 class RoundRobinScheduler : public IScheduler
 {

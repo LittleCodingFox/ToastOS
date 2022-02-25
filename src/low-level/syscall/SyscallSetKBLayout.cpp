@@ -1,5 +1,6 @@
 #include "syscall.hpp"
 #include "keyboard/Keyboard.hpp"
+#include "interrupts/Interrupts.hpp"
 #include "debug.hpp"
 
 int64_t SyscallSetKBLayout(InterruptStack *stack)

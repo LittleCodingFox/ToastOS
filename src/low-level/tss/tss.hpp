@@ -1,7 +1,7 @@
 #pragma once
-#include <stdint.h>
+#include "kernel.h"
 
-struct __attribute__((packed)) TSS
+struct PACKED TSS
 {
     uint32_t reserved0;
     uint64_t rsp0;

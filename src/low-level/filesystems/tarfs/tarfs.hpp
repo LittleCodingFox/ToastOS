@@ -22,7 +22,7 @@ namespace tarfs
         TAR_FIFO =          '6'
     };
 
-    struct __attribute__((packed)) TarHeader
+    struct PACKED TarHeader
     {
         char name[100];
         char mode[8];

@@ -436,8 +436,7 @@ void EnumerateFunction(uint64_t bus, uint64_t deviceID, uint64_t deviceAddress, 
 
     for(uint32_t i = 0; i < 6; i++)
     {
-        //TODO: Ensure correct
-        //device.bars[i] = DecodeBar(&barPtr);
+        device.bars[i] = DecodeBar(&barPtr);
     }
 
     auto deviceName = PCIDeviceName(device.vendorID, device.deviceID);
@@ -452,7 +451,27 @@ void EnumerateFunction(uint64_t bus, uint64_t deviceID, uint64_t deviceAddress, 
         subclass,
         progIf);
 
-    PCIDevices->devices.push_back(device);
+    auto _device = &PCIDevices->devices.push_back(device);
+
+    switch(deviceHeader->objectClass)
+    {
+        case 0x01: //Mass Storage Controller
+            switch(deviceHeader->objectSubclass)
+            {
+                case 0x06: //SATA
+                    switch(deviceHeader->progIF)
+                    {
+                        case 0x01:
+                            Drivers::AHCI::HandleMassStorageDevice(_device);
+
+                            break;
+                    }
+
+                    break;
+            }
+
+            break;
+    }
 }
 
 void EnumerateDevice(uint64_t bus, uint64_t busAddress, uint64_t device)

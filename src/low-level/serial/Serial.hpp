@@ -2,7 +2,7 @@
 #define SERIAL_H
 
 #include <stdint.h>
-#include "lock.hpp"
+#include "threading/lock.hpp"
 
 enum SerialPorts
 {

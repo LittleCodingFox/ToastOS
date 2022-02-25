@@ -1,5 +1,6 @@
 #include "syscall.hpp"
 #include "input/InputSystem.hpp"
+#include "interrupts/Interrupts.hpp"
 #include "debug.hpp"
 
 int64_t SyscallPollInput(InterruptStack *stack)

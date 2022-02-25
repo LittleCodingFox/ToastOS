@@ -1,7 +1,6 @@
 #pragma once
 
-#include <stdint.h>
-#include <stddef.h>
+#include "kernel.h"
 
 #define PIC1      0x20 // Master PIC
 #define PIC2      0xA0 // Slave PIC
@@ -121,7 +120,7 @@ typedef struct _stack
   uint64_t cpuFlags;            // 152
   uint64_t stackPointer;        // 160
   uint64_t stackSegment;        // 168
-} __attribute__((packed)) InterruptStack;
+} PACKED InterruptStack;
 
 typedef void (*InterruptHandler)(InterruptStack* stack);
 typedef void (*InterruptHandlerArg)(InterruptStack *stack, void *data);

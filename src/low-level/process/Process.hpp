@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <signal.h>
 #include "elf/elf.hpp"
-#include "lock.hpp"
+#include "threading/lock.hpp"
 #include "interrupts/Interrupts.hpp"
 #include "filesystems/VFS.hpp"
 #include "pipe/pipe.hpp"

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdint.h>
+#include "kernel.h"
 
 class FramebufferRenderer;
 
@@ -14,7 +14,7 @@ typedef struct
     uint32_t bytesPerGlyph;
     uint32_t height;
     uint32_t width;
-} __attribute__((packed)) psf2_header_t;
+} PACKED psf2_header_t;
 
 typedef struct
 {

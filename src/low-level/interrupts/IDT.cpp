@@ -2,7 +2,7 @@
 #include "gdt/gdt.hpp"
 #include <string.h>
 
-struct __attribute__((packed)) IDTR
+struct PACKED IDTR
 {
     uint16_t limit;
     uint64_t base;

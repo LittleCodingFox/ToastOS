@@ -1,6 +1,7 @@
 #include "syscall.hpp"
 #include "keyboard/Keyboard.hpp"
 #include "process/Process.hpp"
+#include "registers/Registers.hpp"
 #include "debug.hpp"
 #include "errno.h"
 

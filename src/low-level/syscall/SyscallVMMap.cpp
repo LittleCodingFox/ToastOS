@@ -1,10 +1,11 @@
 #include <string.h>
 #include "syscall.hpp"
+#include "debug.hpp"
 #include "keyboard/Keyboard.hpp"
 #include "process/Process.hpp"
-#include "debug.hpp"
-#include "errno.h"
 #include "paging/PageFrameAllocator.hpp"
+#include "registers/Registers.hpp"
+#include "errno.h"
 #include "Panic.hpp"
 
 #define PROT_NONE       0x00

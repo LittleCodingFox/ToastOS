@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include "kernel.h"
 #include "../low-level/pci/PCI.hpp"
 #include "../low-level/devicemanager/GenericIODevice.hpp"
 
@@ -28,7 +29,7 @@ namespace Drivers
             FIS_TYPE_DEV_BITS = 0xA1
         };
 
-        struct __attribute__((packed)) HBAPort
+        struct PACKED HBAPort
         {
             uint32_t commandListBase;
             uint32_t commandListBaseUpper;
@@ -51,7 +52,7 @@ namespace Drivers
             uint32_t vendor[4];
         };
 
-        struct __attribute__((packed)) HBAMemory
+        struct PACKED HBAMemory
         {
             uint32_t hostCapability;
             uint32_t globalHostControl;
@@ -69,7 +70,7 @@ namespace Drivers
             HBAPort ports[1];
         };
 
-        struct __attribute__((packed)) HBACommandHeader
+        struct PACKED HBACommandHeader
         {
             uint8_t commandFISLength : 5;
             uint8_t atapi : 1;
@@ -89,7 +90,7 @@ namespace Drivers
             uint32_t reserved1[4];
         };
 
-        struct __attribute__((packed)) HBAPRDEntry
+        struct PACKED HBAPRDEntry
         {
             uint32_t dataBaseAddress;
             uint32_t dataBaseAddressUpper;
@@ -101,7 +102,7 @@ namespace Drivers
             uint32_t interruptOnCompletion : 1;
         };
 
-        struct __attribute__((packed)) HBACommandTable
+        struct PACKED HBACommandTable
         {
             uint8_t commandFIS[64];
             uint8_t atapiCommand[16];
@@ -110,7 +111,7 @@ namespace Drivers
             HBAPRDEntry prdtEntry[];
         };
 
-        struct __attribute__((packed)) FISREGHost2Device
+        struct PACKED FISREGHost2Device
         {
             uint8_t fisType;
 
@@ -139,7 +140,7 @@ namespace Drivers
             uint8_t reserved1[4];
         };
 
-        struct __attribute__((packed)) FISREGDevice2Host
+        struct PACKED FISREGDevice2Host
         {
             uint8_t type;
 
@@ -166,7 +167,7 @@ namespace Drivers
             uint8_t reserved3[5];
         };
 
-        struct __attribute__((packed)) FISREGData
+        struct PACKED FISREGData
         {
             uint8_t type;
             uint8_t portMultiplier : 4;
@@ -175,7 +176,7 @@ namespace Drivers
             uint32_t data[1];
         };
 
-        struct __attribute__((packed)) FISPIOSetup
+        struct PACKED FISPIOSetup
         {
             uint8_t type;
             uint8_t portMultiplier : 4;
@@ -204,7 +205,7 @@ namespace Drivers
             uint8_t reserved4[2];
         };
 
-        struct __attribute__((packed)) FISDMASetup
+        struct PACKED FISDMASetup
         {
             uint8_t type;
             uint8_t portMultiplier : 4;
@@ -220,7 +221,7 @@ namespace Drivers
             uint32_t reserved3;
         };
 
-        struct __attribute__((packed)) HBAFIS
+        struct PACKED HBAFIS
         {
             FISDMASetup dmaFIS;
             uint8_t padding0[4];
@@ -234,7 +235,7 @@ namespace Drivers
             uint8_t reserved[96];
         };
 
-        struct __attribute__((packed)) FISIdentify
+        struct PACKED FISIdentify
         {
             uint16_t reserved0[27];
             uint16_t model[20];

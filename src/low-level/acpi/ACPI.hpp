@@ -1,7 +1,7 @@
 #pragma once
-#include <stdint.h>
+#include "kernel.h"
 
-struct __attribute__((packed)) RSDP2
+struct PACKED RSDP2
 {
     uint8_t signature[8];
     uint8_t checksum;
@@ -14,7 +14,7 @@ struct __attribute__((packed)) RSDP2
     uint8_t reserved[3];
 };
 
-struct __attribute__((packed)) SDTHeader
+struct PACKED SDTHeader
 {
     uint8_t signature[4];
     uint32_t length;
@@ -27,13 +27,13 @@ struct __attribute__((packed)) SDTHeader
     uint32_t CreatorRevision;
 };
 
-struct __attribute__((packed)) MCFGHeader
+struct PACKED MCFGHeader
 {
     SDTHeader header;
     uint64_t reserved;
 };
 
-struct __attribute__((packed)) ACPIDeviceConfig
+struct PACKED ACPIDeviceConfig
 {
     uint64_t baseAddress;
     uint16_t segmentationGroup;

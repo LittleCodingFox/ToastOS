@@ -3,7 +3,7 @@
 #include "registers/Registers.hpp"
 #include "gdt/gdt.hpp"
 #include "debug.hpp"
-#include "lock.hpp"
+#include "threading/lock.hpp"
 
 typedef int64_t (*SyscallPointer)(InterruptStack *stack);
 
