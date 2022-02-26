@@ -359,9 +359,12 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     if(initrd != NULL)
     {
+        //Not used for now
+        /*
         auto tarfs = new tarfs::TarFS((uint8_t *)initrd->begin);
 
         vfs->AddMountPoint("/", tarfs);
+        */
 
         //tarfs->DebugListDirectories();
     }

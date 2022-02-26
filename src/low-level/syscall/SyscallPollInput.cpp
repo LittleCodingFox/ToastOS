@@ -12,4 +12,4 @@ int64_t SyscallPollInput(InterruptStack *stack)
 #endif
 
     return globalInputSystem->Poll(event);
-} 
+}

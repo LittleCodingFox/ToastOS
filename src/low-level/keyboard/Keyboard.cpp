@@ -166,7 +166,7 @@ uint8_t KeyFromString(const string &key)
 
 bool LoadLayout(const string &name, int *error)
 {
-    DEBUG_OUT("Loading keyboard layout \"%s\"", name.data());
+    printf("Keyboard: Loading keyboard layout \"%s\"\n", name.data());
 
     auto path = string("/system/kbd/layouts/") + name + "." + LAYOUT_EXT;
 
@@ -249,7 +249,7 @@ bool LoadLayout(const string &name, int *error)
 
                 if(k == (size_t)-1)
                 {
-                    printf("At line '%s': Missing key at right side\n");
+                    printf("Keyboard: At line '%s': Missing key at right side\n", line.data());
 
                     error = true;
 
@@ -299,7 +299,7 @@ bool LoadLayout(const string &name, int *error)
     }
     else
     {
-        DEBUG_OUT("Failed to open file for keyboard layout located at \"%s\"", path.data());
+        printf("Keyboard: Failed to open file for keyboard layout located at \"%s\"\n", path.data());
 
         vfs->CloseFile(handle);
 
@@ -311,7 +311,7 @@ bool LoadLayout(const string &name, int *error)
 
 extern "C" void InitializeKeyboard()
 {
-    DEBUG_OUT("Initializing keyboard", 0);
+    printf("Keyboard: Initializing keyboard\n", 0);
 
 #if USE_INPUT_SYSTEM
     int error = 0;
@@ -341,7 +341,7 @@ extern "C" void InitializeKeyboard()
         {
             delete [] buffer;
 
-            DEBUG_OUT("Failed to load keyboard layout", 0);
+            printf("Keyboard: Failed to load keyboard layout\n");
 
             return;
         }
@@ -349,10 +349,9 @@ extern "C" void InitializeKeyboard()
         {
             delete [] buffer;
 
-            DEBUG_OUT("Successfully loaded layout!", 0);
+            printf("Keyboard: Successfully loaded layout!\n");
         }
     }
-
 #endif
 }
 

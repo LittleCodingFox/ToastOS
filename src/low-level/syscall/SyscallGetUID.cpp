@@ -5,7 +5,7 @@
 int64_t SyscallGetUID(InterruptStack *stack)
 {
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: GetUID");
+    DEBUG_OUT("Syscall: GetUID", 0);
 #endif
 
     auto process = globalProcessManager->CurrentProcess();

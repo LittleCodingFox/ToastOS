@@ -41,5 +41,11 @@ int64_t SyscallOpen(InterruptStack *stack)
         return -error;
     }
 
-    return currentProcess->info->AddFD(PROCESS_FD_HANDLE, new ProcessFDVFS(handle));
+    auto fd = currentProcess->info->AddFD(PROCESS_FD_HANDLE, new ProcessFDVFS(handle));
+
+    (void)fd;
+
+    DEBUG_OUT("syscall_open: Opened %s with fd %i", path, fd);
+
+    return fd;
 }

@@ -3,6 +3,7 @@
 #include "elf/elf.hpp"
 #include "debug.hpp"
 #include <stdio.h>
+#include "filesystems/ext2/ext2.hpp"
 
 frg::manual_box<PartitionManager> globalPartitionManager;
 
@@ -52,17 +53,19 @@ void PartitionManager::Initialize()
 
             printf("[PartitionManager] \t%s with size: %s, type: %s)\n", partition.GetID().ToString(), partition.SizeString(), partition.GetType().ToString());
 
-/*
+            if(Ext2FileSystem::IsValid(&partition))
+            {
+                disk.fileSystem = new Ext2FileSystem(&partition);
+            }
+
             if(disk.fileSystem != NULL)
             {
-                printf("Found volume %s\n", disk.fileSystem->VolumeName());
+                printf("[PartitionManager] \tFound volume %s\n", disk.fileSystem->VolumeName());
 
-                //TODO: Dynamic mount points
                 vfs->AddMountPoint("/", disk.fileSystem);
 
                 //disk.fileSystem->DebugListDirectories();
             }
-*/
         }
     }
 }

@@ -1,6 +1,7 @@
 #include "../Process.hpp"
 #include "filesystems/VFS.hpp"
 #include "input/InputSystem.hpp"
+#include "keyboard/Keyboard.hpp"
 #include "fcntl.h"
 #include "errno.h"
 
