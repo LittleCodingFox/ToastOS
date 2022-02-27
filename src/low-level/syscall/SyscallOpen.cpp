@@ -14,7 +14,7 @@ int64_t SyscallOpen(InterruptStack *stack)
     DEBUG_OUT("Syscall: open path: %s flags: 0x%x", path, flags);
 #endif
 
-    auto currentProcess = globalProcessManager->CurrentProcess();
+    auto currentProcess = processManager->CurrentProcess();
 
     if(currentProcess == NULL || currentProcess->isValid == false)
     {

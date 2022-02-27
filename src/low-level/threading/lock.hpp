@@ -6,7 +6,7 @@
 class AtomicLock
 {
 private:
-    uint32_t locked;
+    volatile uint32_t locked;
 public:
     AtomicLock();
 

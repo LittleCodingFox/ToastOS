@@ -17,7 +17,7 @@ int64_t SyscallWaitPID(InterruptStack *stack)
     DEBUG_OUT("Syscall: waitpid pid: %i (%x) status: %p flags: %i retpid: %p", pid, pid, status, flags, retpid);
 #endif
 
-    auto current = globalProcessManager->CurrentProcess();
+    auto current = processManager->CurrentProcess();
 
     if(current == NULL || current->isValid == false)
     {
@@ -28,7 +28,7 @@ int64_t SyscallWaitPID(InterruptStack *stack)
     {
         pid = -pid;
 
-        auto children = globalProcessManager->GetChildProcesses(current->info->ID);
+        auto children = processManager->GetChildProcesses(current->info->ID);
 
         if(children.size() == 0)
         {
@@ -58,7 +58,7 @@ int64_t SyscallWaitPID(InterruptStack *stack)
     }
     else if(pid == -1)
     {
-        auto children = globalProcessManager->GetChildProcesses(current->info->ID);
+        auto children = processManager->GetChildProcesses(current->info->ID);
 
         if(children.size() == 0)
         {
@@ -88,7 +88,7 @@ int64_t SyscallWaitPID(InterruptStack *stack)
     }
     else if(pid == 0)
     {
-        auto children = globalProcessManager->GetChildProcesses(current->info->ID);
+        auto children = processManager->GetChildProcesses(current->info->ID);
 
         if(children.size() == 0)
         {
@@ -108,7 +108,7 @@ int64_t SyscallWaitPID(InterruptStack *stack)
     }
     else if(pid > 0)
     {
-        auto process = globalProcessManager->GetProcess(pid);
+        auto process = processManager->GetProcess(pid);
 
         if(process == NULL || process->isValid == false || process->info->state != PROCESS_STATE_DEAD)
         {

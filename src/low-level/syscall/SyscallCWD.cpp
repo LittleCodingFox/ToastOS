@@ -14,7 +14,7 @@ int64_t SyscallCWD(InterruptStack *stack)
     DEBUG_OUT("Syscall: cwd buffer: %p size: %lu", buffer, size);
 #endif
 
-    auto process = globalProcessManager->CurrentProcess();
+    auto process = processManager->CurrentProcess();
 
     if(process == NULL || process->isValid == false)
     {

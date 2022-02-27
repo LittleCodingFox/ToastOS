@@ -21,4 +21,4 @@ public:
     void Initialize();
 };
 
-extern frg::manual_box<PartitionManager> globalPartitionManager;
+extern box<PartitionManager> globalPartitionManager;

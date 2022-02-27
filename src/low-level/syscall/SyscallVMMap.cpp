@@ -72,7 +72,7 @@ int64_t SyscallVMMap(InterruptStack *stack)
                 mappedPages.push_back(target);
             }
 
-            globalProcessManager->AddProcessVMMap(hint, mappedPages);
+            processManager->AddProcessVMMap(hint, mappedPages);
 
             //DEBUG_OUT("Mapping %p-%p with paging flags 0x%x", hint, (uint64_t)hint + pages * 0x1000, pagingFlags);
 
@@ -97,7 +97,7 @@ int64_t SyscallVMMap(InterruptStack *stack)
                     memset(higher, 0, 0x1000);
                 }
 
-                globalProcessManager->AddProcessVMMap(physical, physical, pages);
+                processManager->AddProcessVMMap(physical, physical, pages);
 
                 //DEBUG_OUT("Allocating %p-%p with paging flags 0x%x", physical, (uint64_t)physical + pages * 0x1000, pagingFlags);
 

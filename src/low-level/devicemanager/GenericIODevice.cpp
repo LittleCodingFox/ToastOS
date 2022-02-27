@@ -6,7 +6,7 @@ bool GenericIODevice::ReadUnaligned(void *data, uint64_t sector, uint64_t count)
 {
     uint64_t maxBlocks = ((sector % 512) + count) / 512 + 1;
     uint64_t currentSector = ((sector / 512)) * 512;
-    uint8_t *buffer = (uint8_t *)malloc(maxBlocks * 512);
+    uint8_t *buffer = new uint8_t[maxBlocks * 512];
 
     for(uint64_t i = 0; i < maxBlocks; i++)
     {
@@ -14,14 +14,15 @@ bool GenericIODevice::ReadUnaligned(void *data, uint64_t sector, uint64_t count)
 
         if(!result)
         {
-            free(buffer);
+            delete [] buffer;
 
             return false;
         }
     }
 
     memcpy(data, buffer + sector % 512, count);
-    free(buffer);
+
+    delete [] buffer;
 
     return true;
 }

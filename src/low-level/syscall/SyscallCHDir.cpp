@@ -14,7 +14,7 @@ int64_t SyscallCHDir(InterruptStack *stack)
     DEBUG_OUT("Syscall: chdir path: %s", path);
 #endif
 
-    auto process = globalProcessManager->CurrentProcess();
+    auto process = processManager->CurrentProcess();
 
     if(process == NULL || process->isValid == false)
     {

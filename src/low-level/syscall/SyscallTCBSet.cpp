@@ -10,7 +10,7 @@ int64_t SyscallTCBSet(InterruptStack *stack)
     DEBUG_OUT("Syscall: tcbset base %p", base);
 #endif
 
-    auto thread = globalProcessManager->CurrentThread();
+    auto thread = processManager->CurrentThread();
     
     if(thread == NULL)
     {
@@ -21,7 +21,7 @@ int64_t SyscallTCBSet(InterruptStack *stack)
 
     DEBUG_OUT("Setting thread %i fsbase to %p", thread->tid, base);
 
-    globalProcessManager->LoadFSBase(base);
+    processManager->LoadFSBase(base);
 
     return 0;
 }

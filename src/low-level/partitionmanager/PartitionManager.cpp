@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include "filesystems/ext2/ext2.hpp"
 
-frg::manual_box<PartitionManager> globalPartitionManager;
+box<PartitionManager> globalPartitionManager;
 
 void PartitionManager::Initialize()
 {

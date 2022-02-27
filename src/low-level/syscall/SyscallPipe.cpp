@@ -20,7 +20,7 @@ int64_t SyscallPipe(InterruptStack *stack)
     DEBUG_OUT("Syscall: Pipe fds: %p flags: %x", fds, flags);
 #endif
 
-    auto current = globalProcessManager->CurrentProcess();
+    auto current = processManager->CurrentProcess();
 
     if(current == NULL || current->isValid == false)
     {

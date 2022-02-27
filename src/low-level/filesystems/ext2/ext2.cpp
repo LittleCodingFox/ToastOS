@@ -1,4 +1,5 @@
 #include "ext2.hpp"
+#include "timer/Timer.hpp"
 
 #define FORMAT_MASK                     0xF000
 
@@ -296,6 +297,8 @@ next:
                         return false;
                     }
                 }
+
+                allocMap = CreateAllocMap(&currentInode);
 
                 goto next;
             }

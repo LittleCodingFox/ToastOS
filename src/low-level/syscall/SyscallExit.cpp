@@ -11,7 +11,7 @@ int64_t SyscallExit(InterruptStack *stack)
     DEBUG_OUT("Syscall: Exit status: %i", status);
 #endif
 
-    globalProcessManager->Exit(status);
+    processManager->Exit(status);
 
     return 0;
 }

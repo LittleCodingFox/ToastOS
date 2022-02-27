@@ -12,7 +12,7 @@ int64_t SyscallSigaction(InterruptStack *stack)
     DEBUG_OUT("Syscall: sigaction signum %i act %p oldact %p", signum, act, oldact);
 #endif
 
-    globalProcessManager->Sigaction(signum, act, oldact);
+    processManager->Sigaction(signum, act, oldact);
 
     return 0;
 }

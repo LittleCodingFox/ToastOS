@@ -373,7 +373,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     InitializeKeyboard();
 
-    globalProcessManager = new ProcessManager(new RoundRobinScheduler());
+    processManager.initialize(new RoundRobinScheduler());
 
     DEBUG_OUT("%s", "Finished initializing the kernel");
 

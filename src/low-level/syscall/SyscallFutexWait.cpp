@@ -11,7 +11,7 @@ int64_t SyscallFutexWait(InterruptStack *stack)
     DEBUG_OUT("Syscall: futex wait: pointer: %p; expected: %i", pointer, expected);
 #endif
 
-    globalProcessManager->FutexWait(pointer, expected, stack);
+    processManager->FutexWait(pointer, expected, stack);
 
     return 0;
 }

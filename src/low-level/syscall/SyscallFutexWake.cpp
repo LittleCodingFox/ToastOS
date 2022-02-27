@@ -10,7 +10,7 @@ int64_t SyscallFutexWake(InterruptStack *stack)
     DEBUG_OUT("Syscall: futex wake: pointer: %p", pointer);
 #endif
 
-    globalProcessManager->FutexWake(pointer);
+    processManager->FutexWake(pointer);
 
     return 0;
 }

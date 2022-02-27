@@ -14,7 +14,7 @@ int64_t SyscallFStat(InterruptStack *stack)
     DEBUG_OUT("Syscall: fstat stat: %p; fd: %i", stat, fd);
 #endif
 
-    auto current = globalProcessManager->CurrentProcess();
+    auto current = processManager->CurrentProcess();
 
     if(current == NULL || current->isValid == false)
     {

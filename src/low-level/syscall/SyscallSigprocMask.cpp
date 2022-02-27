@@ -14,7 +14,7 @@ int64_t SyscallSigprocMask(InterruptStack *stack)
     DEBUG_OUT("Syscall: sigprocmask how %i set %p retrieve %p", how, set, retrieve);
 #endif
 
-    auto process = globalProcessManager->CurrentProcess();
+    auto process = processManager->CurrentProcess();
 
     if(process == NULL || process->isValid == false)
     {

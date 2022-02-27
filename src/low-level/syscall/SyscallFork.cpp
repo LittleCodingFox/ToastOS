@@ -10,5 +10,5 @@ int64_t SyscallFork(InterruptStack *stack)
     DEBUG_OUT("Syscall: fork child: %p", child);
 #endif
 
-    return globalProcessManager->Fork(stack, child);
+    return processManager->Fork(stack, child);
 }

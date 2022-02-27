@@ -19,7 +19,7 @@ int64_t SyscallRead(InterruptStack *stack)
     DEBUG_OUT("Syscall: Read fd: %i buffer: %p count: %llu", fd, buffer, count);
 #endif
 
-    auto current = globalProcessManager->CurrentProcess();
+    auto current = processManager->CurrentProcess();
 
     if(current == NULL || current->isValid == false)
     {

@@ -11,14 +11,14 @@ int64_t SyscallSpawnThread(InterruptStack *stack)
     DEBUG_OUT("Syscall: spawn thread rip: %p rsp: %p", rip, rsp);
 #endif
 
-    auto process = globalProcessManager->CurrentProcess();
+    auto process = processManager->CurrentProcess();
     
     if(process == NULL || process->isValid == false)
     {
         return 0;
     }
 
-    auto pcb = globalProcessManager->AddThread(rip, rsp);
+    auto pcb = processManager->AddThread(rip, rsp);
 
     if(pcb == NULL)
     {

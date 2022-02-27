@@ -5,7 +5,7 @@ export OS_NAME=ToastOS
 
 rm -Rf $BINDIR/*.img
 
-dd if=/dev/zero of=$BINDIR/$OS_NAME.img bs=1M count=800 #1024
+dd if=/dev/zero of=$BINDIR/$OS_NAME.img bs=1M count=1024
 
 (echo g
 echo n
@@ -17,7 +17,7 @@ echo 1
 echo n
 echo 2
 echo 206848
-echo 1638366
+echo 2097118
 echo p
 echo w) | 
 fdisk -u -C500 -S63 -H16 $BINDIR/$OS_NAME.img

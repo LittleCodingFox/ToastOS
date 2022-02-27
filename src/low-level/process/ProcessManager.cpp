@@ -94,19 +94,36 @@
 #define LD_BASE 0x40000000
 #define push(stack, value) *(--stack) = (value)
 
-ProcessManager *globalProcessManager;
+box<ProcessManager> processManager;
 uint64_t processIDCounter = 0;
 
 extern "C" void SwitchTasks(ProcessControlBlock* next);
 
-void SwitchProcess(InterruptStack *stack)
+void ProcessYieldIfAvailable()
 {
-    if(globalProcessManager->IsLocked())
+    if(processManager.valid() == false)
     {
         return;
     }
 
-    globalProcessManager->SwitchProcess(stack, true);
+    auto current = processManager->CurrentProcess();
+
+    if(current == NULL || current->isValid == false)
+    {
+        return;
+    }
+
+    ProcessYield();
+}
+
+void SwitchProcess(InterruptStack *stack)
+{
+    if(processManager->IsLocked())
+    {
+        return;
+    }
+
+    processManager->SwitchProcess(stack, true);
 }
 
 ProcessManager::ProcessManager(IScheduler *scheduler) : scheduler(scheduler), futexes(NULL)

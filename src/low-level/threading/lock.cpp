@@ -1,6 +1,6 @@
 #include "lock.hpp"
 
-AtomicLock::AtomicLock() : locked(0) {};
+AtomicLock::AtomicLock() : locked(false) {};
 
 bool AtomicLock::IsLocked() const
 {

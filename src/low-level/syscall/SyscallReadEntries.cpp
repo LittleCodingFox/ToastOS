@@ -24,7 +24,7 @@ int64_t SyscallReadEntries(InterruptStack *stack)
         return -1;
     }
 
-    auto current = globalProcessManager->CurrentProcess();
+    auto current = processManager->CurrentProcess();
 
     if(current == NULL || current->isValid == false)
     {

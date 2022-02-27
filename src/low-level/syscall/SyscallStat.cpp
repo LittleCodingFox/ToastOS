@@ -15,7 +15,7 @@ int64_t SyscallStat(InterruptStack *stack)
     DEBUG_OUT("Syscall: stat stat: %p path %s", stat, path);
 #endif
 
-    auto currentProcess = globalProcessManager->CurrentProcess();
+    auto currentProcess = processManager->CurrentProcess();
 
     if(currentProcess == NULL || currentProcess->isValid == false)
     {
@@ -28,7 +28,14 @@ int64_t SyscallStat(InterruptStack *stack)
     
     if(vfs->FileType(handle) == FILE_HANDLE_UNKNOWN || error != 0)
     {
-        DEBUG_OUT(error == 0 ? "Stat is unknown" : "Stat Error: %i", error);
+        if(error == 0)
+        {
+            DEBUG_OUT("Stat is unknown", 0);
+        }
+        else
+        {
+            DEBUG_OUT("Stat Error: %i", error);
+        }
 
         return -1;
     }

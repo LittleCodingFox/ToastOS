@@ -106,7 +106,7 @@ void SyscallHandler(InterruptStack *stack)
 {
     if(stack->rdi <= sizeof(syscallHandlers) / sizeof(SyscallPointer) && syscallHandlers[stack->rdi] != NULL)
     {
-        auto current = globalProcessManager->CurrentThread();
+        auto current = processManager->CurrentThread();
 
         current->activePermissionLevel = PROCESS_PERMISSION_KERNEL;
 

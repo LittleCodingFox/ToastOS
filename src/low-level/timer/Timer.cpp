@@ -3,8 +3,8 @@
 #include "debug.hpp"
 #include <stdlib.h>
 
-#define TIMER_FREQUENCY 200 // in Hz
-#define TIMER_QUOTIENT  1193180
+#define TIMER_FREQUENCY 100 // in Hz
+#define TIMER_QUOTIENT  1193182
 
 #define PIT_0           0x40
 #define PIT_1           0x41
@@ -14,7 +14,7 @@
 
 static uint64_t currentTick;
 
-frg::manual_box<Timer> timer;
+box<Timer> timer;
 
 void timerCallback(InterruptStack *stack)
 {
