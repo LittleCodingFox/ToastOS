@@ -499,7 +499,7 @@ bool Ext2FileSystem::ReadInode(void *buffer, uint64_t position, uint64_t count, 
 
         uint32_t blockIndex = allocMap[block];
 
-        if(!partition->ReadUnaligned((uint8_t *)buffer + progress, blockIndex * blockSize + offset, chunk))
+        if(!partition->ReadUnalignedSingleRead((uint8_t *)buffer + progress, blockIndex * blockSize + offset, chunk))
         {
             return false;
         }

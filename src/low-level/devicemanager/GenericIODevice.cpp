@@ -27,11 +27,32 @@ bool GenericIODevice::ReadUnaligned(void *data, uint64_t sector, uint64_t count)
     return true;
 }
 
+bool GenericIODevice::ReadUnalignedSingleRead(void *data, uint64_t sector, uint64_t count)
+{
+    uint64_t maxBlocks = ((sector % 512) + count) / 512 + 1;
+    uint64_t currentSector = ((sector / 512)) * 512;
+    uint8_t *buffer = new uint8_t[maxBlocks * 512];
+
+    if(!Read(buffer, currentSector / 512, maxBlocks))
+    {
+        delete [] buffer;
+
+        return false;
+    }
+
+    memcpy(data, buffer + sector % 512, count);
+
+    delete [] buffer;
+
+    return true;
+}
+
 bool GenericIODevice::WriteUnaligned(const void *data, uint64_t sector, uint64_t count)
 {
     uint64_t maxBlocks = ((sector % 512) + count) / 512 + 1;
     uint64_t currentSector = ((sector / 512)) * 512;
-    uint8_t *buffer = (uint8_t *)malloc(maxBlocks * 512);
+    uint8_t *buffer = new uint8_t[maxBlocks * 512];
+
     ReadUnaligned(buffer, maxBlocks * 512, currentSector);
 
     memcpy(buffer + sector % 512, data, count);
@@ -42,13 +63,35 @@ bool GenericIODevice::WriteUnaligned(const void *data, uint64_t sector, uint64_t
 
         if(!result)
         {
-            free(buffer);
+            delete [] buffer;
 
             return false;
         }
     }
 
-    free(buffer);
+    delete [] buffer;
+
+    return true;
+}
+
+bool GenericIODevice::WriteUnalignedSingleRead(const void *data, uint64_t sector, uint64_t count)
+{
+    uint64_t maxBlocks = ((sector % 512) + count) / 512 + 1;
+    uint64_t currentSector = ((sector / 512)) * 512;
+    uint8_t *buffer = new uint8_t[maxBlocks * 512];
+
+    ReadUnalignedSingleRead(buffer, maxBlocks * 512, currentSector);
+
+    memcpy(buffer + sector % 512, data, count);
+
+    if(!Write(buffer, currentSector / 512, maxBlocks))
+    {
+        delete [] buffer;
+
+        return false;
+    }
+
+    delete [] buffer;
 
     return true;
 }
