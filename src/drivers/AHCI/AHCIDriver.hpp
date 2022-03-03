@@ -3,6 +3,7 @@
 #include "kernel.h"
 #include "../low-level/pci/PCI.hpp"
 #include "../low-level/devicemanager/GenericIODevice.hpp"
+#include "../low-level/diskcache/DiskCache.hpp"
 
 namespace Drivers
 {
@@ -263,6 +264,7 @@ namespace Drivers
             uint8_t portNumber;
             FISIdentify identify;
             char model[41];
+            DiskCache diskCache;
 
             AHCIDriver();
             bool Configure();
@@ -271,6 +273,9 @@ namespace Drivers
             bool Read(void *data, uint64_t sector, uint64_t count) override;
             bool Write(const void *data, uint64_t sector, uint64_t count) override;
             bool Identify();
+
+            bool ReadInternal(void *data, uint64_t sector, uint64_t count);
+            bool WriteInternal(const void *data, uint64_t sector, uint64_t count);
 
             inline const char *name() const override 
             {

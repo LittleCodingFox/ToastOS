@@ -9,6 +9,4 @@ public:
     
     bool ReadUnaligned(void *data, uint64_t sector, uint64_t count);
     bool WriteUnaligned(const void *data, uint64_t sector, uint64_t count);
-    bool ReadUnalignedSingleRead(void *data, uint64_t sector, uint64_t count);
-    bool WriteUnalignedSingleRead(const void *data, uint64_t sector, uint64_t count);
 };

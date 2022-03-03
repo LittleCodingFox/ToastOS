@@ -9,11 +9,11 @@ namespace GPT
 
     bool PartitionTable::Parse()
     {
-        void *headerBuffer = malloc(512);
+        auto headerBuffer = new uint8_t[512];
 
         if(!device->Read(headerBuffer, 1, 1))
         {
-            free(headerBuffer);
+            delete [] headerBuffer;
 
             return false;
         }
@@ -28,12 +28,12 @@ namespace GPT
             tableSectors++;
         }
 
-        void *tableBuffer = malloc(tableSectors * 512);
+        auto tableBuffer = new uint8_t[tableSectors * 512];
 
         if(!device->Read(tableBuffer, 2, tableSectors))
         {
-            free(tableBuffer);
-            free(headerBuffer);
+            delete [] tableBuffer;
+            delete [] headerBuffer;
 
             return false;
         }
@@ -50,8 +50,8 @@ namespace GPT
             partitions.push_back(new Partition(*this, entry->uniqueGuid, entry->typeGuid, entry->firstLBA, entry->lastLBA - entry->firstLBA + 1));
         }
 
-        free(headerBuffer);
-        free(tableBuffer);
+        delete [] headerBuffer;
+        delete [] tableBuffer;
 
         return true;
     }

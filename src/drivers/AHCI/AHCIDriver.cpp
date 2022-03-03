@@ -1,4 +1,5 @@
 #include <string.h>
+#include "Panic.hpp"
 #include "AHCIDriver.hpp"
 #include "../../low-level/paging/PageFrameAllocator.hpp"
 #include "../../low-level/paging/PageTableManager.hpp"
@@ -25,6 +26,10 @@ namespace Drivers
         #define HBA_PxCMD_ST            0x0001
         #define HBA_PxCMD_FR            0x4000
 
+        #define READ_AHEAD_SECTORS      64000
+
+        const int AHCISectorSize = 512;
+
         class AHCIHolder
         {
         public:
@@ -38,17 +43,17 @@ namespace Drivers
             uint8_t portCount;
         };
 
-        void InitializeCommandHeader(volatile HBACommandHeader *commandHeader, bool write)
+        void InitializeCommandHeader(volatile HBACommandHeader *commandHeader, bool write, uint64_t count)
         {
             volatile HBACommandHeader *higherCommandHeader = (volatile HBACommandHeader *)TranslateToHighHalfMemoryAddress((uint64_t)commandHeader);
 
             higherCommandHeader->commandFISLength = sizeof(FISREGHost2Device) / sizeof(uint32_t);
             higherCommandHeader->write = write;
-            higherCommandHeader->prdtLength = 1;
+            higherCommandHeader->prdtLength = (uint16_t)((count - 1) >> 4) + 1;
         }
 
         void InitializeCommandTable(volatile HBACommandTable *commandTable, volatile HBACommandHeader *commandHeader, 
-            uintptr_t dataAddress, size_t count)
+            uintptr_t dataAddress, size_t &count)
         {
             volatile HBACommandTable *higherCommandTable = (volatile HBACommandTable *)TranslateToHighHalfMemoryAddress((uint64_t)commandTable);
             volatile HBACommandHeader *higherCommandHeader = (volatile HBACommandHeader *)TranslateToHighHalfMemoryAddress((uint64_t)commandHeader);
@@ -64,10 +69,23 @@ namespace Drivers
                 dataAddress = TranslateToPhysicalMemoryAddress(dataAddress);
             }
 
-            higherCommandTable->prdtEntry[0].dataBaseAddress = (uint64_t)dataAddress;
-            higherCommandTable->prdtEntry[0].dataBaseAddressUpper = ((uint64_t)dataAddress >> 32);
-            higherCommandTable->prdtEntry[0].interruptOnCompletion = 1;
-            higherCommandTable->prdtEntry[0].byteCount = (count * 512) - 1;
+            uint64_t i = 0;
+
+            for(i = 0; i < higherCommandHeader->prdtLength - 1; i++)
+            {
+                higherCommandTable->prdtEntry[i].dataBaseAddress = (uint64_t)dataAddress;
+                higherCommandTable->prdtEntry[i].dataBaseAddressUpper = ((uint64_t)dataAddress >> 32);
+                higherCommandTable->prdtEntry[i].interruptOnCompletion = 1;
+                higherCommandTable->prdtEntry[i].byteCount = 8192 - 1;
+
+                dataAddress += 4096;
+                count -= 16;
+            }
+
+            higherCommandTable->prdtEntry[i].dataBaseAddress = (uint64_t)dataAddress;
+            higherCommandTable->prdtEntry[i].dataBaseAddressUpper = ((uint64_t)dataAddress >> 32);
+            higherCommandTable->prdtEntry[i].interruptOnCompletion = 1;
+            higherCommandTable->prdtEntry[i].byteCount = (count << 9) - 1;
         }
 
         void InitializeFISRegCommand(volatile FISREGHost2Device *command, bool write, uintptr_t sector, size_t count)
@@ -292,12 +310,14 @@ namespace Drivers
             volatile HBACommandHeader *commandHeader = (HBACommandHeader *)((uint64_t)port->commandListBase);
             commandHeader += slot;
 
-            InitializeCommandHeader(commandHeader, false);
+            InitializeCommandHeader(commandHeader, false, 1);
 
             volatile HBACommandTable *commandTable = (HBACommandTable *)(uint64_t)((uint64_t)((volatile HBACommandHeader *)
                 TranslateToHighHalfMemoryAddress((uint64_t)commandHeader))->commandTableBaseAddress);
 
-            InitializeCommandTable(commandTable, commandHeader, (uintptr_t)&identify, 0);
+            size_t i = 0;
+
+            InitializeCommandTable(commandTable, commandHeader, (uintptr_t)&identify, i);
 
             volatile FISREGHost2Device *commandFIS = (FISREGHost2Device *)((uint64_t)TranslateToPhysicalMemoryAddress((uint64_t)((volatile HBACommandTable *)
                 TranslateToHighHalfMemoryAddress((uint64_t)commandTable))->commandFIS));
@@ -337,6 +357,35 @@ namespace Drivers
 
             identify.ReadModel(model);
 
+            char *size = (char *)"bytes";
+            uint64_t diskSize = identify.maxLBA48 * AHCISectorSize;
+
+            while(diskSize >= 1024)
+            {
+                diskSize /= 1024;
+
+                if(strcmp(size, "bytes") == 0)
+                {
+                    size = (char *)"KB";
+                } 
+                else if(strcmp(size, "KB") == 0)
+                {
+                    size = (char *)"MB";
+                }
+                else if(strcmp(size, "MB") == 0)
+                {
+                    size = (char *)"GB";
+                }
+                else if(strcmp(size, "GB") == 0)
+                {
+                    size = (char *)"TB";
+
+                    break;
+                } 
+            }
+
+            DEBUG_OUT("ahci: Identified model %s with size %llu%s", model, diskSize, size);
+
             return true;
         }
 
@@ -375,8 +424,18 @@ namespace Drivers
             port->commandStatus &= ~HBA_PxCMD_FRE;
         }
 
-        bool AHCIDriver::Read(void *buffer, uint64_t sector, uint64_t sectorCount)
+        bool AHCIDriver::ReadInternal(void *buffer, uint64_t sector, uint64_t sectorCount)
         {
+            if(sector >= identify.maxLBA48)
+            {
+                return false;
+            }
+
+            if(sector + sectorCount > identify.maxLBA48)
+            {
+                sectorCount = identify.maxLBA48 - sector;
+            }
+
             port->interruptStatus = (uint32_t)-1;
 
             int32_t slot = FindCommandSlot(port);
@@ -389,7 +448,7 @@ namespace Drivers
             volatile HBACommandHeader *commandHeader = (HBACommandHeader *)((uint64_t)port->commandListBase);
             commandHeader += slot;
 
-            InitializeCommandHeader(commandHeader, false);
+            InitializeCommandHeader(commandHeader, false, sectorCount);
 
             volatile HBACommandTable *commandTable = (HBACommandTable *)(uint64_t)((uint64_t)((volatile HBACommandHeader *)
                 TranslateToHighHalfMemoryAddress((uint64_t)commandHeader))->commandTableBaseAddress);
@@ -433,6 +492,56 @@ namespace Drivers
             return true;
         }
 
+        bool AHCIDriver::Read(void *buffer, uint64_t sector, uint64_t sectorCount)
+        {
+            for(uint64_t i = 0; i < sectorCount; i++)
+            {
+                auto cacheBuffer = diskCache.Get(sector + i);
+
+                if(cacheBuffer != NULL)
+                {
+                    memcpy((uint8_t *)buffer + i * AHCISectorSize, cacheBuffer, AHCISectorSize);
+                }
+                else
+                {
+                    uint64_t readAheadSectors = READ_AHEAD_SECTORS;
+
+                    if(sector + readAheadSectors >= identify.maxLBA48)
+                    {
+                        readAheadSectors = identify.maxLBA48 - sector;
+                    }
+
+                    uint8_t *readBuffer = new uint8_t[readAheadSectors * AHCISectorSize];
+
+                    if(!ReadInternal(readBuffer, sector + i, readAheadSectors))
+                    {
+                        delete [] readBuffer;
+
+                        return false;
+                    }
+
+                    auto owner = new DiskCache::OwnerInfo();
+                    owner->buffer = readBuffer;
+
+                    for(uint64_t j = 0; j < readAheadSectors; j++)
+                    {
+                        diskCache.Set(sector + i + j, readBuffer + j * AHCISectorSize, owner);
+                    }
+
+                    cacheBuffer = diskCache.Get(sector + i);
+
+                    if(cacheBuffer == NULL)
+                    {
+                        return false;
+                    }
+
+                    memcpy((uint8_t *)buffer + i * AHCISectorSize, cacheBuffer, AHCISectorSize);
+                }
+            }
+
+            return true;
+        }
+
         bool AHCIDriver::Write(const void *buffer, uint64_t sector, uint64_t sectorCount)
         {
             port->interruptStatus = (uint32_t)-1;
@@ -447,7 +556,7 @@ namespace Drivers
             volatile HBACommandHeader *commandHeader = (volatile HBACommandHeader *)(uint64_t)(port->commandListBase);
             commandHeader += slot;
 
-            InitializeCommandHeader(commandHeader, true);
+            InitializeCommandHeader(commandHeader, true, sectorCount);
 
             volatile HBACommandTable *commandTable = (HBACommandTable *)(uint64_t)((uint64_t)((volatile HBACommandHeader *)
                 TranslateToHighHalfMemoryAddress((uint64_t)commandHeader))->commandTableBaseAddress);
