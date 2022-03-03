@@ -510,6 +510,33 @@ bool Ext2FileSystem::ReadInode(void *buffer, uint64_t position, uint64_t count, 
     return true;
 }
 
+bool Ext2FileSystem::WriteInode(void *buffer, uint64_t position, uint64_t count, const vector<uint32_t> &allocMap)
+{
+    for(uint64_t progress = 0; progress < count;)
+    {
+        uint64_t block = (position + progress) / blockSize;
+        uint64_t chunk = count - progress;
+
+        uint64_t offset = (position + progress) % blockSize;
+
+        if(chunk > blockSize - offset)
+        {
+            chunk = blockSize - offset;
+        }
+
+        uint32_t blockIndex = allocMap[block];
+
+        if(!partition->WriteUnaligned((uint8_t *)buffer + progress, blockIndex * blockSize + offset, chunk))
+        {
+            return false;
+        }
+
+        progress += chunk;
+    }
+
+    return true;
+}
+
 bool Ext2FileSystem::IsValid(GPT::Partition *partition)
 {
     Ext2Superblock superblock;

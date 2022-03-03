@@ -26,9 +26,18 @@ namespace Drivers
         #define HBA_PxCMD_ST            0x0001
         #define HBA_PxCMD_FR            0x4000
 
-        #define READ_AHEAD_SECTORS      64000
+        #define READ_AHEAD_SECTORS      8192
 
         const int AHCISectorSize = 512;
+        const int PRDTMaxSize = 4194304;
+        const int PRDTMaxSectors = PRDTMaxSize / AHCISectorSize;
+
+        inline uint16_t PRDTLength(uint64_t sectorCount)
+        {
+            uint64_t t = sectorCount * 512;
+
+            return t / PRDTMaxSize + (t % PRDTMaxSize != 0 ? 1 : 0);
+        }
 
         class AHCIHolder
         {
@@ -49,8 +58,7 @@ namespace Drivers
 
             higherCommandHeader->commandFISLength = sizeof(FISREGHost2Device) / sizeof(uint32_t);
             higherCommandHeader->write = write;
-            higherCommandHeader->prdtLength = (uint16_t)((count - 1) >> 4) + 1;
-            higherCommandHeader->prefetchable = true;
+            higherCommandHeader->prdtLength = PRDTLength(count);
         }
 
         void InitializeCommandTable(volatile HBACommandTable *commandTable, volatile HBACommandHeader *commandHeader, 
@@ -77,10 +85,10 @@ namespace Drivers
                 higherCommandTable->prdtEntry[i].dataBaseAddress = (uint64_t)dataAddress;
                 higherCommandTable->prdtEntry[i].dataBaseAddressUpper = ((uint64_t)dataAddress >> 32);
                 higherCommandTable->prdtEntry[i].interruptOnCompletion = 1;
-                higherCommandTable->prdtEntry[i].byteCount = 8192 - 1;
+                higherCommandTable->prdtEntry[i].byteCount = PRDTMaxSize - 1;
 
-                dataAddress += 8192;
-                count -= 16;
+                dataAddress += PRDTMaxSize;
+                count -= PRDTMaxSectors;
             }
 
             higherCommandTable->prdtEntry[i].dataBaseAddress = (uint64_t)dataAddress;
@@ -279,10 +287,20 @@ namespace Drivers
             {
                 commandHeader[i].prdtLength = 8;
 
-                void *commandTableAddress = globalAllocator.RequestPage();
+                uint64_t tableSize = sizeof(HBACommandTable) + READ_AHEAD_SECTORS * sizeof(HBAPRDTEntry);
+                tableSize = tableSize / 0x1000 + (tableSize % 0x1000 ? 1 : 0);
 
-                globalPageTableManager->MapMemory((void *)TranslateToHighHalfMemoryAddress((uint64_t)commandTableAddress),
-                    commandTableAddress, PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+                void *commandTableAddress = globalAllocator.RequestPages(tableSize);
+
+                auto higher = (void *)TranslateToHighHalfMemoryAddress((uint64_t)commandTableAddress);
+
+                for(uint64_t j = 0; j < tableSize; j++)
+                {
+                    globalPageTableManager->MapMemory((uint8_t *)higher + j * 0x1000, (uint8_t *)commandTableAddress + j * 0x1000,
+                        PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+                }
+                
+                memset(higher, 0, tableSize * 0x1000);
 
                 commandHeader[i].commandTableBaseAddress = (uint64_t)commandTableAddress;
             }
@@ -543,7 +561,7 @@ namespace Drivers
             return true;
         }
 
-        bool AHCIDriver::Write(const void *buffer, uint64_t sector, uint64_t sectorCount)
+        bool AHCIDriver::WriteInternal(const void *buffer, uint64_t sector, uint64_t sectorCount)
         {
             port->interruptStatus = (uint32_t)-1;
 
@@ -597,6 +615,42 @@ namespace Drivers
             }
 
             StopCommand();
+
+            return true;
+        }
+
+        bool AHCIDriver::Write(void *buffer, uint64_t sector, uint64_t sectorCount)
+        {
+            if(sector + sectorCount >= identify.maxLBA48)
+            {
+                return false;
+            }
+
+            for(uint64_t i = 0; i < sectorCount; i++)
+            {
+                auto item = diskCache.Get(sector + i)
+
+                if(item != NULL)
+                {
+                    memcpy(item, (uint8_t *)buffer + i * AHCISectorSize, AHCISectorSize);
+                }
+                else
+                {
+                    auto owner = new DiskCache::OwnerInfo();
+                    uint8_t *cacheBuffer = new uint8_t[AHCISectorSize];
+
+                    memcpy(cacheBuffer, (uint8_t *)buffer + i * AHCISectorSize, AHCISectorSize);
+
+                    owner->buffer = cacheBuffer;
+
+                    diskCache.Set(sector + i, cacheBuffer, owner);
+                }
+            }
+
+            if(!WriteInternal(buffer, sector, sectorCount))
+            {
+                return false;
+            }
 
             return true;
         }
