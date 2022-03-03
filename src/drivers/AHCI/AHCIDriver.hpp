@@ -91,7 +91,7 @@ namespace Drivers
             uint32_t reserved1[4];
         };
 
-        struct PACKED HBAPRDEntry
+        struct PACKED HBAPRDTEntry
         {
             uint32_t dataBaseAddress;
             uint32_t dataBaseAddressUpper;
@@ -109,7 +109,7 @@ namespace Drivers
             uint8_t atapiCommand[16];
             uint8_t reserved[48];
 
-            HBAPRDEntry prdtEntry[];
+            HBAPRDTEntry prdtEntry[];
         };
 
         struct PACKED FISREGHost2Device

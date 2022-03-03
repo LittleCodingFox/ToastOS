@@ -50,6 +50,7 @@ namespace Drivers
             higherCommandHeader->commandFISLength = sizeof(FISREGHost2Device) / sizeof(uint32_t);
             higherCommandHeader->write = write;
             higherCommandHeader->prdtLength = (uint16_t)((count - 1) >> 4) + 1;
+            higherCommandHeader->prefetchable = true;
         }
 
         void InitializeCommandTable(volatile HBACommandTable *commandTable, volatile HBACommandHeader *commandHeader, 
@@ -58,7 +59,7 @@ namespace Drivers
             volatile HBACommandTable *higherCommandTable = (volatile HBACommandTable *)TranslateToHighHalfMemoryAddress((uint64_t)commandTable);
             volatile HBACommandHeader *higherCommandHeader = (volatile HBACommandHeader *)TranslateToHighHalfMemoryAddress((uint64_t)commandHeader);
 
-            memset((void *)higherCommandTable, 0, sizeof(HBACommandTable) + (higherCommandHeader->prdtLength - 1) * sizeof(HBAPRDEntry));
+            memset((void *)higherCommandTable, 0, sizeof(HBACommandTable) + (higherCommandHeader->prdtLength - 1) * sizeof(HBAPRDTEntry));
 
             if(IsKernelHigherHalf(dataAddress))
             {
@@ -78,7 +79,7 @@ namespace Drivers
                 higherCommandTable->prdtEntry[i].interruptOnCompletion = 1;
                 higherCommandTable->prdtEntry[i].byteCount = 8192 - 1;
 
-                dataAddress += 4096;
+                dataAddress += 8192;
                 count -= 16;
             }
 
