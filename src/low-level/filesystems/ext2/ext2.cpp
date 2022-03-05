@@ -510,7 +510,7 @@ bool Ext2FileSystem::ReadInode(void *buffer, uint64_t position, uint64_t count, 
     return true;
 }
 
-bool Ext2FileSystem::WriteInode(void *buffer, uint64_t position, uint64_t count, const vector<uint32_t> &allocMap)
+bool Ext2FileSystem::WriteInode(const void *buffer, uint64_t position, uint64_t count, const vector<uint32_t> &allocMap)
 {
     for(uint64_t progress = 0; progress < count;)
     {

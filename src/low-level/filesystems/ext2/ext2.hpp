@@ -146,7 +146,7 @@ private:
     vector<uint32_t> CreateAllocMap(Ext2Inode *inode);
     bool ParseDirent(Ext2DirEntry *dirent, const char *path);
     bool SymlinkToInode(Ext2Inode *inode);
-    bool WriteInode(const void *buffer, uint64_t position, uint64_t count, const vector2<uint32_t> &allocMap);
+    bool WriteInode(const void *buffer, uint64_t position, uint64_t count, const vector<uint32_t> &allocMap);
     bool ReadInode(void *buffer, uint64_t position, uint64_t count, const vector<uint32_t> &allocMap);
     bool ReadDirent(Ext2DirEntry *dirent, const vector<uint32_t> &allocMap, uint64_t offset);
     bool ReadDirentName(Ext2DirEntry *dirent, const vector<uint32_t> &allocMap, char *buffer, uint64_t offset);

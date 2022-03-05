@@ -619,7 +619,7 @@ namespace Drivers
             return true;
         }
 
-        bool AHCIDriver::Write(void *buffer, uint64_t sector, uint64_t sectorCount)
+        bool AHCIDriver::Write(const void *buffer, uint64_t sector, uint64_t sectorCount)
         {
             if(sector + sectorCount >= identify.maxLBA48)
             {
@@ -628,7 +628,7 @@ namespace Drivers
 
             for(uint64_t i = 0; i < sectorCount; i++)
             {
-                auto item = diskCache.Get(sector + i)
+                auto item = diskCache.Get(sector + i);
 
                 if(item != NULL)
                 {
