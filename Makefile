@@ -46,7 +46,7 @@ LIBCASMOBJECTS		= $(LIBCASMSRC:$(LIBCSRCDIR)/%.asm=$(LIBCOBJDIR)/%_asm.o)
 INCLUDEDIRS			= -Isrc -Iklibc -Isrc/include -Isrc/low-level -Iext-libs -Iext-libs/liballoc/ -Ifrigg/include -Icxxshim/stage2/include
 ASMFLAGS			= -g -F dwarf
 ASFLAGS 			=  -nostdlib -fpic
-CFLAGS				= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -nostdlib -mno-red-zone -Wall -fpic -O3 -fno-omit-frame-pointer -g \
+CFLAGS				= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -nostdlib -mno-red-zone -Wall -fpic -O2 -fno-omit-frame-pointer -g \
 	-fno-stack-protector -fno-rtti -fno-exceptions -mno-3dnow -mno-mmx -mno-sse -mno-sse2 -mno-avx \
 	-Werror -Wno-ambiguous-reversed-operator -Wno-c99-designator -Wno-deprecated-volatile -Wno-initializer-overrides
 CFLAGS_INTERNAL		= 

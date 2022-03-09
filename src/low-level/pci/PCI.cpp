@@ -429,14 +429,23 @@ void EnumerateFunction(uint64_t bus, uint64_t deviceID, uint64_t deviceAddress, 
     device.subclass = deviceHeader->objectSubclass;
     device.progIf = deviceHeader->progIF;
 
-    volatile uint8_t *barPtr = (volatile uint8_t *)deviceHeader;
-    barPtr += 0x10; //BAR0 location
+    auto _device = &PCIDevices->devices.push_back(device);
 
-    globalPageTableManager->MapMemory((void *)barPtr, (void *)(functionAddress + 0x10), PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
-
-    for(uint32_t i = 0; i < 6; i++)
+    if(deviceHeader->objectClass == 0x01 && //Mass Storage
+        deviceHeader->objectSubclass == 0x06 && //SATA
+        deviceHeader->progIF == 0x01)
     {
-        device.bars[i] = DecodeBar(&barPtr);
+        volatile uint8_t *barPtr = (volatile uint8_t *)deviceHeader;
+        barPtr += 0x10; //BAR0 location
+
+        globalPageTableManager->MapMemory((void *)barPtr, (void *)(functionAddress + 0x10), PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+
+        for(uint32_t i = 0; i < 6; i++)
+        {
+            _device->bars[i] = DecodeBar(&barPtr);
+        }
+
+        Drivers::AHCI::HandleMassStorageDevice(_device);
     }
 
     auto deviceName = PCIDeviceName(device.vendorID, device.deviceID);
@@ -450,28 +459,6 @@ void EnumerateFunction(uint64_t bus, uint64_t deviceID, uint64_t deviceAddress, 
         PCIDeviceClasses[device.classCode],
         subclass,
         progIf);
-
-    auto _device = &PCIDevices->devices.push_back(device);
-
-    switch(deviceHeader->objectClass)
-    {
-        case 0x01: //Mass Storage Controller
-            switch(deviceHeader->objectSubclass)
-            {
-                case 0x06: //SATA
-                    switch(deviceHeader->progIF)
-                    {
-                        case 0x01:
-                            Drivers::AHCI::HandleMassStorageDevice(_device);
-
-                            break;
-                    }
-
-                    break;
-            }
-
-            break;
-    }
 }
 
 void EnumerateDevice(uint64_t bus, uint64_t busAddress, uint64_t device)

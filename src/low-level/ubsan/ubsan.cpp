@@ -139,3 +139,12 @@ extern "C" void __ubsan_handle_alignment_assumption(void *data, uintptr_t pointe
 
     ubsanPanicAt(&alignmentData->assumption_location, "byte alignment failed");
 }
+
+extern "C" void __ubsan_handle_nonnull_return_v1(void* data_raw)
+{
+	ubsan_nonnull_return_data_t *data = (ubsan_nonnull_return_data_t *) data_raw;
+
+    DEBUG_OUT("[UBSAN] null return from %s:%i:%i", data->attr_location.file, data->attr_location.line, data->attr_location.column);
+
+    ubsanPanicAt(&data->location, "null return");
+}

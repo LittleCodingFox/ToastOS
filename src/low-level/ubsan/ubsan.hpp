@@ -40,3 +40,8 @@ typedef struct {
     ubsan_source_location_t assumption_location;
     ubsan_type_t *type;
 } ubsan_alignment_assumption_data_t;
+
+typedef struct {
+	ubsan_source_location_t location;
+	ubsan_source_location_t attr_location;
+} ubsan_nonnull_return_data_t;
