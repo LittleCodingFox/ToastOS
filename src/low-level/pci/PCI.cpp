@@ -448,6 +448,7 @@ void EnumerateFunction(uint64_t bus, uint64_t deviceID, uint64_t deviceAddress, 
         Drivers::AHCI::HandleMassStorageDevice(_device);
     }
 
+    /*
     auto deviceName = PCIDeviceName(device.vendorID, device.deviceID);
     auto vendor = PCIVendorName(device.vendorID);
     auto subclass = PCISubclassName(device.classCode, device.subclass);
@@ -459,6 +460,7 @@ void EnumerateFunction(uint64_t bus, uint64_t deviceID, uint64_t deviceAddress, 
         PCIDeviceClasses[device.classCode],
         subclass,
         progIf);
+    */
 }
 
 void EnumerateDevice(uint64_t bus, uint64_t busAddress, uint64_t device)

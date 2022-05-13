@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include "printf/printf.h"
 #include "Panic.hpp"
+#include "debug.hpp"
 
 //TODO: Make this value randomized
 #define STACK_CHK_GUARD 0x595e9fbd94fda766

@@ -148,3 +148,12 @@ extern "C" void __ubsan_handle_nonnull_return_v1(void* data_raw)
 
     ubsanPanicAt(&data->location, "null return");
 }
+
+/*
+extern "C" void __ubsan_handle_function_type_mismatch_v1(function_type_mismatch *data, uintptr_t ptr)
+{
+    DEBUG_OUT("[UBSAN] Function type mismatch on ptr %p typename: %s function: %p", ptr, data->type->name, ptr);
+
+    ubsanPanicAt(&data->location, "function type mismatch");
+}
+*/

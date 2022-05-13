@@ -45,3 +45,8 @@ typedef struct {
 	ubsan_source_location_t location;
 	ubsan_source_location_t attr_location;
 } ubsan_nonnull_return_data_t;
+
+typedef struct {
+    ubsan_source_location_t location;
+    ubsan_type_t *type;
+} function_type_mismatch;

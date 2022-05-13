@@ -45,17 +45,22 @@ LIBCASMOBJECTS		= $(LIBCASMSRC:$(LIBCSRCDIR)/%.asm=$(LIBCOBJDIR)/%_asm.o)
 
 INCLUDEDIRS			= -Isrc -Iklibc -Isrc/include -Isrc/low-level -Iext-libs -Iext-libs/liballoc/ -Ifrigg/include -Icxxshim/stage2/include
 ASMFLAGS			= -g -F dwarf
-ASFLAGS 			=  -nostdlib -fpic
-CFLAGS				= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -nostdlib -mno-red-zone -Wall -fpic -O2 -fno-omit-frame-pointer -g \
+ASFLAGS 			= -nostdlib -fpic
+CFLAGS				= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -nostdlib -mno-red-zone -Wall -fpic -O3 -fno-omit-frame-pointer -g \
 	-fno-stack-protector -fno-rtti -fno-exceptions -mno-3dnow -mno-mmx -mno-sse -mno-sse2 -mno-avx \
-	-Werror -Wno-ambiguous-reversed-operator -Wno-c99-designator -Wno-deprecated-volatile -Wno-initializer-overrides
+	-Werror -Wno-ambiguous-reversed-operator -Wno-c99-designator -Wno-deprecated-volatile -Wno-initializer-overrides \
+	-DPRINTF_DISABLE_SUPPORT_FLOAT=1 -DPRINTF_DISABLE_SUPPORT_EXPONENTIAL=1
 CFLAGS_INTERNAL		= 
 LDFLAGS				= -T $(SRCDIR)/link.ld -static -Bsymbolic -nostdlib -Map=linker.map -zmax-page-size=0x1000
 QEMU_FLAGS			= 
 QEMU_EXTRA_FLAGS 	= 
 
-ifeq ($(USE_UBSAN), 1)
+ifeq ($(UBSAN), 1)
 	CFLAGS_INTERNAL += -fsanitize=undefined -fno-sanitize=function
+endif
+
+ifeq ($(KVM), 1)
+	QEMU_FLAGS += -enable-kvm
 endif
 
 makedirs:
@@ -131,15 +136,15 @@ linux: kernel userland iso-linux
 run-linux: linux run-qemu-linux
 
 debug-linux: CFLAGS += -DKERNEL_DEBUG=1 #-O0
-debug-linux: QEMU_FLAGS = -s -S
+#debug-linux: QEMU_FLAGS = -s -S
 debug-linux: run-linux
 
 run-qemu-linux:
 	qemu-system-x86_64 -drive file=$(BINDIR)/$(OS_NAME).img,format=raw,index=0,media=disk \
-	-bios /usr/share/qemu/OVMF.fd -display gtk -enable-kvm $(QEMU_FLAGS) $(QEMU_EXTRA_FLAGS) \
+	-bios /usr/share/qemu/OVMF.fd -display gtk $(QEMU_FLAGS) $(QEMU_EXTRA_FLAGS) \
 	-m 2G -cpu qemu64 -machine type=q35 -serial file:./debug.log -net none -d int --no-reboot 2>qemu.log
 
-debug-qemu-linux: QEMU_FLAGS = -s -S
+#debug-qemu-linux: QEMU_FLAGS = -s -S
 debug-qemu-linux: run-qemu-linux
 
 bootstrap:

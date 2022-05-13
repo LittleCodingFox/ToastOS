@@ -23,7 +23,7 @@ namespace Elf
 
         if(!(programHeader->flags & ELF_PROGRAM_FLAG_EXECUTE))
         {
-            //flags |= PAGING_FLAG_NO_EXECUTE;
+            flags |= PAGING_FLAG_NO_EXECUTE;
         }
 
         if((programHeader->flags & ELF_PROGRAM_FLAG_WRITE))
