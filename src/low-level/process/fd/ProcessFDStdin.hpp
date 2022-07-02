@@ -3,6 +3,7 @@
 #include "input/InputSystem.hpp"
 #include "fcntl.h"
 #include "errno.h"
+#include "keyboard/Keyboard.hpp"
 
 extern "C" void ProcessYield();
 

@@ -22,6 +22,7 @@
 #include "cmos/cmos.hpp"
 #include "keyboard/Keyboard.hpp"
 #include "input/InputSystem.hpp"
+#include "kasan/kasan.hpp"
 
 PageTableManager pageTableManager;
 
@@ -132,7 +133,18 @@ void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_fr
         {
             for(uint64_t index = 0; index < desc->length / 0x1000 + 1; index++)
             {
-                pageTableManager.MapMemory((void *)(HIGHER_HALF_KERNEL_MEMORY_OFFSET + desc->base + index * 0x1000), (void *)(desc->base + index * 0x1000),
+                auto base = desc->base;
+
+                if(TranslateToKernelMemoryAddress(desc->base) <= 0xFFFFFFFF90000000)
+                {
+                    base = TranslateToKernelMemoryAddress(base);
+                }
+                else
+                {
+                    base = TranslateToHighHalfMemoryAddress(base);
+                }
+
+                pageTableManager.MapMemory((void *)(base + index * 0x1000), (void *)(desc->base + index * 0x1000),
                     PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
             }
         }
@@ -181,6 +193,8 @@ void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_fr
 
 void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
 {
+    (void)rsdp;
+
     printf("[ACPI] Initializing ACPI\n");
 
     if(rsdp == NULL)
@@ -238,8 +252,6 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
     globalPartitionManager->Initialize();
 }
 
-FramebufferRenderer r = FramebufferRenderer(NULL, NULL);
-
 vtconsole_t *console = NULL;
 
 static uint32_t colors[] =
@@ -288,6 +300,8 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
     stivale2_struct_tag_modules *modules = (stivale2_struct_tag_modules *)Stivale2GetTag(stivale2Struct, STIVALE2_STRUCT_TAG_MODULES_ID);
     stivale2_struct_tag_rsdp *rsdp = (stivale2_struct_tag_rsdp *)Stivale2GetTag(stivale2Struct, STIVALE2_STRUCT_TAG_RSDP_ID);
 
+    (void)rsdp;
+
     stivale2_module *symbols = Stivale2GetModule(modules, "symbols.map");
     stivale2_module *font = Stivale2GetModule(modules, "font.psf");
     stivale2_module *initrd = Stivale2GetModule(modules, "initrd");
@@ -299,6 +313,39 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
     printf("[INTERRUPTS] Initializing Interrupts\n");
 
     interrupts.Init();
+
+#if USE_KASAN
+    DEBUG_OUT("Kasan: Unpoison framebuffer", 0);
+#endif
+
+    UnpoisonKasanShadow((void *)TranslateToHighHalfMemoryAddress((uint64_t)globalPageTableManager->p4), 0x1000);
+
+    UnpoisonKasanShadow((void *)framebuffer->framebuffer_addr, (uint64_t)framebuffer->framebuffer_height * framebuffer->framebuffer_pitch);
+
+    for (int i = 0; i < memmap->entries; i++)
+    {
+        stivale2_mmap_entry* desc = (stivale2_mmap_entry*)&memmap->memmap[i];
+
+        if(desc->type == STIVALE2_MMAP_KERNEL_AND_MODULES)
+        {
+            auto base = desc->base;
+
+            if(TranslateToKernelMemoryAddress(desc->base) <= 0xFFFFFFFF90000000)
+            {
+                base = TranslateToKernelMemoryAddress(base);
+            }
+            else
+            {
+                base = TranslateToHighHalfMemoryAddress(base);
+            }
+
+#if USE_KASAN
+            DEBUG_OUT("Kasan: Unpoison kernel/modules at %p (%p)", base, desc->base);
+#endif
+
+            UnpoisonKasanShadow((void *)base, desc->length);
+        }
+    }
 
     if(symbols != NULL)
     {
@@ -324,9 +371,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
     framebufferStruct->width = framebuffer->framebuffer_width;
     framebufferStruct->pixelsPerScanLine = framebuffer->framebuffer_pitch;
 
-    r = FramebufferRenderer(framebufferStruct, psf2Font);
-
-    globalRenderer = &r;
+    globalRenderer = new FramebufferRenderer(framebufferStruct, psf2Font);
 
     globalRenderer->Initialize();
 
@@ -351,7 +396,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     globalPartitionManager.initialize();
 
-    InitializeACPI(rsdp);
+    //InitializeACPI(rsdp);
 
     printf("[CMOS] Initializing cmos\n");
 

@@ -7,6 +7,7 @@
 #include "registers/Registers.hpp"
 #include "errno.h"
 #include "Panic.hpp"
+#include "kasan/kasan.hpp"
 
 #define PROT_NONE       0x00
 #define PROT_READ       0x01
@@ -67,6 +68,8 @@ int64_t SyscallVMMap(InterruptStack *stack)
 
                 userManager.MapMemory((void *)((uint64_t)hint + i * 0x1000), target, pagingFlags);
 
+                UnpoisonKasanShadow(higher, 0x1000);
+
                 memset(higher, 0, 0x1000);
 
                 mappedPages.push_back(target);
@@ -93,6 +96,8 @@ int64_t SyscallVMMap(InterruptStack *stack)
 
                     userManager.MapMemory(higher, target,
                         PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
+
+                    UnpoisonKasanShadow(higher, 0x1000);
 
                     memset(higher, 0, 0x1000);
                 }

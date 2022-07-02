@@ -15,6 +15,7 @@
 #include "filesystems/VFS.hpp"
 #include "tss/tss.hpp"
 #include "Panic.hpp"
+#include "kasan/kasan.hpp"
 
 #define UPDATE_PROCESS_ACTIVE_PERMISSIONS(pcb) \
     switch(pcb->activePermissionLevel)\
@@ -54,19 +55,36 @@
     SwapTasks(task);
 #endif
 
-#define MAPSTACK(stack) \
-    page = (uint64_t)stack / 0x1000; \
-    pageCount = PROCESS_STACK_PAGE_COUNT; \
-    \
-    for(uint64_t i = 0; i < pageCount; i++) \
-    { \
-        currentPageManager.MapMemory((void *)(uint64_t)((page + i) * 0x1000), \
-            (void *)((uint64_t)TranslateToPhysicalMemoryAddress((page + i) * 0x1000)), \
-            PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE); \
+#if USE_KASAN
+    #define MAPSTACK(stack) \
+        page = (uint64_t)stack / 0x1000; \
+        pageCount = PROCESS_STACK_PAGE_COUNT; \
         \
-        userPageManager.IdentityMap((void *)(uint64_t)TranslateToPhysicalMemoryAddress((page + i) * 0x1000), \
-            PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE); \
-    }
+        for(uint64_t i = 0; i < pageCount; i++) \
+        { \
+            currentPageManager.MapMemory((void *)(uint64_t)((page + i) * 0x1000), \
+                (void *)((uint64_t)TranslateToPhysicalMemoryAddress((page + i) * 0x1000)), \
+                PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE); \
+            \
+            userPageManager.IdentityMap((void *)(uint64_t)TranslateToPhysicalMemoryAddress((page + i) * 0x1000), \
+                PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE); \
+        }\
+        UnpoisonKasanShadow((void *)(page * 0x1000), PROCESS_STACK_PAGE_COUNT * 0x1000);
+#else
+    #define MAPSTACK(stack) \
+        page = (uint64_t)stack / 0x1000; \
+        pageCount = PROCESS_STACK_PAGE_COUNT; \
+        \
+        for(uint64_t i = 0; i < pageCount; i++) \
+        { \
+            currentPageManager.MapMemory((void *)(uint64_t)((page + i) * 0x1000), \
+                (void *)((uint64_t)TranslateToPhysicalMemoryAddress((page + i) * 0x1000)), \
+                PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE); \
+            \
+            userPageManager.IdentityMap((void *)(uint64_t)TranslateToPhysicalMemoryAddress((page + i) * 0x1000), \
+                PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE); \
+        }
+#endif
 
 #define SAVE_TASK_STATE(task, stack) \
         task->r10 = stack->r10; \
@@ -277,6 +295,8 @@ ProcessControlBlock *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, c
 
     PageTable *higherPageTableFrame = (PageTable *)TranslateToHighHalfMemoryAddress((uint64_t)pageTableFrame);
 
+    UnpoisonKasanShadow(higherPageTableFrame, 0x1000);
+
     memset(higherPageTableFrame, 0, sizeof(PageTable));
 
     auto higherCurrentP4 = (PageTable *)TranslateToHighHalfMemoryAddress((uint64_t)currentPageManager.p4);
@@ -289,7 +309,9 @@ ProcessControlBlock *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, c
     PageTableManager userPageManager;
     userPageManager.p4 = pageTableFrame;
 
-    Process *newProcess = (Process *)globalAllocator.RequestPages(sizeof(Process) / 0x1000 + 1);
+    auto processPageSize = sizeof(Process) / 0x1000 + 1;
+
+    Process *newProcess = (Process *)globalAllocator.RequestPages(processPageSize);
 
     uint64_t page = (uint64_t)newProcess / 0x1000;
     uint64_t offset = (uint64_t)newProcess % 0x1000;
@@ -304,6 +326,8 @@ ProcessControlBlock *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, c
     }
 
     newProcess = (Process *)TranslateToHighHalfMemoryAddress((uint64_t)newProcess);
+
+    UnpoisonKasanShadow(newProcess, processPageSize * 0x1000);
 
     new (newProcess) Process();
 
@@ -381,6 +405,8 @@ ProcessControlBlock *ProcessManager::LoadImage(const void *image, const char *na
 
     PageTable *higherPageTableFrame = (PageTable *)TranslateToHighHalfMemoryAddress((uint64_t)pageTableFrame);
 
+    UnpoisonKasanShadow(higherPageTableFrame, 0x1000);
+
     memset(higherPageTableFrame, 0, sizeof(PageTable));
 
     auto higherCurrentP4 = (PageTable *)TranslateToHighHalfMemoryAddress((uint64_t)currentPageManager.p4);
@@ -393,7 +419,9 @@ ProcessControlBlock *ProcessManager::LoadImage(const void *image, const char *na
     PageTableManager userPageManager;
     userPageManager.p4 = pageTableFrame;
 
-    Process *newProcess = (Process *)globalAllocator.RequestPages(sizeof(Process) / 0x1000 + 1);
+    auto processPageSize = sizeof(Process) / 0x1000 + 1;
+
+    Process *newProcess = (Process *)globalAllocator.RequestPages(processPageSize);
 
     uint64_t page = (uint64_t)newProcess / 0x1000;
     uint64_t offset = (uint64_t)newProcess % 0x1000;
@@ -408,6 +436,8 @@ ProcessControlBlock *ProcessManager::LoadImage(const void *image, const char *na
     }
 
     newProcess = (Process *)TranslateToHighHalfMemoryAddress((uint64_t)newProcess);
+
+    UnpoisonKasanShadow(newProcess, processPageSize * 0x1000);
 
     userPageManager.MapMemory((void *)TranslateToHighHalfMemoryAddress((uint64_t)pageTableFrame), pageTableFrame,
         PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
@@ -534,6 +564,10 @@ ProcessControlBlock *ProcessManager::LoadImage(const void *image, const char *na
     uint64_t stackEnd = (uint64_t)&newProcess->stack[PROCESS_STACK_SIZE];
     uint64_t *stack = (uint64_t *)stackEnd;
     uint8_t *byteStack = (uint8_t *)stack;
+
+    memset(newProcess->stack, 0, PROCESS_STACK_SIZE);
+    memset(newProcess->istStack, 0, PROCESS_STACK_SIZE);
+    memset(newProcess->kernelStack, 0, PROCESS_STACK_SIZE);
 
     uint32_t envc = 0;
 
@@ -809,12 +843,16 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
 
     PageTable *higherPageTableFrame = (PageTable *)TranslateToHighHalfMemoryAddress((uint64_t)pageTableFrame);
 
+    UnpoisonKasanShadow(higherPageTableFrame, 0x1000);
+
     memset(higherPageTableFrame, 0, sizeof(PageTable));
 
     PageTableManager userPageManager;
     userPageManager.p4 = pageTableFrame;
 
-    Process *newProcess = (Process *)globalAllocator.RequestPages(sizeof(Process) / 0x1000 + 1);
+    auto processPageSize = sizeof(Process) / 0x1000 + 1;
+
+    Process *newProcess = (Process *)globalAllocator.RequestPages(processPageSize);
 
     uint64_t page = (uint64_t)newProcess / 0x1000;
     uint64_t offset = (uint64_t)newProcess % 0x1000;
@@ -846,6 +884,8 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
             PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
     }
 
+    UnpoisonKasanShadow(newProcess, processPageSize * 0x1000);
+
     new (newProcess) Process();
 
     newProcess->ID = ++processIDCounter;
@@ -861,6 +901,10 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
     MAPSTACK(newProcess->kernelStack);
     MAPSTACK(newProcess->istStack);
     MAPSTACK(newProcess->stack);
+
+    memcpy(newProcess->stack, current->process->stack, PROCESS_STACK_SIZE);
+    memcpy(newProcess->istStack, current->process->istStack, PROCESS_STACK_SIZE);
+    memcpy(newProcess->kernelStack, current->process->kernelStack, PROCESS_STACK_SIZE);
 
     if(current->process->name.size() > 0)
     {
@@ -1580,6 +1624,8 @@ void ProcessManager::ClearProcessVMMap(void *virt, uint64_t pages)
             {
                 pageTableManger.UnmapMemory((void *)((uint64_t)target + i * 0x1000));
 
+                PoisonKasanShadow((uint8_t *)virt + i * 0x1000, 0x1000);
+
                 globalAllocator.FreePage(entry.pages[i]);
             }
         }
@@ -1589,6 +1635,8 @@ void ProcessManager::ClearProcessVMMap(void *virt, uint64_t pages)
             {
                 pageTableManger.UnmapMemory((void *)((uint64_t)target + i * 0x1000));
             }
+
+            PoisonKasanShadow(entry.virt, entry.pageCount * 0x1000);
 
             globalAllocator.FreePages(entry.physical, entry.pageCount);
         }

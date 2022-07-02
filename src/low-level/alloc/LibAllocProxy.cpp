@@ -4,14 +4,23 @@
 #include <debug.hpp>
 #include "paging/PageFrameAllocator.hpp"
 #include "paging/PageTableManager.hpp"
+#include "threading/lock.hpp"
+#include "registers/Registers.hpp"
+#include <string.h>
+
+AtomicLock liballocLock;
 
 extern "C" int liballoc_lock()
 {
+    liballocLock.Lock();
+
     return 0;
 }
 
 extern "C" int liballoc_unlock()
 {
+    liballocLock.Unlock();
+
     return 0;
 }
 

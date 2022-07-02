@@ -32,14 +32,14 @@ int64_t SyscallWaitPID(InterruptStack *stack)
 
         if(children.size() == 0)
         {
-            return -EINTR;
+            return EINTR;
         }
 
         for(auto &child : children)
         {
             if(child.info->state != PROCESS_STATE_DEAD)
             {
-                return -EINTR;
+                return EINTR;
             }
 
             if(child.info->didWaitPID || child.info->ID != pid)
@@ -54,7 +54,7 @@ int64_t SyscallWaitPID(InterruptStack *stack)
             return 0;
         }
 
-        return -EINTR;
+        return EINTR;
     }
     else if(pid == -1)
     {
@@ -62,14 +62,14 @@ int64_t SyscallWaitPID(InterruptStack *stack)
 
         if(children.size() == 0)
         {
-            return -EINTR;
+            return EINTR;
         }
 
         for(auto &child : children)
         {
             if(child.info->state != PROCESS_STATE_DEAD)
             {
-                return -EINTR;
+                return EINTR;
             }
 
             if(child.info->didWaitPID)
@@ -84,7 +84,7 @@ int64_t SyscallWaitPID(InterruptStack *stack)
             return 0;
         }
 
-        return -EINTR;
+        return EINTR;
     }
     else if(pid == 0)
     {
@@ -92,14 +92,14 @@ int64_t SyscallWaitPID(InterruptStack *stack)
 
         if(children.size() == 0)
         {
-            return -EINTR;
+            return EINTR;
         }
 
         auto child = children[children.size() - 1];
 
         if(child.info->state != PROCESS_STATE_DEAD)
         {
-            return -EINTR;
+            return EINTR;
         }
         
         *retpid = child.info->ID;
@@ -112,7 +112,7 @@ int64_t SyscallWaitPID(InterruptStack *stack)
 
         if(process == NULL || process->isValid == false || process->info->state != PROCESS_STATE_DEAD)
         {
-            return -EINTR;
+            return EINTR;
         }
 
         *retpid = pid;

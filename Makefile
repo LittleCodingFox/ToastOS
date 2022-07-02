@@ -43,6 +43,21 @@ LIBCCOBJECTS		= $(LIBCSRC:$(LIBCSRCDIR)/%.c=$(LIBCOBJDIR)/%.o)
 LIBKCOBJECTS		= $(LIBCSRC:$(LIBCSRCDIR)/%.c=$(LIBKOBJDIR)/%.o)
 LIBCASMOBJECTS		= $(LIBCASMSRC:$(LIBCSRCDIR)/%.asm=$(LIBCOBJDIR)/%_asm.o)
 
+KASANEXCLUSIONS		= $(wildcard $(SRCDIR)/*.cpp)
+KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/gdt/*.cpp)
+KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/interrupts/*.cpp)
+KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/kasan/*.cpp)
+KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/paging/*.cpp)
+KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/ports/*.cpp)
+KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/registers/*.cpp)
+KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/serial/*.cpp)
+KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/sse/*.cpp)
+KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/stacktrace/*.cpp)
+KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/threading/*.cpp)
+KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/*.cpp)
+
+KASANOBJECTS 		= $(KASANEXCLUSIONS:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
+
 INCLUDEDIRS			= -Isrc -Iklibc -Isrc/include -Isrc/low-level -Iext-libs -Iext-libs/liballoc/ -Ifrigg/include -Icxxshim/stage2/include
 ASMFLAGS			= -g -F dwarf
 ASFLAGS 			=  -nostdlib -fpic
@@ -51,15 +66,20 @@ CFLAGS				= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -nostdlib -mno-red-zone 
 	-Werror -Wno-ambiguous-reversed-operator -Wno-c99-designator -Wno-deprecated-volatile -Wno-initializer-overrides
 CFLAGS_INTERNAL		= 
 LDFLAGS				= -T $(SRCDIR)/link.ld -static -Bsymbolic -nostdlib -Map=linker.map -zmax-page-size=0x1000
-QEMU_FLAGS			= -enable-kvm
+QEMU_FLAGS			= 
 QEMU_EXTRA_FLAGS 	= 
+CFLAGS_KASAN		= -fsanitize=kernel-address -mllvm -asan-mapping-offset=0xdfffe00000000000 -mllvm -asan-globals=false
 
-ifeq ($(USE_UBSAN), 1)
+ifeq ($(UBSAN), 1)
 	CFLAGS_INTERNAL += -fsanitize=undefined -fno-sanitize=function
 endif
 
-ifeq ($(ENABLE_KVM), 1)
+ifeq ($(KVM), 1)
 	QEMU_EXTRA_FLAGS = -enable-kvm
+endif
+
+ifeq ($(KASAN), 1)
+	CFLAGS += -DUSE_KASAN=1
 endif
 
 makedirs:
@@ -71,43 +91,72 @@ makedirs:
 
 $(COBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
 	mkdir -p $(shell dirname $@)
+	@echo compile C $@
+ifeq ($(KASAN), 1)
+	$(CC) $(CFLAGS) $(CFLAGS_KASAN) $(CFLAGS_INTERNAL) -c $< -o $@
+else
 	$(CC) $(CFLAGS) $(CFLAGS_INTERNAL) -c $< -o $@
+endif
 
 $(EXTCOBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
 	mkdir -p $(shell dirname $@)
+	@echo compile ext C $@
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(EXTOBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
 	mkdir -p $(shell dirname $@)
+	@echo compile ext cpp $@
 	$(CPP) $(CFLAGS) -c $< -o $@
+
+ifeq ($(KASAN), 1)
 
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
 	mkdir -p $(shell dirname $@)
+	@echo compile kasan cpp $@
+	$(CPP) $(CFLAGS) $(CFLAGS_INTERNAL) $(CFLAGS_KASAN) -std=c++20 -c $< -o $@
+
+else
+
+$(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
+	mkdir -p $(shell dirname $@)
+	@echo compile cpp $@
+	$(CPP) $(CFLAGS) $(CFLAGS_INTERNAL) -std=c++20 -c $< -o $@
+
+endif
+
+$(KASANOBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
+	mkdir -p $(shell dirname $@)
+	@echo compile kasan exclusion cpp $@
 	$(CPP) $(CFLAGS) $(CFLAGS_INTERNAL) -std=c++20 -c $< -o $@
 
 $(ASMOBJECTS): $(OBJDIR)/%_asm.o : $(SRCDIR)/%.asm
 	mkdir -p $(shell dirname $@)
+	@echo compile asm $@
 	$(ASMC) $(ASMFLAGS) $< -f elf64 -o $@
 
 $(ASOBJECTS): $(OBJDIR)/%_asm.o : $(SRCDIR)/%.s
 	mkdir -p $(shell dirname $@)
+	@echo compile gas $@
 	$(ASC) $(ASFLAGS) -c $< -o $@
 
 $(LIBCCOBJECTS): CFLAGS += -DIS_LIBC
 $(LIBCCOBJECTS): $(LIBCOBJDIR)/%.o : $(LIBCSRCDIR)/%.c
 	mkdir -p $(shell dirname $@)
+	@echo compile libc C $@
 	$(CC) $(CFLAGS) $(CFLAGS_INTERNAL) -c $< -o $@
 
 $(LIBKCOBJECTS): CFLAGS += -DIS_LIBK
 $(LIBKCOBJECTS): $(LIBKOBJDIR)/%.o : $(LIBCSRCDIR)/%.c
 	mkdir -p $(shell dirname $@)
+	@echo compile libk C $@
 	$(CC) $(CFLAGS) $(CFLAGS_INTERNAL) -c $< -o $@
 
 $(LIBCASMOBJECTS): $(LIBCOBJDIR)/%_asm.o : $(LIBCSRCDIR)/%.asm
 	mkdir -p $(shell dirname $@)
+	@echo compile libc asm $@
 	$(ASMC) $(ASMFLAGS) $< -f elf64 -o $@
 
-kernel: makedirs $(OBJECTS) $(COBJECTS) $(LIBKCOBJECTS) $(EXTOBJECTS) $(EXTCOBJECTS) $(ASMOBJECTS) $(ASOBJECTS)
+kernel: makedirs $(KASANOBJECTS) $(KASANCOBJECTS) $(OBJECTS) $(COBJECTS) $(LIBKCOBJECTS) $(EXTOBJECTS) $(EXTCOBJECTS) $(ASMOBJECTS) $(ASOBJECTS)
 	$(LD) $(LDFLAGS) $(OBJECTS) $(COBJECTS) $(LIBKCOBJECTS) $(EXTOBJECTS) $(EXTCOBJECTS) $(ASMOBJECTS) $(ASOBJECTS) -o $(BINDIR)/kernel
 	awk '$$1 ~ /0x[0-9a-f]{16}/ {print substr($$1, 3), $$2}' linker.map > symbols.map
 	rm linker.map
@@ -141,7 +190,7 @@ debug-linux: run-linux
 run-qemu-linux:
 	qemu-system-x86_64 -drive file=$(BINDIR)/$(OS_NAME).img,format=raw,index=0,media=disk \
 	-bios /usr/share/qemu/OVMF.fd -display gtk $(QEMU_FLAGS) $(QEMU_EXTRA_FLAGS) \
-	-m 2G -cpu qemu64 -machine type=q35 -serial file:./debug.log -net none -d int --no-reboot 2>qemu.log
+	-m 4G -cpu qemu64 -machine type=q35 -serial file:./debug.log -net none -d int --no-reboot 2>qemu.log
 
 debug-qemu-linux: QEMU_FLAGS = -s -S
 debug-qemu-linux: run-qemu-linux

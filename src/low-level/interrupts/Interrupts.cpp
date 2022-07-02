@@ -10,6 +10,9 @@
 #include "process/Process.hpp"
 #include "debug.hpp"
 #include "serial/Serial.hpp"
+#include "paging/PageFrameAllocator.hpp"
+#include "paging/PageTableManager.hpp"
+#include "kasan/kasan.hpp"
 
 Interrupts interrupts;
 
@@ -316,6 +319,32 @@ void PageFaultHandler(InterruptStack* stack)
     uint8_t is_user = (error_code >> 2) & 1;
     uint8_t is_reserved_write = (error_code >> 3) & 1;
     uint8_t is_instruction_fetch = (error_code >> 4) & 1;
+    uintptr_t cr2 = Registers::ReadCR2();
+
+#if USE_KASAN
+    if(PointerIsKasanShadow((void *)cr2))
+    {
+        PageTableManager currentPageTable;
+
+        currentPageTable.p4 = (PageTable *)Registers::ReadCR3();
+
+        auto mapping = currentPageTable.PhysicalMemory((void *)cr2);
+
+        if(mapping == NULL) //Not Mapped
+        {
+            auto page = globalAllocator.RequestPage();
+
+            if(page != NULL)
+            {
+                currentPageTable.MapMemory((void *)cr2, page, PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+
+                memset((void *)cr2, 0xFF, 0x1000);
+
+                return;
+            }
+        }
+    }
+#endif
 
     Panic("Exception: PAGE FAULT\n"
             "  accessed address    = %p\n"
@@ -338,7 +367,7 @@ void PageFaultHandler(InterruptStack* stack)
             "  r10 = 0x%016llx    r11 = 0x%016llx    r12 = 0x%016llx\n"
             "  r13 = 0x%016llx    r14 = 0x%016llx    r15 = 0x%016llx\n"
             "  cr3 = 0x%016llx\n",
-            Registers::ReadCR2(),
+            cr2,
             error_code,
             is_present != 0 ? 'Y' : 'N',
             is_write != 0 ? 'Y' : 'N',

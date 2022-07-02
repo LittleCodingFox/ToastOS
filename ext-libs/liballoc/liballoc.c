@@ -3,7 +3,7 @@
 #include "liballoc.h"
 
 #define VERSION "1.1"
-#define ALIGNMENT 64ul //4ul				///< This is the byte alignment that memory must be allocated on. IMPORTANT for GTK and other stuff.
+#define ALIGNMENT 8ul //4ul				///< This is the byte alignment that memory must be allocated on. IMPORTANT for GTK and other stuff.
 
 #define ALIGN_TYPE char                    ///unsigned char[16] /// unsigned short
 #define ALIGN_INFO sizeof(ALIGN_TYPE) * 64 ///< Alignment information is stored right before the pointer. This is the number of bytes of information stored there.
@@ -13,6 +13,11 @@
 #define USE_CASE3
 #define USE_CASE4
 #define USE_CASE5
+
+#if USE_KASAN
+extern void UnpoisonKasanShadow(void *pointer, size_t size);
+extern void PoisonKasanShadow(void *pointer, size_t size);
+#endif
 
 /** This macro will conveniently align our pointer upwards */
 #define ALIGN(ptr)                                       \
@@ -47,7 +52,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define FLUSH() fflush(stdout)
+#define FLUSH() //fflush(stdout)
 
 #endif
 
@@ -257,7 +262,7 @@
 #ifdef DEBUG
             printf("liballoc: initialization of liballoc " VERSION "\n");
 #endif
-            atexit(liballoc_dump);
+            //atexit(liballoc_dump);
             FLUSH();
 #endif
 
@@ -376,6 +381,10 @@
                 printf("CASE 2: returning %x\n", p);
                 FLUSH();
 #endif
+
+#if USE_KASAN
+                UnpoisonKasanShadow(p, req_size);
+#endif
                 liballoc_unlock(); // release the lock
                 return p;
             }
@@ -411,6 +420,10 @@
 #ifdef DEBUG
                 printf("CASE 3: returning %x\n", p);
                 FLUSH();
+#endif
+
+#if USE_KASAN
+                UnpoisonKasanShadow(p, req_size);
 #endif
                 liballoc_unlock(); // release the lock
                 return p;
@@ -458,6 +471,10 @@
                         printf("CASE 4.1: returning %x\n", p);
                         FLUSH();
 #endif
+
+#if USE_KASAN
+                        UnpoisonKasanShadow(p, req_size);
+#endif
                         liballoc_unlock(); // release the lock
                         return p;
                     }
@@ -496,6 +513,11 @@
 #ifdef DEBUG
                         printf("CASE 4.2: returning %x\n", p);
                         FLUSH();
+#endif
+
+
+#if USE_KASAN
+                        UnpoisonKasanShadow(p, req_size);
 #endif
 
                         liballoc_unlock(); // release the lock
@@ -567,6 +589,9 @@
             return;
         }
 
+        void *requestPtr = ptr;
+        (void)requestPtr;
+
         UNALIGN(ptr);
 
         liballoc_lock(); // lockit
@@ -621,6 +646,10 @@
                __builtin_return_address(0),
                ptr);
         FLUSH();
+#endif
+
+#if USE_KASAN
+        PoisonKasanShadow(requestPtr, min->req_size);
 #endif
 
         maj = min->block;
@@ -766,6 +795,9 @@
 
         if (real_size >= size)
         {
+#if USE_KASAN
+            PoisonKasanShadow(p + real_size, real_size - size);
+#endif
             min->req_size = size;
             liballoc_unlock();
             return p;
