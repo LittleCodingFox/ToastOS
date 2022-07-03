@@ -21,7 +21,7 @@ const char *MemoryMapTypeString(int type)
 
         case STIVALE2_MMAP_RESERVED:
 
-            return "Memory Map Reserved";
+            return "Reserved";
 
         case STIVALE2_MMAP_ACPI_RECLAIMABLE:
 
@@ -33,19 +33,19 @@ const char *MemoryMapTypeString(int type)
 
         case STIVALE2_MMAP_BAD_MEMORY:
 
-            return "Memory Map Bad Memory";
+            return "Bad Memory";
 
         case STIVALE2_MMAP_BOOTLOADER_RECLAIMABLE:
 
-            return "Memory Map Bootloader Reclaimable";
+            return "Bootloader Reclaimable";
 
         case STIVALE2_MMAP_KERNEL_AND_MODULES:
 
-            return "Memory Map Kernel and Modules";
+            return "Kernel and Modules";
 
         case STIVALE2_MMAP_FRAMEBUFFER:
 
-            return "Memory Map Framebuffer";
+            return "Framebuffer";
 
         default:
 

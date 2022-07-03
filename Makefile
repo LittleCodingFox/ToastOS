@@ -53,6 +53,7 @@ KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/registers/*.cpp)
 KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/serial/*.cpp)
 KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/sse/*.cpp)
 KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/stacktrace/*.cpp)
+KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/syscall/*.cpp)
 KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/threading/*.cpp)
 KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/*.cpp)
 
