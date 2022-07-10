@@ -4,7 +4,7 @@
 #include "framebuffer/FramebufferRenderer.hpp"
 #include "stacktrace/stacktrace.hpp"
 
-void Panic(const char* format, ...)
+extern "C" void Panic(const char* format, ...)
 {
     char message[10240];
 

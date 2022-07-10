@@ -3,7 +3,7 @@
 
 #define KPREFIX(n) k_##n
 
-#define USE_INPUT_SYSTEM 0
+#define USE_INPUT_SYSTEM 1
 
 #include "defines.h"
 

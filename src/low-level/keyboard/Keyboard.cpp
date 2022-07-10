@@ -176,7 +176,7 @@ bool LoadLayout(const string &name, int *error)
     {
         auto length = vfs->FileLength(handle);
 
-        auto buffer = new char[length] + 1;
+        auto buffer = new char[length + 1];
 
         buffer[length] = '\0';
 

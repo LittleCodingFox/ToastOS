@@ -2,6 +2,14 @@
 
 #include "kernel.h"
 
+struct UserAccessRegion {
+
+    void *startIP;
+    void *endIP;
+    void *faultIP;
+    uint32_t flags;
+};
+
 bool ReadUserMemory(void *kernelPtr, const void *userPtr, size_t size);
 
 bool WriteUserMemory(void *userPtr, const void *kernelPtr, size_t size);
@@ -41,5 +49,5 @@ bool WriteUserObject(T *pointer, const T *array, size_t count)
         return false;
     }
 
-    return WriteUserMemory(pointer, array, ssize);
+    return WriteUserMemory(pointer, array, size);
 }
