@@ -64,7 +64,8 @@ ASMFLAGS			= -g -F dwarf
 ASFLAGS 			=  -nostdlib -fpic
 CFLAGS				= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -nostdlib -mno-red-zone -Wall -fpic -O3 -fno-omit-frame-pointer -g \
 	-fno-stack-protector -fno-rtti -fno-exceptions -mno-3dnow -mno-mmx -mno-sse -mno-sse2 -mno-avx \
-	-Werror -Wno-ambiguous-reversed-operator -Wno-c99-designator -Wno-deprecated-volatile -Wno-initializer-overrides
+	-Werror -Wno-ambiguous-reversed-operator -Wno-c99-designator -Wno-deprecated-volatile -Wno-initializer-overrides \
+	-DPRINTF_DISABLE_SUPPORT_FLOAT=1 -DPRINTF_DISABLE_SUPPORT_EXPONENTIAL=1
 CFLAGS_INTERNAL		= 
 LDFLAGS				= -T $(SRCDIR)/link.ld -static -Bsymbolic -nostdlib -Map=linker.map -zmax-page-size=0x1000
 QEMU_FLAGS			= 
@@ -76,7 +77,7 @@ ifeq ($(UBSAN), 1)
 endif
 
 ifeq ($(KVM), 1)
-	QEMU_EXTRA_FLAGS = -enable-kvm
+	QEMU_EXTRA_FLAGS += -enable-kvm
 endif
 
 ifeq ($(KASAN), 1)

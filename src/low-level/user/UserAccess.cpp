@@ -1,7 +1,7 @@
 #include "UserAccess.hpp"
 #include "paging/Paging.hpp"
 
-bool ReadUserMemory(void *kernelPtr, const void *userPtr, size_t size)
+bool [[gnu::no_sanitize_address]] ReadUserMemory(void *kernelPtr, const void *userPtr, size_t size)
 {
     uintptr_t limit;
 
@@ -15,12 +15,12 @@ bool ReadUserMemory(void *kernelPtr, const void *userPtr, size_t size)
         return false;
     }
 
-    //TODO
+    memcpy(kernelPtr, userPtr, size);
 
     return false;
 }
 
-bool WriteUserMemory(void *userPtr, const void *kernelPtr, size_t size)
+bool [[gnu::no_sanitize_address]] WriteUserMemory(void *userPtr, const void *kernelPtr, size_t size)
 {
     uintptr_t limit;
 
@@ -34,7 +34,7 @@ bool WriteUserMemory(void *userPtr, const void *kernelPtr, size_t size)
         return false;
     }
 
-    //TODO
+    memcpy(userPtr, kernelPtr, size);
 
     return false;
 }
