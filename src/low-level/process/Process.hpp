@@ -11,6 +11,11 @@
 
 extern "C" void ProcessYield();
 
+/**
+ * @brief Yields the current process if we have one
+ */
+void ProcessYieldIfAvailable();
+
 constexpr int PROCESS_STACK_SIZE = 0x4000;
 
 static_assert((PROCESS_STACK_SIZE * sizeof(uint64_t)) % 0x1000 == 0, "Misaligned process stack size");
@@ -332,4 +337,4 @@ public:
     int32_t Fork(InterruptStack *interruptStack, pid_t *child);
 };
 
-extern ProcessManager *globalProcessManager;
+extern box<ProcessManager> processManager;

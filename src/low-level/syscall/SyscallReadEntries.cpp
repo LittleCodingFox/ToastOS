@@ -5,6 +5,7 @@
 #include "filesystems/VFS.hpp"
 #include "debug.hpp"
 #include "errno.h"
+#include "user/UserAccess.hpp"
 
 int64_t SyscallReadEntries(InterruptStack *stack)
 {
@@ -12,6 +13,11 @@ int64_t SyscallReadEntries(InterruptStack *stack)
     void *buffer = (void *)stack->rdx;
     uint64_t maxSize = stack->rcx;
     int *error = (int *)stack->r8;
+
+    if(!SanitizeUserPointer(buffer) || !SanitizeUserPointer(error))
+    {
+        return -1;
+    }
 
 #if KERNEL_DEBUG_SYSCALLS
     DEBUG_OUT("Syscall: readentries fd: %i buffer %p maxSize %llu error %p", fd, buffer, maxSize, error);
@@ -24,7 +30,7 @@ int64_t SyscallReadEntries(InterruptStack *stack)
         return -1;
     }
 
-    auto current = globalProcessManager->CurrentProcess();
+    auto current = processManager->CurrentProcess();
 
     if(current == NULL || current->isValid == false)
     {

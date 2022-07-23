@@ -5,12 +5,18 @@
 #include "errno.h"
 #include "cmos/cmos.hpp"
 #include "timer/Timer.hpp"
+#include "user/UserAccess.hpp"
 
 int64_t SyscallClock(InterruptStack *stack)
 {
     int clock = (int)stack->rsi;
     time_t *secs = (time_t *)stack->rdx;
     long *nanos = (long *)stack->rcx;
+
+    if(!SanitizeUserPointer(secs) || !SanitizeUserPointer(nanos))
+    {
+        return 0;
+    }
 
 #if KERNEL_DEBUG_SYSCALLS
     DEBUG_OUT("Syscall: Clock clock: %i secs: %p nanos: %p", clock, secs, nanos);

@@ -10,7 +10,7 @@ int64_t SyscallSetUID(InterruptStack *stack)
     DEBUG_OUT("Syscall: SetUID pid: %i uid: %i", pid, uid);
 #endif
 
-    globalProcessManager->SetUID(uid);
+    processManager->SetUID(uid);
 
     return 0;
 }

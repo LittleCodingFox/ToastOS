@@ -17,7 +17,7 @@ int64_t SyscallDup2(InterruptStack *stack)
     DEBUG_OUT("Syscall: dup2 fd: %i flags: %x newfd: %i", fd, flags, newfd);
 #endif
 
-    auto process = globalProcessManager->CurrentProcess();
+    auto process = processManager->CurrentProcess();
 
     if(process == NULL || process->isValid == false)
     {

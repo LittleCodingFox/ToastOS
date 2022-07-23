@@ -5,6 +5,7 @@
 #include "debug.hpp"
 #include "errno.h"
 #include "paging/PageFrameAllocator.hpp"
+#include "user/UserAccess.hpp"
 
 int64_t SyscallVMUnmap(InterruptStack *stack)
 {
@@ -14,11 +15,16 @@ int64_t SyscallVMUnmap(InterruptStack *stack)
     (void)ptr;
     (void)size;
 
+    if(!SanitizeUserPointer(ptr))
+    {
+        return 0;
+    }
+
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: vmunmap pointer %p size %llu", pointer, size);
+    DEBUG_OUT("Syscall: vmunmap pointer %p size %llu", ptr, size);
 #endif
 
-    globalProcessManager->ClearProcessVMMap(ptr, size / 0x1000 + (size % 0x1000 != 0 ? 1 : 0));
+    processManager->ClearProcessVMMap(ptr, size / 0x1000 + (size % 0x1000 != 0 ? 1 : 0));
 
     return 0;
 }

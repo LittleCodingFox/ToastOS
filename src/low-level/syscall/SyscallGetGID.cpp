@@ -8,7 +8,7 @@ int64_t SyscallGetGID(InterruptStack *stack)
     DEBUG_OUT("Syscall: GetGID");
 #endif
 
-    auto process = globalProcessManager->CurrentProcess();
+    auto process = processManager->CurrentProcess();
 
     if(process == NULL || process->isValid == false)
     {

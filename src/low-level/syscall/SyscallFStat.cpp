@@ -4,17 +4,23 @@
 #include "filesystems/VFS.hpp"
 #include "debug.hpp"
 #include "errno.h"
+#include "user/UserAccess.hpp"
 
 int64_t SyscallFStat(InterruptStack *stack)
 {
     struct stat *stat = (struct stat *)stack->rsi;
     int fd = (int)stack->rdx;
 
+    if(!SanitizeUserPointer(stat))
+    {
+        return -EBADF;
+    }
+
 #if KERNEL_DEBUG_SYSCALLS
     DEBUG_OUT("Syscall: fstat stat: %p; fd: %i", stat, fd);
 #endif
 
-    auto current = globalProcessManager->CurrentProcess();
+    auto current = processManager->CurrentProcess();
 
     if(current == NULL || current->isValid == false)
     {

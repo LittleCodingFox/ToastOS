@@ -5,6 +5,7 @@
 #include "errno.h"
 #include "fcntl.h"
 #include "filesystems/VFS.hpp"
+#include "user/UserAccess.hpp"
 
 int64_t SyscallFcntl(InterruptStack *stack)
 {
@@ -13,11 +14,16 @@ int64_t SyscallFcntl(InterruptStack *stack)
     size_t arg = (size_t)stack->rcx;
     int *result = (int *)stack->r8;
 
+    if(!SanitizeUserPointer(result))
+    {
+        return ENOENT;
+    }
+
 #if KERNEL_DEBUG_SYSCALLS
     DEBUG_OUT("Syscall: fcntl fd: %i; request: %i; arg: %llu; result: %p", fd, request, arg, result);
 #endif
 
-    auto process = globalProcessManager->CurrentProcess();
+    auto process = processManager->CurrentProcess();
 
     if(process == NULL || process->isValid == false)
     {

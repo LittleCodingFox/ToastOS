@@ -1,7 +1,22 @@
 #include "UserAccess.hpp"
 #include "paging/Paging.hpp"
 
-bool [[gnu::no_sanitize_address]] ReadUserMemory(void *kernelPtr, const void *userPtr, size_t size)
+[[gnu::no_sanitize_address]] bool SanitizeUserPointer(const void *userPtr)
+{
+    if(IsHigherHalf((uint64_t)userPtr))
+    {
+        return false;
+    }
+
+    if(userPtr == NULL)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+[[gnu::no_sanitize_address]] bool ReadUserMemory(void *kernelPtr, const void *userPtr, size_t size)
 {
     uintptr_t limit;
 
@@ -17,10 +32,10 @@ bool [[gnu::no_sanitize_address]] ReadUserMemory(void *kernelPtr, const void *us
 
     memcpy(kernelPtr, userPtr, size);
 
-    return false;
+    return true;
 }
 
-bool [[gnu::no_sanitize_address]] WriteUserMemory(void *userPtr, const void *kernelPtr, size_t size)
+[[gnu::no_sanitize_address]] bool WriteUserMemory(void *userPtr, const void *kernelPtr, size_t size)
 {
     uintptr_t limit;
 
@@ -36,5 +51,5 @@ bool [[gnu::no_sanitize_address]] WriteUserMemory(void *userPtr, const void *ker
 
     memcpy(userPtr, kernelPtr, size);
 
-    return false;
+    return true;
 }

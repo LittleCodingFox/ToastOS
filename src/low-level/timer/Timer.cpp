@@ -14,7 +14,7 @@
 
 static uint64_t currentTick;
 
-frg::manual_box<Timer> timer;
+box<Timer> timer;
 
 void timerCallback(InterruptStack *stack)
 {

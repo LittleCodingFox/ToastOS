@@ -3,7 +3,7 @@
 #include "debug.hpp"
 #include "string/stringutils.hpp"
 
-frg::manual_box<VFS> vfs;
+box<VFS> vfs;
 
 uint64_t VirtualFile::Length() const
 {
@@ -29,7 +29,7 @@ void VFS::AddVirtualFile(const VirtualFile &file)
     virtualFiles.push_back(newFile);
 }
 
-void VFS::RemoveVirtualFile(const frg::string<frg_allocator> &path)
+void VFS::RemoveVirtualFile(const string &path)
 {
     //TODO
 }
@@ -132,7 +132,7 @@ dirent *VFS::ReadEntries(FILE_HANDLE handle)
     return fileHandle->mountPoint->fileSystem->ReadEntries(fileHandle->fsHandle);
 }
 
-frg::string<frg_allocator> VFS::GetFilePath(FILE_HANDLE handle)
+string VFS::GetFilePath(FILE_HANDLE handle)
 {
     FileHandle *fileHandle = GetFileHandle(handle);
 
@@ -187,7 +187,7 @@ void VFS::SetFileFlags(FILE_HANDLE handle, uint32_t flags)
 
 FILE_HANDLE VFS::OpenFile(const char *path, uint32_t flags, Process *currentProcess, int *error)
 {
-    frg::string<frg_allocator> targetPath = path;
+    string targetPath = path;
 
     if(targetPath.size() > 0 && currentProcess != NULL)
     {
@@ -325,7 +325,7 @@ FILE_HANDLE VFS::OpenFile(const char *path, uint32_t flags, Process *currentProc
                     {
                         char *newPath = NULL;
                         char *ptr = strrchr(buffer, '/');
-                        frg::string<frg_allocator> linkPath;
+                        string linkPath;
 
                         if(ptr != NULL)
                         {
@@ -343,7 +343,7 @@ FILE_HANDLE VFS::OpenFile(const char *path, uint32_t flags, Process *currentProc
                             delete [] newPath;
                         }
 
-                        auto nextPath = frg::string<frg_allocator>(mountPoint->path) + linkPath;
+                        auto nextPath = string(mountPoint->path) + linkPath;
 
                         return OpenFile(nextPath.data(), flags, currentProcess, error);
                     }
@@ -590,7 +590,7 @@ VFS::FileHandle *VFS::ResolveSymlink(FileHandle *original, uint32_t flags)
         return original;
     }
 
-    auto currentProcess = globalProcessManager->CurrentProcess();
+    auto currentProcess = processManager->CurrentProcess();
 
     int error = 0;
 

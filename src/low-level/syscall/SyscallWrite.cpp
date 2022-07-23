@@ -5,6 +5,7 @@
 #include "process/Process.hpp"
 #include "debug.hpp"
 #include "errno.h"
+#include "user/UserAccess.hpp"
 
 size_t SyscallWrite(InterruptStack *stack)
 {
@@ -12,11 +13,16 @@ size_t SyscallWrite(InterruptStack *stack)
     const void *buffer = (const void *)stack->rdx;
     size_t count = (size_t)stack->rcx;
 
+    if(!SanitizeUserPointer(buffer))
+    {
+        return -EBADF;
+    }
+
 #if KERNEL_DEBUG_SYSCALLS
     DEBUG_OUT("Syscall: write fd: %i buffer: %p count: %llu", fd, buffer, count);
 #endif
 
-    auto current = globalProcessManager->CurrentProcess();
+    auto current = processManager->CurrentProcess();
 
     if(current == NULL || current->isValid == false)
     {

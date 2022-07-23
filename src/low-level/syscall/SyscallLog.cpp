@@ -3,6 +3,7 @@
 #include "printf/printf.h"
 #include "debug.hpp"
 #include "errno.h"
+#include "user/UserAccess.hpp"
 
 size_t SyscallLog(InterruptStack *stack)
 {
@@ -11,6 +12,11 @@ size_t SyscallLog(InterruptStack *stack)
 
     (void)buffer;
     (void)count;
+
+    if(!SanitizeUserPointer(buffer))
+    {
+        return 0;
+    }
 
 #if KERNEL_DEBUG_SYSCALLS
     DEBUG_OUT("Syscall: log buffer: %p; count: %llu", buffer, count);

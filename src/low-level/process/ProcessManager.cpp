@@ -16,6 +16,7 @@
 #include "tss/tss.hpp"
 #include "Panic.hpp"
 #include "kasan/kasan.hpp"
+#include "user/UserAccess.hpp"
 
 #define UPDATE_PROCESS_ACTIVE_PERMISSIONS(pcb) \
     switch(pcb->activePermissionLevel)\
@@ -112,19 +113,36 @@
 #define LD_BASE 0x40000000
 #define push(stack, value) *(--stack) = (value)
 
-ProcessManager *globalProcessManager;
+box<ProcessManager> processManager;
 uint64_t processIDCounter = 0;
 
 extern "C" void SwitchTasks(ProcessControlBlock* next);
 
-void SwitchProcess(InterruptStack *stack)
+void ProcessYieldIfAvailable()
 {
-    if(globalProcessManager->IsLocked())
+    if(processManager.valid() == false)
     {
         return;
     }
 
-    globalProcessManager->SwitchProcess(stack, true);
+    auto current = processManager->CurrentProcess();
+
+    if(current == NULL || current->isValid == false)
+    {
+        return;
+    }
+
+    ProcessYield();
+}
+
+void SwitchProcess(InterruptStack *stack)
+{
+    if(processManager->IsLocked())
+    {
+        return;
+    }
+
+    processManager->SwitchProcess(stack, true);
 }
 
 ProcessManager::ProcessManager(IScheduler *scheduler) : scheduler(scheduler), futexes(NULL)
@@ -868,6 +886,8 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
 
     newProcess = (Process *)TranslateToHighHalfMemoryAddress((uint64_t)newProcess);
 
+    UnpoisonKasanShadow(newProcess, processPageSize * 0x1000);
+
     page = (uint64_t)newProcess->stack / 0x1000;
     offset = (uint64_t)newProcess->stack % 0x1000;
     pageCount = (sizeof(newProcess->stack) + offset) / 0x1000 + 1;
@@ -883,8 +903,6 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
             (void *)((uint64_t)TranslateToPhysicalMemoryAddress((page + i) * 0x1000)),
             PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_USER_ACCESSIBLE);
     }
-
-    UnpoisonKasanShadow(newProcess, processPageSize * 0x1000);
 
     new (newProcess) Process();
 
@@ -977,7 +995,7 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
 
     lock.Unlock();
 
-    *child = newProcess->ID;
+    WriteUserObject(child, newProcess->ID);
 
     uint64_t childOffset = (uint64_t)child % 0x1000;
 

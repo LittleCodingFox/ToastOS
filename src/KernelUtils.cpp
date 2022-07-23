@@ -402,7 +402,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     if(initrd != NULL)
     {
-        auto tarfs = new tarfs::TarFS((uint8_t *)initrd->begin);
+        auto tarfs = new TarFS((uint8_t *)initrd->begin);
 
         vfs->AddMountPoint("/", tarfs);
 
@@ -413,7 +413,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     InitializeKeyboard();
 
-    globalProcessManager = new ProcessManager(new RoundRobinScheduler());
+    processManager.initialize(new RoundRobinScheduler());
 
     DEBUG_OUT("%s", "Finished initializing the kernel");
 

@@ -87,6 +87,6 @@ public:
     struct stat Stat(FILE_HANDLE handle, int *error);
 };
 
-extern frg::manual_box<VFS> vfs;
+extern box<VFS> vfs;
 
 void InitializeVirtualFiles();

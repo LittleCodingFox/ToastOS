@@ -5,12 +5,42 @@
 #include "debug.hpp"
 #include "errno.h"
 #include "kernel.h"
+#include "user/UserAccess.hpp"
 
 int64_t SyscallExecve(InterruptStack *stack)
 {
     const char *path = (const char *)stack->rsi;
     const char **argv = (const char **)stack->rdx;
     const char **envp = (const char **)stack->rcx;
+
+    if(!SanitizeUserPointer(path) || !SanitizeUserPointer(argv) || !SanitizeUserPointer(envp))
+    {
+        return ENOENT;
+    }
+
+    const char **arg = argv;
+
+    while(*arg != NULL)
+     {
+        if(!SanitizeUserPointer(*arg))
+        {
+            return ENOENT;
+        }
+
+        arg++;
+     }
+
+    const char **env = envp;
+
+    while(*env != NULL)
+     {
+        if(!SanitizeUserPointer(*env))
+        {
+            return ENOENT;
+        }
+
+        env++;
+     }
 
 #if KERNEL_DEBUG_SYSCALLS
     DEBUG_OUT("Syscall: execve path: %s argv: %p envp: %p", path, argv, envp);
@@ -23,7 +53,7 @@ int64_t SyscallExecve(InterruptStack *stack)
         interrupts.DisableInterrupts();
     }
 
-    auto process = globalProcessManager->CurrentProcess();
+    auto process = processManager->CurrentProcess();
 
     if(process == NULL || process->isValid == false)
     {
@@ -81,7 +111,7 @@ int64_t SyscallExecve(InterruptStack *stack)
         return error != 0 ? error : EIO;
     }
 
-    auto pair = globalProcessManager->LoadImage(buffer, path, argv, envp, process->info->cwd.data(), PROCESS_PERMISSION_USER, process->info->ID);
+    auto pair = processManager->LoadImage(buffer, path, argv, envp, process->info->cwd.data(), PROCESS_PERMISSION_USER, process->info->ID);
 
     pair->process->ppid = process->info->ppid;
     pair->process->uid = process->info->uid;
@@ -96,7 +126,7 @@ int64_t SyscallExecve(InterruptStack *stack)
 
     vfs->CloseFile(handle);
 
-    globalProcessManager->Exit(0, true);
+    processManager->Exit(0, true);
 
     return 0;
 }

@@ -5,17 +5,23 @@
 #include "debug.hpp"
 #include "errno.h"
 #include "fcntl.h"
+#include "user/UserAccess.hpp"
 
 int64_t SyscallStat(InterruptStack *stack)
 {
     struct stat *stat = (struct stat *)stack->rsi;
     const char *path = (const char *)stack->rdx;
 
+    if(!SanitizeUserPointer(stat) || !SanitizeUserPointer(path))
+    {
+        return -1;
+    }
+
 #if KERNEL_DEBUG_SYSCALLS
     DEBUG_OUT("Syscall: stat stat: %p path %s", stat, path);
 #endif
 
-    auto currentProcess = globalProcessManager->CurrentProcess();
+    auto currentProcess = processManager->CurrentProcess();
 
     if(currentProcess == NULL || currentProcess->isValid == false)
     {

@@ -49,6 +49,7 @@ KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/interrupts/*.cpp)
 KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/kasan/*.cpp)
 KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/paging/*.cpp)
 KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/ports/*.cpp)
+KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/process/fd/*.cpp)
 KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/registers/*.cpp)
 KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/serial/*.cpp)
 KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/sse/*.cpp)
@@ -61,11 +62,11 @@ KASANOBJECTS 		= $(KASANEXCLUSIONS:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
 INCLUDEDIRS			= -Isrc -Iklibc -Isrc/include -Isrc/low-level -Iext-libs -Iext-libs/liballoc/ -Ifrigg/include -Icxxshim/stage2/include
 ASMFLAGS			= -g -F dwarf
-ASFLAGS 			=  -nostdlib -fpic
+ASFLAGS 			= -nostdlib -fpic
 CFLAGS				= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -nostdlib -mno-red-zone -Wall -fpic -O3 -fno-omit-frame-pointer -g \
-	-fno-stack-protector -fno-rtti -fno-exceptions -mno-3dnow -mno-mmx -mno-sse -mno-sse2 -mno-avx \
+	-fno-stack-protector -fno-rtti -fno-exceptions -mno-3dnow -mno-mmx -mno-sse -mno-sse2 -mno-avx -fno-builtin \
 	-Werror -Wno-ambiguous-reversed-operator -Wno-c99-designator -Wno-deprecated-volatile -Wno-initializer-overrides \
-	-DPRINTF_DISABLE_SUPPORT_FLOAT=1 -DPRINTF_DISABLE_SUPPORT_EXPONENTIAL=1
+	-DPRINTF_DISABLE_SUPPORT_FLOAT=1 -DPRINTF_DISABLE_SUPPORT_EXPONENTIAL=1 --target=x86_64-pc-none-elf -march=x86-64
 CFLAGS_INTERNAL		= 
 LDFLAGS				= -T $(SRCDIR)/link.ld -static -Bsymbolic -nostdlib -Map=linker.map -zmax-page-size=0x1000
 QEMU_FLAGS			= 

@@ -2,10 +2,16 @@
 #include "keyboard/Keyboard.hpp"
 #include "interrupts/Interrupts.hpp"
 #include "debug.hpp"
+#include "user/UserAccess.hpp"
 
 int64_t SyscallSetKBLayout(InterruptStack *stack)
 {
     const char *name = (const char *)stack->rsi;
+
+    if(!SanitizeUserPointer(name))
+    {
+        return 0;
+    }
 
 #if KERNEL_DEBUG_SYSCALLS
     DEBUG_OUT("Syscall: SetKBLayout name: %p", name);

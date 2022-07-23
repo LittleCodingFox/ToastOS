@@ -11,7 +11,7 @@ int64_t SyscallKill(InterruptStack *stack)
     DEBUG_OUT("Syscall: kill pid: %i signal: %i", pid, signal);
 #endif
 
-    globalProcessManager->Kill(pid, signal);
+    processManager->Kill(pid, signal);
 
     return 0;
 }

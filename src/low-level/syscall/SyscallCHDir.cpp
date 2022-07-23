@@ -5,16 +5,22 @@
 #include "debug.hpp"
 #include "errno.h"
 #include "kernel.h"
+#include "user/UserAccess.hpp"
 
 int64_t SyscallCHDir(InterruptStack *stack)
 {
     char *path = (char *)stack->rsi;
 
+    if(!SanitizeUserPointer(path))
+    {
+        return ENOENT;
+    }
+
 #if KERNEL_DEBUG_SYSCALLS
     DEBUG_OUT("Syscall: chdir path: %s", path);
 #endif
 
-    auto process = globalProcessManager->CurrentProcess();
+    auto process = processManager->CurrentProcess();
 
     if(process == NULL || process->isValid == false)
     {

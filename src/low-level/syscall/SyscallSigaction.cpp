@@ -5,14 +5,14 @@
 int64_t SyscallSigaction(InterruptStack *stack)
 {
     int signum = (int)stack->rsi;
-    sigaction *act = (sigaction *)stack->rdx;
-    sigaction *oldact = (sigaction *)stack->rcx;
+    struct sigaction *act = (struct sigaction *)stack->rdx;
+    struct sigaction *oldact = (struct sigaction *)stack->rcx;
 
 #if KERNEL_DEBUG_SYSCALLS
     DEBUG_OUT("Syscall: sigaction signum %i act %p oldact %p", signum, act, oldact);
 #endif
 
-    globalProcessManager->Sigaction(signum, act, oldact);
+    processManager->Sigaction(signum, act, oldact);
 
     return 0;
 }

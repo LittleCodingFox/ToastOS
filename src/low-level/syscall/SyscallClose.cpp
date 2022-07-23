@@ -13,7 +13,7 @@ int64_t SyscallClose(InterruptStack *stack)
     DEBUG_OUT("Syscall: close fd: %i", fd);
 #endif
 
-    auto current = globalProcessManager->CurrentProcess();
+    auto current = processManager->CurrentProcess();
 
     if(current == NULL || current->isValid == false)
     {

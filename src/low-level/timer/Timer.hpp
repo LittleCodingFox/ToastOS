@@ -9,7 +9,7 @@
 class Timer
 {
 private:
-    frg::vector<void *, frg_allocator> handlers;
+    vector<void *> handlers;
 public:
     void Initialize();
     uint32_t Frequency();
@@ -19,4 +19,4 @@ public:
     void RunHandlers(InterruptStack *stack);
 };
 
-extern frg::manual_box<Timer> timer;
+extern box<Timer> timer;

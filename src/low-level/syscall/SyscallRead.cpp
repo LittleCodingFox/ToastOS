@@ -6,6 +6,7 @@
 #include "debug.hpp"
 #include "errno.h"
 #include "ctype.h"
+#include "user/UserAccess.hpp"
 
 extern bool InputEnabled;
 
@@ -15,11 +16,16 @@ int64_t SyscallRead(InterruptStack *stack)
     void *buffer = (void *)stack->rdx;
     size_t count = (size_t)stack->rcx;
 
+    if(!SanitizeUserPointer(buffer))
+    {
+        return -EBADF;
+    }
+
 #if KERNEL_DEBUG_SYSCALLS
     DEBUG_OUT("Syscall: Read fd: %i buffer: %p count: %llu", fd, buffer, count);
 #endif
 
-    auto current = globalProcessManager->CurrentProcess();
+    auto current = processManager->CurrentProcess();
 
     if(current == NULL || current->isValid == false)
     {
