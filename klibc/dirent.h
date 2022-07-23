@@ -2,6 +2,10 @@
 
 #include <sys/types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define DT_UNKNOWN 0
 #define DT_FIFO 1
 #define DT_CHR 2
@@ -19,3 +23,17 @@ struct dirent {
 	unsigned char d_type;
 	char d_name[1024];
 };
+
+struct __mlibc_dir_struct {
+	int __handle;
+	__SIZE_TYPE__ __ent_next;
+	__SIZE_TYPE__ __ent_limit;
+	char __ent_buffer[2048];
+	struct dirent __current;
+};
+
+typedef struct __mlibc_dir_struct DIR;
+
+#ifdef __cplusplus
+}
+#endif

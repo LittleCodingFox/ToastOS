@@ -4,19 +4,26 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+// [7.14] Signal handling basics
+
 typedef int sig_atomic_t;
 
 // Argument for signal()
 typedef void (*__sighandler) (int);
 
-union sigval
-{
+#define CLD_EXITED 1
+#define CLD_KILLED 2
+#define CLD_DUMPED 3
+#define CLD_TRAPPED 4
+#define CLD_STOPPED 5
+#define CLD_CONTINUED 6
+
+union sigval {
 	int sival_int;
 	void *sival_ptr;
 };
 
-typedef struct
-{
+typedef struct {
 	int si_signo;
 	int si_code;
 	int si_errno;
@@ -70,8 +77,28 @@ extern "C" {
 #define SIGRTMIN 32
 #define SIGRTMAX 33
 #define SIGCANCEL 34
-
 #define SIGNAL_MAX 35
+
+// siginfo->si_info constants
+// SIGBUS
+#define BUS_ADRALN 1
+#define BUS_ADRERR 2
+#define BUS_OBJERR 3
+
+// SIGILL
+#define ILL_ILLOPC 1
+#define ILL_ILLOPN 2
+#define ILL_ILLADR 3
+#define ILL_ILLTRP 4
+#define ILL_PRVOPC 5
+#define ILL_PRVREG 6
+#define ILL_COPROC 7
+#define ILL_BADSTK 8
+#define ILL_BADIADDR 9
+
+// SIGSEGV
+#define SEGV_MAPERR 1
+#define SEGV_ACCERR 2
 
 // TODO: replace this by uint64_t
 typedef long sigset_t;
@@ -96,11 +123,10 @@ typedef long sigset_t;
 #define SS_ONSTACK 1
 #define SS_DISABLE 2
 
-typedef struct __stack
-{
-    void *ss_sp;
-    size_t ss_size;
-    int ss_flags;
+typedef struct __stack {
+        void *ss_sp;
+        size_t ss_size;
+        int ss_flags;
 } stack_t;
 
 // constants for sigev_notify of struct sigevent
@@ -120,8 +146,14 @@ typedef struct __stack
 
 #define NSIG 65
 
-struct sigevent
-{
+#define CLD_EXITED 1
+#define CLD_KILLED 2
+#define CLD_DUMPED 3
+#define CLD_TRAPPED 4
+#define CLD_STOPPED 5
+#define CLD_CONTINUED 6
+
+struct sigevent {
 	int sigev_notify;
 	int sigev_signo;
 	union sigval sigev_value;
@@ -129,8 +161,7 @@ struct sigevent
 	// MISSING: sigev_notify_attributes
 };
 
-struct sigaction
-{
+struct sigaction {
 	void (*sa_handler)(int);
 	sigset_t sa_mask;
 	int sa_flags;
@@ -138,6 +169,31 @@ struct sigaction
 };
 
 const char *signalname(int signal);
+
+#if defined(__x86_64__) || defined(__aarch64__)
+// TODO: This is wrong for AArch64.
+
+typedef struct {
+	unsigned long oldmask;
+	unsigned long gregs[16];
+	unsigned long pc, pr, sr;
+	unsigned long gbr, mach, macl;
+	unsigned long fpregs[16];
+	unsigned long xfpregs[16];
+	unsigned int fpscr, fpul, ownedfp;
+} mcontext_t;
+
+typedef struct __ucontext {
+	unsigned long uc_flags;
+	struct __ucontext *uc_link;
+	stack_t uc_stack;
+	mcontext_t uc_mcontext;
+	sigset_t uc_sigmask;
+} ucontext_t;
+
+#else
+#error "Missing architecture specific code."
+#endif
 
 #ifdef __cplusplus
 }

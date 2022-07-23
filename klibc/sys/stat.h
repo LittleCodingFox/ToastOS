@@ -29,6 +29,10 @@
 #define S_IWRITE S_IWUSR
 #define S_IEXEC  S_IXUSR
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct stat {
 	dev_t st_dev;
 	ino_t st_ino;
@@ -44,3 +48,7 @@ struct stat {
 	blksize_t st_blksize;
 	blkcnt_t st_blocks;
 };
+
+#ifdef __cplusplus
+}
+#endif
