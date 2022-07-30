@@ -1,8 +1,8 @@
 #include "stringutils.hpp"
 
-frg::vector<frg::string<frg_allocator>, frg_allocator> SplitString(const frg::string<frg_allocator> &str, char separator)
+vector<string> SplitString(const frg::string<frg_allocator> &str, char separator)
 {
-    frg::vector<frg::string<frg_allocator>, frg_allocator> outValues;
+    vector<string> outValues;
 
     int64_t lastIndex = -1;
 
@@ -10,11 +10,11 @@ frg::vector<frg::string<frg_allocator>, frg_allocator> SplitString(const frg::st
     {
         if(str[i] == separator)
         {
-            frg::string<frg_allocator> out;
+            string out;
 
-            if(i != lastIndex)
+            if(lastIndex < 0 || i != (uint64_t)lastIndex)
             {
-                for(uint64_t j = lastIndex + 1; j < i; j++)
+                for(uint64_t j = (uint64_t)lastIndex + 1; j < i; j++)
                 {
                     out += str[j];
                 }
@@ -26,11 +26,11 @@ frg::vector<frg::string<frg_allocator>, frg_allocator> SplitString(const frg::st
         }
     }
 
-    if(lastIndex < str.size())
+    if(lastIndex >= 0 && (uint64_t)lastIndex < str.size())
     {
-        frg::string<frg_allocator> out;
+        string out;
 
-        for(uint64_t i = lastIndex + 1; i < str.size(); i++)
+        for(uint64_t i = (uint64_t)lastIndex + 1; i < str.size(); i++)
         {
             out += str[i];
         }

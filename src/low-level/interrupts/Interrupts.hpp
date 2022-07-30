@@ -144,7 +144,7 @@ public:
     void RegisterHandler(uint64_t id, InterruptHandler handler);
     void RegisterHandler(uint64_t id, InterruptHandlerArg handler, void *data);
     
-    inline InterruptHandler GetHandler(int index)
+    inline InterruptHandler GetHandler(uint64_t index)
     {
         if(index >= 0 && index <= sizeof(handlers) / sizeof(handlers[0]))
         {
@@ -154,7 +154,7 @@ public:
         return NULL;
     }
     
-    inline HandlerInfo *GetHandlerArg(int index)
+    inline HandlerInfo *GetHandlerArg(uint64_t index)
     {
         if(index >= 0 && index <= sizeof(argHandlers) / sizeof(argHandlers[0]))
         {

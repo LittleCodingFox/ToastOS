@@ -153,7 +153,7 @@ KeyboardLayout *currentLayout = NULL;
 
 uint8_t KeyFromString(const string &key)
 {
-    for(int i = 0; i < sizeof(keys) / sizeof(keys[0]); i++)
+    for(uint64_t i = 0; i < sizeof(keys) / sizeof(keys[0]); i++)
     {
         if(key == keys[i].text)
         {

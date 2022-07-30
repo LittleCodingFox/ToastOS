@@ -87,7 +87,7 @@ void psf2PutChar(int x, int y, char c, psf2_font_t *font, uint32_t color, Frameb
 	}
 
 	int bytesPerLine = (font->header->width + 7) / 8;
-	unsigned char *glyph = (unsigned char*)font->glyph_buffer + (c > 0 && c < font->header->numGlyph ? c : 0) * font->header->bytesPerGlyph +
+	unsigned char *glyph = (unsigned char*)font->glyph_buffer + (c > 0 && (uint32_t)c < font->header->numGlyph ? c : 0) * font->header->bytesPerGlyph +
 		area.targetY * bytesPerLine;
 
 	for(int ty = 0, yIndex = area.y * area.width; ty < area.targetHeight; ty++, yIndex += area.width)

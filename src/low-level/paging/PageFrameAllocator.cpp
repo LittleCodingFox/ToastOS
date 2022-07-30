@@ -62,7 +62,7 @@ void PageFrameAllocator::ReadMemoryMap(stivale2_struct_tag_memmap* memmap)
     void* largestFreeMemSeg = NULL;
     size_t largestFreeMemSegSize = 0;
 
-    for (int i = 0; i < memmap->entries; i++)
+    for (uint64_t i = 0; i < memmap->entries; i++)
     {
         stivale2_mmap_entry* desc = (stivale2_mmap_entry*)&memmap->memmap[i];
 
@@ -88,7 +88,7 @@ void PageFrameAllocator::ReadMemoryMap(stivale2_struct_tag_memmap* memmap)
 
     DEBUG_OUT("Memory Size: %llu", GetMemorySize(memmap));
 
-    for (int i = 0; i < memmap->entries; i++)
+    for (uint64_t i = 0; i < memmap->entries; i++)
     {
         stivale2_mmap_entry* desc = (stivale2_mmap_entry*)&memmap->memmap[i];
 
@@ -237,7 +237,7 @@ void PageFrameAllocator::UnreservePage(void* address)
 
 void PageFrameAllocator::UnreservePages(void* address, uint64_t pageCount)
 {
-    for (int t = 0; t < pageCount; t++)
+    for (uint64_t t = 0; t < pageCount; t++)
     {
         UnreservePage((void*)((uint64_t)address + (t * 0x1000)));
     }
@@ -258,7 +258,7 @@ void PageFrameAllocator::ReservePage(void* address)
 
 void PageFrameAllocator::ReservePages(void* address, uint64_t pageCount)
 {
-    for (int t = 0; t < pageCount; t++)
+    for (uint64_t t = 0; t < pageCount; t++)
     {
         ReservePage((void*)((uint64_t)address + (t * 0x1000)));
     }

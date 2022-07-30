@@ -626,7 +626,7 @@ dirent *TarFS::ReadEntries(FileSystemHandle handle)
         return NULL;
     }
 
-    if(file->currentEntry < file->entries.size())
+    if(file->currentEntry < (int)file->entries.size())
     {
         dirent *entry = &file->entries[file->currentEntry++];
 

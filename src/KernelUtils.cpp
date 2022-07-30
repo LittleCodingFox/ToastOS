@@ -7,7 +7,6 @@
 #include "registers/Registers.hpp"
 #include "stacktrace/stacktrace.hpp"
 #include "timer/Timer.hpp"
-#include "pci/PCI.hpp"
 #include "vtconsole/vtconsole.h"
 #include "partitionmanager/PartitionManager.hpp"
 #include "tss/tss.hpp"
@@ -123,7 +122,7 @@ void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_fr
 
     DEBUG_OUT("%s", "Mapping memmap");
 
-    for (int i = 0; i < memmap->entries; i++)
+    for (uint64_t i = 0; i < memmap->entries; i++)
     {
         stivale2_mmap_entry* desc = (stivale2_mmap_entry*)&memmap->memmap[i];
 
@@ -243,9 +242,11 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
         return;
     }
 
+    /*
     SetPCIMCFG(mcfg);
 
     EnumeratePCI();
+    */
 
     globalPartitionManager->Initialize();
 }
@@ -320,7 +321,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     UnpoisonKasanShadow((void *)framebuffer->framebuffer_addr, (uint64_t)framebuffer->framebuffer_height * framebuffer->framebuffer_pitch);
 
-    for (int i = 0; i < memmap->entries; i++)
+    for (uint64_t i = 0; i < memmap->entries; i++)
     {
         stivale2_mmap_entry* desc = (stivale2_mmap_entry*)&memmap->memmap[i];
 
