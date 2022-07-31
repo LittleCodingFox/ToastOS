@@ -104,7 +104,7 @@ void InitializeMemory(volatile limine_memmap_request *memmap, volatile limine_fr
 
     for (uint64_t i = 0; i < memmap->response->entry_count; i++)
     {
-        limine_memmap_entry* desc = (limine_memmap_entry*)&memmap->response->entries[i];
+        limine_memmap_entry* desc = (limine_memmap_entry*)memmap->response->entries[i];
 
         if(desc->type == LIMINE_MEMMAP_KERNEL_AND_MODULES)
         {
