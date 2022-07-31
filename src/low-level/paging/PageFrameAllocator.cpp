@@ -15,35 +15,35 @@ const char *MemoryMapTypeString(int type)
 {
     switch(type)
     {
-        case STIVALE2_MMAP_USABLE:
+        case LIMINE_MEMMAP_USABLE:
 
             return "Usable"; 
 
-        case STIVALE2_MMAP_RESERVED:
+        case LIMINE_MEMMAP_RESERVED:
 
             return "Reserved";
 
-        case STIVALE2_MMAP_ACPI_RECLAIMABLE:
+        case LIMINE_MEMMAP_ACPI_RECLAIMABLE:
 
             return "ACPI Reclaimable";
 
-        case STIVALE2_MMAP_ACPI_NVS:
+        case LIMINE_MEMMAP_ACPI_NVS:
 
             return "ACPI NVS";
 
-        case STIVALE2_MMAP_BAD_MEMORY:
+        case LIMINE_MEMMAP_BAD_MEMORY:
 
             return "Bad Memory";
 
-        case STIVALE2_MMAP_BOOTLOADER_RECLAIMABLE:
+        case LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE:
 
             return "Bootloader Reclaimable";
 
-        case STIVALE2_MMAP_KERNEL_AND_MODULES:
+        case LIMINE_MEMMAP_KERNEL_AND_MODULES:
 
             return "Kernel and Modules";
 
-        case STIVALE2_MMAP_FRAMEBUFFER:
+        case LIMINE_MEMMAP_FRAMEBUFFER:
 
             return "Framebuffer";
 
@@ -53,7 +53,7 @@ const char *MemoryMapTypeString(int type)
     }
 }
 
-void PageFrameAllocator::ReadMemoryMap(stivale2_struct_tag_memmap* memmap)
+void PageFrameAllocator::ReadMemoryMap(volatile limine_memmap_request* memmap)
 {
     if (Initialized) return;
 
@@ -62,14 +62,14 @@ void PageFrameAllocator::ReadMemoryMap(stivale2_struct_tag_memmap* memmap)
     void* largestFreeMemSeg = NULL;
     size_t largestFreeMemSegSize = 0;
 
-    for (uint64_t i = 0; i < memmap->entries; i++)
+    for (uint64_t i = 0; i < memmap->response->entry_count; i++)
     {
-        stivale2_mmap_entry* desc = (stivale2_mmap_entry*)&memmap->memmap[i];
+        limine_memmap_entry* desc = (limine_memmap_entry*)memmap->response->entries[i];
 
         DEBUG_OUT("MMap Entry %i: type: %s, size %llu, addr: %p", i, MemoryMapTypeString(desc->type),
             desc->length, desc->base);
 
-        if (desc->type == STIVALE2_MMAP_USABLE)
+        if (desc->type == LIMINE_MEMMAP_USABLE)
         {
             if (desc->length > largestFreeMemSegSize)
             {
@@ -88,11 +88,11 @@ void PageFrameAllocator::ReadMemoryMap(stivale2_struct_tag_memmap* memmap)
 
     DEBUG_OUT("Memory Size: %llu", GetMemorySize(memmap));
 
-    for (uint64_t i = 0; i < memmap->entries; i++)
+    for (uint64_t i = 0; i < memmap->response->entry_count; i++)
     {
-        stivale2_mmap_entry* desc = (stivale2_mmap_entry*)&memmap->memmap[i];
+        limine_memmap_entry* desc = (limine_memmap_entry*)memmap->response->entries[i];
 
-        if (desc->type == STIVALE2_MMAP_USABLE)
+        if (desc->type == LIMINE_MEMMAP_USABLE)
         {
             DEBUG_OUT("Unlocking usable pages for %p-%p (%llu pages)", desc->base, desc->base + desc->length, desc->length / 0x1000);
 

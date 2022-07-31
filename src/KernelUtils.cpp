@@ -25,33 +25,13 @@
 
 PageTableManager pageTableManager;
 
-void *Stivale2GetTag(stivale2_struct *stivale2Struct, uint64_t ID)
+limine_file *GetModule(volatile limine_module_request *modules, const char *name)
 {
-    stivale2_tag *current = (stivale2_tag *)stivale2Struct->tags;
-
-    for(;;)
+    for(uint64_t i = 0; i < modules->response->module_count; i++)
     {
-        if(current == NULL)
-        {
-            return NULL;
-        }
+        limine_file *module = modules->response->modules[i];
 
-        if(current->identifier == ID)
-        {
-            return current;
-        }
-
-        current = (stivale2_tag *)current->next;
-    }
-}
-
-stivale2_module *Stivale2GetModule(stivale2_struct_tag_modules *modules, const char *name)
-{
-    for(uint64_t i = 0; i < modules->module_count; i++)
-    {
-        stivale2_module *module = &modules->modules[i];
-
-        if(strncmp(name, module->string, 128) == 0)
+        if(strncmp(name, module->cmdline, 128) == 0)
         {
             return module;
         }
@@ -60,7 +40,7 @@ stivale2_module *Stivale2GetModule(stivale2_struct_tag_modules *modules, const c
     return NULL;
 }
 
-uint64_t GetMemorySize(stivale2_struct_tag_memmap *memmap)
+uint64_t GetMemorySize(volatile limine_memmap_request *memmap)
 {
     static uint64_t memorySize = 0;
 
@@ -69,15 +49,15 @@ uint64_t GetMemorySize(stivale2_struct_tag_memmap *memmap)
         return memorySize;
     }
 
-    for(uint64_t i = 0; i < memmap->entries; i++)
+    for(uint64_t i = 0; i < memmap->response->entry_count; i++)
     {
-        memorySize += memmap->memmap[i].length;
+        memorySize += memmap->response->entries[i]->length;
     }
 
     return memorySize;
 }
 
-void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_framebuffer *framebuffer)
+void InitializeMemory(volatile limine_memmap_request *memmap, volatile limine_framebuffer_request *framebuffer)
 {
     globalAllocator.ReadMemoryMap(memmap);
 
@@ -122,11 +102,11 @@ void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_fr
 
     DEBUG_OUT("%s", "Mapping memmap");
 
-    for (uint64_t i = 0; i < memmap->entries; i++)
+    for (uint64_t i = 0; i < memmap->response->entry_count; i++)
     {
-        stivale2_mmap_entry* desc = (stivale2_mmap_entry*)&memmap->memmap[i];
+        limine_memmap_entry* desc = (limine_memmap_entry*)&memmap->response->entries[i];
 
-        if(desc->type == STIVALE2_MMAP_KERNEL_AND_MODULES)
+        if(desc->type == LIMINE_MEMMAP_KERNEL_AND_MODULES)
         {
             for(uint64_t index = 0; index < desc->length / 0x1000 + 1; index++)
             {
@@ -145,7 +125,7 @@ void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_fr
                     PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
             }
         }
-        else if(desc->type != STIVALE2_MMAP_USABLE)
+        else if(desc->type != LIMINE_MEMMAP_USABLE)
         {
             for(uint64_t index = 0; index < desc->length / 0x1000 + 1; index++)
             {
@@ -155,14 +135,14 @@ void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_fr
         }
     }
 
-    DEBUG_OUT("Preparing framebuffer pages for address %p", framebuffer->framebuffer_addr);
+    DEBUG_OUT("Preparing framebuffer pages for address %p", framebuffer->response->framebuffers[0]->address);
 
-    uint64_t fbBase = framebuffer->framebuffer_addr;
-    uint64_t fbSize = (uint64_t)framebuffer->framebuffer_height * framebuffer->framebuffer_pitch;
+    uint64_t fbBase = (uint64_t)framebuffer->response->framebuffers[0]->address;
+    uint64_t fbSize = (uint64_t)framebuffer->response->framebuffers[0]->height * framebuffer->response->framebuffers[0]->pitch;
 
     DEBUG_OUT("Framebuffer width: %u; height: %u; bpp: %u; pitch: %u",
-        framebuffer->framebuffer_width, framebuffer->framebuffer_height,
-        framebuffer->framebuffer_bpp, framebuffer->framebuffer_pitch);
+        framebuffer->response->framebuffers[0]->width, framebuffer->response->framebuffers[0]->height,
+        framebuffer->response->framebuffers[0]->bpp, framebuffer->response->framebuffers[0]->pitch);
 
     for (uint64_t t = fbBase; t < fbBase + fbSize; t += 0x1000)
     {
@@ -170,7 +150,7 @@ void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_fr
             PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_WRITE_COMBINE);
     }
 
-    framebuffer->framebuffer_addr = fbBase;
+    framebuffer->response->framebuffers[0]->address = (void *)fbBase;
 
     DEBUG_OUT("%s", "Initialized Framebuffer");
 
@@ -188,7 +168,7 @@ void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_fr
     DEBUG_OUT("%s", "Initialized memory");
 }
 
-void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
+void InitializeACPI(volatile limine_rsdp_request *rsdp)
 {
     (void)rsdp;
 
@@ -201,7 +181,7 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
         return;
     }
 
-    RSDP2 *rsdpStruct = (RSDP2 *)rsdp->rsdp;
+    RSDP2 *rsdpStruct = (RSDP2 *)rsdp->response->address;
 
     char signature[9] = { 0 };
 
@@ -290,20 +270,13 @@ void CursorHandler(struct vtconsole* vtc, vtcursor_t* cur)
 
 void RefreshFramebuffer(InterruptStack *stack);
 
-void InitializeKernel(stivale2_struct *stivale2Struct)
+void InitializeKernel(volatile limine_framebuffer_request *framebuffer, volatile limine_memmap_request *memmap, volatile limine_module_request *modules)
 {
     InitializeSerial();
 
-    stivale2_struct_tag_framebuffer *framebuffer = (stivale2_struct_tag_framebuffer *)Stivale2GetTag(stivale2Struct, STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID);
-    stivale2_struct_tag_memmap *memmap = (stivale2_struct_tag_memmap *)Stivale2GetTag(stivale2Struct, STIVALE2_STRUCT_TAG_MEMMAP_ID);
-    stivale2_struct_tag_modules *modules = (stivale2_struct_tag_modules *)Stivale2GetTag(stivale2Struct, STIVALE2_STRUCT_TAG_MODULES_ID);
-    stivale2_struct_tag_rsdp *rsdp = (stivale2_struct_tag_rsdp *)Stivale2GetTag(stivale2Struct, STIVALE2_STRUCT_TAG_RSDP_ID);
-
-    (void)rsdp;
-
-    stivale2_module *symbols = Stivale2GetModule(modules, "symbols.map");
-    stivale2_module *font = Stivale2GetModule(modules, "font.psf");
-    stivale2_module *initrd = Stivale2GetModule(modules, "initrd");
+    limine_file *symbols = GetModule(modules, "symbols.map");
+    limine_file *font = GetModule(modules, "font.psf");
+    limine_file *initrd = GetModule(modules, "initrd");
 
     LoadGDT();
 
@@ -319,13 +292,14 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     UnpoisonKasanShadow((void *)TranslateToHighHalfMemoryAddress((uint64_t)globalPageTableManager->p4), 0x1000);
 
-    UnpoisonKasanShadow((void *)framebuffer->framebuffer_addr, (uint64_t)framebuffer->framebuffer_height * framebuffer->framebuffer_pitch);
+    UnpoisonKasanShadow((void *)framebuffer->response->framebuffers[0]->address,
+        (uint64_t)framebuffer->response->framebuffers[0]->height * framebuffer->response->framebuffers[0]->pitch);
 
-    for (uint64_t i = 0; i < memmap->entries; i++)
+    for (uint64_t i = 0; i < memmap->response->entry_count; i++)
     {
-        stivale2_mmap_entry* desc = (stivale2_mmap_entry*)&memmap->memmap[i];
+        limine_memmap_entry* desc = (limine_memmap_entry*)memmap->response->entries[i];
 
-        if(desc->type == STIVALE2_MMAP_KERNEL_AND_MODULES)
+        if(desc->type == LIMINE_MEMMAP_KERNEL_AND_MODULES)
         {
             auto base = desc->base;
 
@@ -348,9 +322,9 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     if(symbols != NULL)
     {
-        DEBUG_OUT("Initializing kernel symbols from size %llu", symbols->end - symbols->begin);
+        DEBUG_OUT("Initializing kernel symbols from size %llu", symbols->size);
 
-        KernelInitStacktrace((char *)symbols->begin, symbols->end - symbols->begin);
+        KernelInitStacktrace((char *)symbols->address, symbols->size);
     }
 
     EnableSSE();
@@ -359,16 +333,16 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     if(font != NULL)
     {
-        psf2Font = psf2Load((void *)font->begin);
+        psf2Font = psf2Load((void *)font->address);
     }
 
-    Framebuffer *framebufferStruct = (Framebuffer *)malloc(sizeof(Framebuffer));
+    Framebuffer *framebufferStruct = new Framebuffer();
 
-    framebufferStruct->baseAddress = (void *)framebuffer->framebuffer_addr;
-    framebufferStruct->bufferSize = framebuffer->framebuffer_pitch * framebuffer->framebuffer_height;
-    framebufferStruct->height = framebuffer->framebuffer_height;
-    framebufferStruct->width = framebuffer->framebuffer_width;
-    framebufferStruct->pixelsPerScanLine = framebuffer->framebuffer_pitch;
+    framebufferStruct->baseAddress = (void *)framebuffer->response->framebuffers[0]->address;
+    framebufferStruct->bufferSize = framebuffer->response->framebuffers[0]->pitch * framebuffer->response->framebuffers[0]->height;
+    framebufferStruct->height = framebuffer->response->framebuffers[0]->height;
+    framebufferStruct->width = framebuffer->response->framebuffers[0]->width;
+    framebufferStruct->pixelsPerScanLine = framebuffer->response->framebuffers[0]->pitch;
 
     globalRenderer = new FramebufferRenderer(framebufferStruct, psf2Font);
 
@@ -403,7 +377,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     if(initrd != NULL)
     {
-        auto tarfs = new TarFS((uint8_t *)initrd->begin);
+        auto tarfs = new TarFS((uint8_t *)initrd->address);
 
         vfs->AddMountPoint("/", tarfs);
 

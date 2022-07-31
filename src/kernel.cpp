@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
-#include <stivale2.h>
+#include <limine.h>
 #include "fcntl.h"
 #include "liballoc/liballoc.h"
 #include "printf/printf.h"
@@ -13,7 +13,7 @@
 #include "process/Process.hpp"
 #include "framebuffer/FramebufferRenderer.hpp"
 
-static uint8_t stack[0x100000];
+//static uint8_t stack[0x100000];
 
 const char *startAppPath = "/usr/bin/bash";
 
@@ -24,22 +24,19 @@ const char *args[] =
 
 const char *cwd = "/home/toast/";
 
-static stivale2_header_tag_framebuffer framebufferTag = {
-    .tag = {
-        .identifier = STIVALE2_HEADER_TAG_FRAMEBUFFER_ID,
-        .next = 0,
-    },
-    .framebuffer_width = 0,
-    .framebuffer_height = 0,
-    .framebuffer_bpp = 0,
+static volatile limine_framebuffer_request framebuffer = {
+    .id = LIMINE_FRAMEBUFFER_REQUEST,
+    .revision = 0,
 };
 
-__attribute__((section(".stivale2hdr"), used))
-static struct stivale2_header stivaleHeader = {
-    .entry_point = 0,
-    .stack = (uintptr_t)stack + sizeof(stack),
-    .flags = (1 << 1) | (1 << 2),
-    .tags = (uint64_t)&framebufferTag,
+static volatile limine_memmap_request memmap = {
+    .id = LIMINE_MEMMAP_REQUEST,
+    .revision = 0,
+};
+
+static volatile limine_module_request modules = {
+    .id = LIMINE_MODULE_REQUEST,
+    .revision = 0,
 };
 
 void KernelTask()
@@ -51,9 +48,9 @@ void KernelTask()
     }
 }
 
-extern "C" void _start(stivale2_struct *stivale2Struct)
+extern "C" void _start()
 {
-    InitializeKernel(stivale2Struct);
+    InitializeKernel(&framebuffer, &memmap, &modules);
 
     printf("Starting app at %s\n", startAppPath);
 
