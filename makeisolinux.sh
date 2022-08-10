@@ -26,7 +26,7 @@ git clone https://github.com/limine-bootloader/limine.git --branch=v3.0-branch-b
 
 make -C limine
 
-./limine/limine-install $BINDIR/$OS_NAME.img
+./limine/limine-deploy $BINDIR/$OS_NAME.img
 
 sudo mkdir -p /mnt/osdev
 

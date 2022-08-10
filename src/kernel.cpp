@@ -13,8 +13,6 @@
 #include "process/Process.hpp"
 #include "framebuffer/FramebufferRenderer.hpp"
 
-//static uint8_t stack[0x100000];
-
 const char *startAppPath = "/usr/bin/bash";
 
 const char *args[] =
