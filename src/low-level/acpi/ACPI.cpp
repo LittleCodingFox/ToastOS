@@ -1,6 +1,6 @@
 #include "ACPI.hpp"
 #include "debug.hpp"
-#include "paging/Paging.hpp"
+#include "paging/PageTableManager.hpp"
 #include <string.h>
 
 namespace ACPI

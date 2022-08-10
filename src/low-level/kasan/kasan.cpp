@@ -1,6 +1,6 @@
 #include "kernel.h"
 #include "Panic.hpp"
-#include "paging/Paging.hpp"
+#include "paging/PageTableManager.hpp"
 
 #if USE_KASAN
 namespace {

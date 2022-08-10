@@ -1,5 +1,5 @@
 #pragma once
-#include "Paging.hpp"
+#include "osdev-paging-x64/paging.h"
 
 class PageTableManager
 {

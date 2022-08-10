@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include "debug.hpp"
 #include "stacktrace.hpp"
-#include "paging/Paging.hpp"
 
 typedef struct stack_frame
 {

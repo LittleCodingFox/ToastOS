@@ -7,3 +7,6 @@
 [submodule "cxxshim"]
 	path = cxxshim
 	url = https://github.com/managarm/cxxshim.git
+[submodule "ext-libs/osdev-paging-x64"]
+	path = ext-libs/osdev-paging-x64
+	url = https://github.com/LittleCodingFox/osdev-paging-x64.git
