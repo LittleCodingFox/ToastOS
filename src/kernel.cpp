@@ -37,6 +37,22 @@ static volatile limine_module_request modules = {
     .revision = 0,
 };
 
+static volatile limine_stack_size_request stackSize {
+    .id = LIMINE_STACK_SIZE_REQUEST,
+    .revision = 0,
+    .stack_size = 0x1000000
+};
+
+static volatile limine_hhdm_request hhdm {
+    .id = LIMINE_HHDM_REQUEST,
+    .revision = 0,
+};
+
+static volatile limine_kernel_address_request kernelAddress {
+    .id = LIMINE_KERNEL_ADDRESS_REQUEST,
+    .revision = 0,
+};
+
 void KernelTask()
 {
     //Idle process
@@ -48,7 +64,11 @@ void KernelTask()
 
 extern "C" void _start()
 {
-    InitializeKernel(&framebuffer, &memmap, &modules);
+    volatile limine_stack_size_request *s = &stackSize;
+
+    (void)s;
+
+    InitializeKernel(&framebuffer, &memmap, &modules, &hhdm, &kernelAddress);
 
     printf("Starting app at %s\n", startAppPath);
 

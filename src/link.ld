@@ -22,20 +22,30 @@ SECTIONS
     /* Since we are going to use PIE, this is just the base load address, but the */
     /* bootloader will be able to relocate us as it sees fit. */
     . = 0xffffffff80000000;
- 
+
+    text_start_addr = .;
+    
     .text : {
         *(.text*)
     } :text
+
+    text_end_addr = .;
  
     /* Move to the next memory page for .rodata */
     . += 0x1000;
- 
+
+    rodata_start_addr = .;
+
     .rodata : {
         *(.rodata*)
     } :rodata
+
+    rodata_end_addr = .;
  
     /* Move to the next memory page for .data */
     . += 0x1000;
+
+    data_start_addr = .;
  
     .data : {
         *(.data*)
@@ -50,4 +60,10 @@ SECTIONS
         *(COMMON)
         *(.bss*)
     } :data
+
+    data_end_addr = .;
+
+    /DISCARD/ : {
+        *(.note .note.*)
+    }
 }

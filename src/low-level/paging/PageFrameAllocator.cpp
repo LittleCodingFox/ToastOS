@@ -53,7 +53,7 @@ const char *MemoryMapTypeString(int type)
     }
 }
 
-void PageFrameAllocator::ReadMemoryMap(volatile limine_memmap_request* memmap)
+void PageFrameAllocator::ReadMemoryMap(volatile limine_memmap_request* memmap, volatile limine_hhdm_request *hhdm)
 {
     if (Initialized) return;
 
@@ -84,7 +84,7 @@ void PageFrameAllocator::ReadMemoryMap(volatile limine_memmap_request* memmap)
 
     uint64_t bitmapSize = memorySize / 0x1000 / 8 + 1;
 
-    InitBitmap(bitmapSize, largestFreeMemSeg);
+    InitBitmap(bitmapSize, largestFreeMemSeg, hhdm);
 
     DEBUG_OUT("Memory Size: %llu", GetMemorySize(memmap));
 
@@ -111,10 +111,10 @@ void PageFrameAllocator::ReadMemoryMap(volatile limine_memmap_request* memmap)
     DEBUG_OUT("%s", "Finished setting up memory");
 }
 
-void PageFrameAllocator::InitBitmap(size_t bitmapSize, void* bufferAddress)
+void PageFrameAllocator::InitBitmap(size_t bitmapSize, void* bufferAddress, volatile limine_hhdm_request *hhdm)
 {
     PageBitmap.size = bitmapSize;
-    PageBitmap.buffer = (uint8_t*)bufferAddress;
+    PageBitmap.buffer = (uint8_t*)((uint64_t)bufferAddress + hhdm->response->offset);
 
     DEBUG_OUT("Initing bitmap with size %d at address %p", bitmapSize, bufferAddress);
 

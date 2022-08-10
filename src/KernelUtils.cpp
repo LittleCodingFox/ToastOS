@@ -25,6 +25,12 @@
 
 PageTableManager pageTableManager;
 
+using symbol = char[];
+
+extern "C" symbol text_start_addr, text_end_addr,
+    rodata_start_addr, rodata_end_addr,
+    data_start_addr, data_end_addr;
+
 limine_file *GetModule(volatile limine_module_request *modules, const char *name)
 {
     for(uint64_t i = 0; i < modules->response->module_count; i++)
@@ -57,9 +63,10 @@ uint64_t GetMemorySize(volatile limine_memmap_request *memmap)
     return memorySize;
 }
 
-void InitializeMemory(volatile limine_memmap_request *memmap, volatile limine_framebuffer_request *framebuffer)
+void InitializeMemory(volatile limine_memmap_request *memmap, volatile limine_framebuffer_request *framebuffer,
+    volatile limine_hhdm_request *hhdm, volatile limine_kernel_address_request *kernelAddress)
 {
-    globalAllocator.ReadMemoryMap(memmap);
+    globalAllocator.ReadMemoryMap(memmap, hhdm);
 
     DEBUG_OUT("%s", "Initializing page table manager");
 
@@ -80,10 +87,6 @@ void InitializeMemory(volatile limine_memmap_request *memmap, volatile limine_fr
     //Enable write protection
     Registers::WriteCR0(Registers::ReadCR0() | (1 << 16));
 
-    //Enable NXE bit
-    uint64_t efer = Registers::ReadMSR(Registers::IA32_EFER);
-    Registers::WriteMSR(Registers::IA32_EFER, efer | (1 << 11));
-
     // Program the PAT. Each byte configures a single entry.
     // 00: Uncacheable
     // 01: Write Combining
@@ -92,15 +95,45 @@ void InitializeMemory(volatile limine_memmap_request *memmap, volatile limine_fr
     //Registers::WriteMSR(0x277, 0x00'00'01'00'00'00'04'06);
     Registers::WriteMSR(0x0277, 0x0000000005010406);
 
-    DEBUG_OUT("%s", "Identity mapping the whole memory");
+    DEBUG_OUT("%s", "Mapping memmap");
 
-    for(uint64_t index = 0; index < GetMemorySize(memmap); index += 0x1000)
+    #define ALIGN_DOWN(value, align) ((value / align) * align)
+    #define ALIGN_UP(value, align) (((value + (align - 1)) / align) * align)
+
+    uint64_t textStart = ALIGN_DOWN((uint64_t)text_start_addr, 0x1000);
+    uint64_t textEnd = ALIGN_UP((uint64_t)text_end_addr, 0x1000);
+    uint64_t rodataStart = ALIGN_DOWN((uint64_t)rodata_start_addr, 0x1000);
+    uint64_t rodataEnd = ALIGN_UP((uint64_t)rodata_end_addr, 0x1000);
+    uint64_t dataStart = ALIGN_DOWN((uint64_t)data_start_addr, 0x1000);
+    uint64_t dataEnd = ALIGN_UP((uint64_t)data_end_addr, 0x1000);
+
+    for(uint64_t textAddress = textStart; textAddress < textEnd; textAddress += 0x1000)
     {
-        pageTableManager.MapMemory((void *)TranslateToHighHalfMemoryAddress(index), (void *)(index),
-            PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+        uint64_t target = textAddress - kernelAddress->response->virtual_base + kernelAddress->response->physical_base;
+
+        pageTableManager.MapMemory((void *)textAddress, (void *)target, PAGING_FLAG_PRESENT);
     }
 
-    DEBUG_OUT("%s", "Mapping memmap");
+    for(uint64_t rodataAddress = rodataStart; rodataAddress < rodataEnd; rodataAddress += 0x1000)
+    {
+        uint64_t target = rodataAddress - kernelAddress->response->virtual_base + kernelAddress->response->physical_base;
+
+        pageTableManager.MapMemory((void *)rodataAddress, (void *)target, PAGING_FLAG_PRESENT | PAGING_FLAG_NO_EXECUTE);
+    }
+
+    for(uint64_t dataAddress = dataStart; dataAddress < dataEnd; dataAddress += 0x1000)
+    {
+        uint64_t target = dataAddress - kernelAddress->response->virtual_base + kernelAddress->response->physical_base;
+
+        pageTableManager.MapMemory((void *)dataAddress, (void *)target, PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_NO_EXECUTE);
+    }
+
+    for(uint64_t address = 0x1000; address < 0x100000000; address += 0x1000)
+    {
+        pageTableManager.IdentityMap((void *)address, PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+        pageTableManager.MapMemory((void *)TranslateToHighHalfMemoryAddress(address), (void *)address,
+            PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_NO_EXECUTE);
+    }
 
     for (uint64_t i = 0; i < memmap->response->entry_count; i++)
     {
@@ -112,25 +145,13 @@ void InitializeMemory(volatile limine_memmap_request *memmap, volatile limine_fr
             {
                 auto base = desc->base;
 
-                if(TranslateToKernelMemoryAddress(desc->base) <= 0xFFFFFFFF90000000)
-                {
-                    base = TranslateToKernelMemoryAddress(base);
-                }
-                else
+                if(TranslateToKernelMemoryAddress(desc->base) > 0xFFFFFFFF90000000)
                 {
                     base = TranslateToHighHalfMemoryAddress(base);
-                }
 
-                pageTableManager.MapMemory((void *)(base + index * 0x1000), (void *)(desc->base + index * 0x1000),
-                    PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
-            }
-        }
-        else if(desc->type != LIMINE_MEMMAP_USABLE)
-        {
-            for(uint64_t index = 0; index < desc->length / 0x1000 + 1; index++)
-            {
-                pageTableManager.MapMemory((void *)TranslateToHighHalfMemoryAddress(desc->base + index * 0x1000), (void *)(desc->base + index * 0x1000),
-                    PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE);
+                    pageTableManager.MapMemory((void *)(base + index * 0x1000), (void *)(desc->base + index * 0x1000),
+                        PAGING_FLAG_PRESENT | PAGING_FLAG_WRITABLE | PAGING_FLAG_NO_EXECUTE);
+                }
             }
         }
     }
@@ -270,7 +291,8 @@ void CursorHandler(struct vtconsole* vtc, vtcursor_t* cur)
 
 void RefreshFramebuffer(InterruptStack *stack);
 
-void InitializeKernel(volatile limine_framebuffer_request *framebuffer, volatile limine_memmap_request *memmap, volatile limine_module_request *modules)
+void InitializeKernel(volatile limine_framebuffer_request *framebuffer, volatile limine_memmap_request *memmap, volatile limine_module_request *modules,
+    volatile limine_hhdm_request *hhdm, volatile limine_kernel_address_request *kernelAddress)
 {
     InitializeSerial();
 
@@ -280,11 +302,11 @@ void InitializeKernel(volatile limine_framebuffer_request *framebuffer, volatile
 
     LoadGDT();
 
-    InitializeMemory(memmap, framebuffer);
-
     printf("[INTERRUPTS] Initializing Interrupts\n");
 
     interrupts.Init();
+
+    InitializeMemory(memmap, framebuffer, hhdm, kernelAddress);
 
 #if USE_KASAN
     DEBUG_OUT("Kasan: Unpoison framebuffer", 0);
