@@ -5,7 +5,6 @@
 #include "framebuffer/FramebufferRenderer.hpp"
 #include "Bitmap.hpp"
 #include "paging/PageFrameAllocator.hpp"
-#include "paging/Paging.hpp"
 #include "paging/PageTableManager.hpp"
 #include "text/psf2.hpp"
 #include "serial/Serial.hpp"

@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "debug.hpp"
 #include "stacktrace.hpp"
-#include "paging/Paging.hpp"
+#include "paging/PageTableManager.hpp"
 
 typedef struct stack_frame
 {
