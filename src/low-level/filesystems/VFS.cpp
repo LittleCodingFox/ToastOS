@@ -290,6 +290,7 @@ FILE_HANDLE VFS::OpenFile(const char *path, uint32_t flags, Process *currentProc
             handle->fsHandle = mountPoint->fileSystem->GetFileHandle("");
             handle->mountPoint = mountPoint;
             handle->fileType = FILE_HANDLE_DIRECTORY;
+            handle->virtualFile = NULL;
             handle->cursor = 0;
             handle->length = 0;
             handle->isValid = true;
@@ -362,6 +363,7 @@ FILE_HANDLE VFS::OpenFile(const char *path, uint32_t flags, Process *currentProc
                 handle->fsHandle = mountHandle;
                 handle->mountPoint = mountPoint;
                 handle->fileType = mountPoint->fileSystem->FileHandleType(handle->fsHandle);
+                handle->virtualFile = NULL;
                 handle->cursor = 0;
                 handle->length = mountPoint->fileSystem->FileLength(handle->fsHandle);
                 handle->isValid = true;

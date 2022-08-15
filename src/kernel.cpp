@@ -15,12 +15,9 @@
 
 static uint8_t stack[0x100000];
 
-const char *startAppPath = "/usr/bin/bash";
+const char *startAppPath = "/bin/init";
 
-const char *args[] =
-{
-    "-i", "-l"
-};
+const char *args[] = {};
 
 const char *cwd = "/home/toast/";
 
