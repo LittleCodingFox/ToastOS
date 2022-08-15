@@ -383,7 +383,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     globalInputSystem.initialize();
 
-    printf("[Timer] Initializing timer");
+    printf("[Timer] Initializing timer\n");
 
     timer.initialize();
 

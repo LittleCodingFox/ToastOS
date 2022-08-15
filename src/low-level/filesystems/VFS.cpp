@@ -43,9 +43,9 @@ VFS::FileHandle *VFS::GetFileHandle(FILE_HANDLE handle)
 
     for(uint64_t i = 0; i < fileHandles.size(); i++)
     {
-        if(fileHandles[i].ID == handle && fileHandles[i].isValid)
+        if(fileHandles[i]->ID == handle && fileHandles[i]->isValid)
         {
-            return &fileHandles[i];
+            return fileHandles[i];
         }
     }
 
@@ -56,17 +56,27 @@ VFS::FileHandle *VFS::NewFileHandle()
 {
     for(uint64_t i = 0; i < fileHandles.size(); i++)
     {
-        if(fileHandles[i].isValid == false)
+        if(fileHandles[i]->isValid == false)
         {
-            return &fileHandles[i];
+            auto handle = fileHandles[i];
+            
+            handle->cursor = 0;
+            handle->fileType = FILE_HANDLE_UNKNOWN;
+            handle->flags = 0;
+            handle->fsHandle = INVALID_FILE_HANDLE;
+            handle->length = 0;
+            handle->mountPoint = NULL;
+            handle->virtualFile = NULL;
+
+            return handle;
         }
     }
 
-    FileHandle handle = {0};
+    auto handle = new FileHandle();
 
-    handle.ID = fileHandleCounter++;
+    handle->ID = fileHandleCounter++;
 
-    return &fileHandles.push_back(handle);
+    return fileHandles.push_back(handle);
 }
 
 void VFS::AddMountPoint(const char *path, FileSystem *fileSystem)
@@ -98,10 +108,10 @@ void VFS::RemoveMountPoint(const char *path)
         {
             for(uint64_t j = 0; j < fileHandles.size(); j++)
             {
-                if(fileHandles[j].mountPoint == mountPoints[i])
+                if(fileHandles[j]->isValid && fileHandles[j]->mountPoint == mountPoints[i])
                 {
-                    fileHandles[j].isValid = false;
-                    fileHandles[j].mountPoint = NULL;
+                    fileHandles[j]->isValid = false;
+                    fileHandles[j]->mountPoint = NULL;
                 }
             }
 
@@ -119,7 +129,7 @@ dirent *VFS::ReadEntries(FILE_HANDLE handle)
 {
     FileHandle *fileHandle = GetFileHandle(handle);
 
-    if(fileHandle == NULL)
+    if(fileHandle == NULL || fileHandle->isValid == false)
     {
         return NULL;
     }
@@ -136,7 +146,7 @@ string VFS::GetFilePath(FILE_HANDLE handle)
 {
     FileHandle *fileHandle = GetFileHandle(handle);
 
-    if(fileHandle == NULL)
+    if(fileHandle == NULL || fileHandle->isValid == false)
     {
         return "";
     }
@@ -148,7 +158,7 @@ void VFS::CloseDir(FILE_HANDLE handle)
 {
     FileHandle *fileHandle = GetFileHandle(handle);
 
-    if(fileHandle == NULL)
+    if(fileHandle == NULL || fileHandle->isValid == false)
     {
         return;
     }

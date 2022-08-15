@@ -188,8 +188,10 @@ linux: kernel userland iso-linux
 run-linux: linux run-qemu-linux
 
 debug-linux: CFLAGS += -DKERNEL_DEBUG=1 #-O0
-debug-linux: QEMU_FLAGS = -s -S
 debug-linux: run-linux
+
+debug-gdb-linux: QEMU_FLAGS = -s -S
+debug-gdb-linux: debug-linux
 
 run-qemu-linux:
 	qemu-system-x86_64 -drive file=$(BINDIR)/$(OS_NAME).img,format=raw,index=0,media=disk \

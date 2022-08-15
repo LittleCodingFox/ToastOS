@@ -48,7 +48,7 @@ int64_t SyscallVMMap(InterruptStack *stack)
 
     if((prot & PROT_EXEC) == 0)
     {
-        pagingFlags |= PAGING_FLAG_NO_EXECUTE;
+        //pagingFlags |= PAGING_FLAG_NO_EXECUTE;
     }
 
     if(flags & MAP_ANONYMOUS)

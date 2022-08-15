@@ -37,7 +37,7 @@ private:
     struct FileHandle
     {
         MountPoint *mountPoint;
-        frg::string<frg_allocator> path;
+        string path;
         FileSystemHandle fsHandle;
         uint64_t length;
         uint64_t cursor;
@@ -47,11 +47,21 @@ private:
         uint64_t ID;
         struct stat stat;
         VirtualFile *virtualFile;
+
+        FileHandle()
+        {
+            mountPoint = NULL;
+            fsHandle = INVALID_FILE_HANDLE;
+            length = cursor = flags = ID = 0;
+            isValid = false;
+            fileType = FILE_HANDLE_UNKNOWN;
+            virtualFile = NULL;
+        }
     };
 
-    frg::vector<MountPoint *, frg_allocator> mountPoints;
-    frg::vector<FileHandle, frg_allocator> fileHandles;
-    frg::vector<VirtualFile *, frg_allocator> virtualFiles;
+    vector<MountPoint *> mountPoints;
+    vector<FileHandle *> fileHandles;
+    vector<VirtualFile *> virtualFiles;
     uint64_t fileHandleCounter;
 
     FileHandle *GetFileHandle(FILE_HANDLE handle);
