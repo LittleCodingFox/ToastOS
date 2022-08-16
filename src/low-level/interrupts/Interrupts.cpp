@@ -7,6 +7,7 @@
 #include "printf/printf.h"
 #include "registers/Registers.hpp"
 #include "keyboard/Keyboard.hpp"
+#include "mouse/Mouse.hpp"
 #include "process/Process.hpp"
 #include "debug.hpp"
 #include "serial/Serial.hpp"
@@ -22,6 +23,7 @@ void DoubleFaultHandler(InterruptStack *stack);
 void KeyboardHandler(InterruptStack *stack);
 void SwitchProcess(InterruptStack *stack);
 void SyscallHandler(InterruptStack *stack);
+void MouseHandler(InterruptStack *stack);
 
 static const char *exception_messages[] =
 {
@@ -146,6 +148,7 @@ void Interrupts::Init()
     RegisterHandler(EXCEPTION_PF, PageFaultHandler);
     RegisterHandler(EXCEPTION_DF, DoubleFaultHandler);
     RegisterHandler(IRQ1, KeyboardHandler);
+    RegisterHandler(IRQ12, MouseHandler);
     RegisterHandler(0x30, SwitchProcess);
     RegisterHandler(0x80, SyscallHandler);
 
@@ -280,6 +283,16 @@ void KeyboardHandler(InterruptStack *stack)
 
     HandleKeyboardKeyPress(scancode);
 
+    outport8(PIC1, PIC_EOI);
+}
+
+void MouseHandler(InterruptStack *stack)
+{
+    uint8_t data = inport8(0x60);
+
+    HandleMouse(data);
+
+    outport8(PIC2, PIC_EOI);
     outport8(PIC1, PIC_EOI);
 }
 

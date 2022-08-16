@@ -77,7 +77,10 @@ enum InputEventType
 {
     TOAST_INPUT_EVENT_NONE,
     TOAST_INPUT_EVENT_KEYDOWN,
-    TOAST_INPUT_EVENT_KEYUP
+    TOAST_INPUT_EVENT_KEYUP,
+    TOAST_INPUT_EVENT_MOUSEMOVE,
+    TOAST_INPUT_EVENT_MOUSEDOWN,
+    TOAST_INPUT_EVENT_MOUSEUP
 };
 
 enum InputModifierType
@@ -88,6 +91,13 @@ enum InputModifierType
     TOAST_INPUT_MODIFIER_RCONTROL = (1 << 4)
 };
 
+enum MouseButtons
+{
+    TOAST_INPUT_MOUSE_BUTTON_LEFT = (1 << 0),
+    TOAST_INPUT_MOUSE_BUTTON_MIDDLE = (1 << 1),
+    TOAST_INPUT_MOUSE_BUTTON_RIGHT = (1 << 2)
+};
+
 struct InputKeyEvent
 {
     uint8_t key;
@@ -95,10 +105,17 @@ struct InputKeyEvent
     uint8_t modifiers;
 };
 
+struct InputMouseEvent
+{
+    int x, y;
+    int buttons;
+};
+
 struct InputEvent
 {
     uint32_t type;
     struct InputKeyEvent keyEvent;
+    struct InputMouseEvent mouseEvent;
 };
 
 bool ToastInputPollEvent(struct InputEvent *event);

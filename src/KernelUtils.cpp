@@ -22,6 +22,7 @@
 #include "keyboard/Keyboard.hpp"
 #include "input/InputSystem.hpp"
 #include "kasan/kasan.hpp"
+#include "mouse/Mouse.hpp"
 
 PageTableManager pageTableManager;
 
@@ -413,6 +414,8 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
     InitializeVirtualFiles();
 
     InitializeKeyboard();
+
+    InitializeMouse();
 
     processManager.initialize(new RoundRobinScheduler());
 

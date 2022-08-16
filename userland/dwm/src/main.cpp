@@ -1,5 +1,6 @@
 #include <string.h>
 #include <toast/graphics.h>
+#include <toast/input.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -15,6 +16,10 @@ void DrawMain(float delta);
 
 int screenWidth = 0;
 int screenHeight = 0;
+
+int mouseX = 0;
+int mouseY = 0;
+int mouseButtons = 0;
 
 extern Screen logoScreen;
 
@@ -79,8 +84,9 @@ int main(int argc, char **argv)
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-    int frames = 0;
     uint32_t t = GetTime();
+
+    InputEvent inputEvent;
 
     for(;;)
     {
@@ -99,7 +105,31 @@ int main(int argc, char **argv)
 
         glFinish();
 
-        frames++;
+        if(ToastInputPollEvent(&inputEvent))
+        {
+            switch(inputEvent.type)
+            {
+                case TOAST_INPUT_EVENT_MOUSEMOVE:
+
+                    mouseX = inputEvent.mouseEvent.x;
+                    mouseY = inputEvent.mouseEvent.y;
+                    mouseButtons = inputEvent.mouseEvent.buttons;
+
+                    break;
+
+                case TOAST_INPUT_EVENT_MOUSEDOWN:
+
+                    mouseButtons |= inputEvent.mouseEvent.buttons;
+
+                    break;
+
+                case TOAST_INPUT_EVENT_MOUSEUP:
+
+                    mouseButtons &= ~inputEvent.mouseEvent.buttons;
+
+                    break;
+            }
+        }
 
         ToastSetGraphicsBuffer(buffer);
     }
