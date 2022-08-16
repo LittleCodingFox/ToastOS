@@ -4,12 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-const char *startAppPath = "/usr/bin/bash";
+const char *startAppPath = "/bin/dwm";
 
-const char *args[] =
-{
-    "-i", "-l"
-};
+const char *args[] = {};
 
 const char *cwd = "/home/toast/";
 
