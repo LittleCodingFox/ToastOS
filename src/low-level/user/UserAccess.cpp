@@ -5,11 +5,15 @@
 {
     if(IsHigherHalf((uint64_t)userPtr))
     {
+        DEBUG_OUT("SanitizeUserPointer: %p failed", userPtr);
+
         return false;
     }
 
     if(userPtr == NULL)
     {
+        DEBUG_OUT("SanitizeUserPointer: %p failed", userPtr);
+
         return false;
     }
 

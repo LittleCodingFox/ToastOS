@@ -605,6 +605,7 @@ ProcessControlBlock *ProcessManager::LoadImage(const void *image, const char *na
     {
         uint32_t length = strlen(argv[argc]) + 1;
         byteStack = (uint8_t *)byteStack - length;
+
         memcpy(byteStack, argv[argc], length);
 
         argc++;
@@ -644,6 +645,8 @@ ProcessControlBlock *ProcessManager::LoadImage(const void *image, const char *na
     push(stack, 0);
 
     stack -= envc;
+
+    stackEnd = TranslateToPhysicalMemoryAddress(stackEnd);
 
     for(uint32_t i = 0; i < envc; i++)
     {
