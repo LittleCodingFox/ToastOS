@@ -52,6 +52,7 @@ int64_t SyscallFutexWake(InterruptStack *stack);
 int64_t SyscallSetKBLayout(InterruptStack *stack);
 int64_t SyscallPipe(InterruptStack *stack);
 int64_t SyscallDup2(InterruptStack *stack);
+int64_t SyscallGetRandom(InterruptStack *stack);
 
 SyscallPointer syscallHandlers[] =
 {
@@ -102,6 +103,7 @@ SyscallPointer syscallHandlers[] =
     (SyscallPointer)SyscallSetKBLayout,
     (SyscallPointer)SyscallPipe,
     (SyscallPointer)SyscallDup2,
+    (SyscallPointer)SyscallGetRandom,
 };
 
 void SyscallHandler(InterruptStack *stack)

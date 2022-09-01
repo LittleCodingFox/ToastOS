@@ -34,7 +34,7 @@ int64_t SyscallStat(InterruptStack *stack)
     
     if(vfs->FileType(handle) == FILE_HANDLE_UNKNOWN || error != 0)
     {
-        DEBUG_OUT(error == 0 ? "Stat is unknown" : "Stat Error: %i", error);
+        //DEBUG_OUT(error == 0 ? "Stat is unknown" : "Stat Error: %i", error);
 
         return -1;
     }
@@ -45,12 +45,12 @@ int64_t SyscallStat(InterruptStack *stack)
 
     if(error != 0)
     {
-        DEBUG_OUT("Stat Error: %i", error);
+        //DEBUG_OUT("Stat Error: %i", error);
 
         return -error;
     }
 
-    DEBUG_OUT("Stat OK!", 0);
+    //DEBUG_OUT("Stat OK!", 0);
 
     return 0;
 }

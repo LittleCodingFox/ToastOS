@@ -1,22 +1,25 @@
 #ifndef _ABIBITS_WAIT_H
 #define _ABIBITS_WAIT_H
 
-#define WCONTINUED 1
-#define WNOHANG 2
-#define WUNTRACED 4
-#define WEXITED 8
-#define WNOWAIT 16
-#define WSTOPPED 32
+#define WNOHANG 1
+#define WUNTRACED 2
+#define WSTOPPED 2
+#define WEXITED 4
+#define WCONTINUED 8
+#define WNOWAIT 0x01000000
+
+#define __WALL 0x40000000
+#define __WCLONE 0x80000000
 
 #define WCOREFLAG 0x80
 
-#define WEXITSTATUS(x) ((x) & 0x000000FF)
-#define WIFCONTINUED(x) ((x) & 0x00000100)
-#define WIFEXITED(x) ((x) & 0x00000200)
-#define WIFSIGNALED(x) ((x) & 0x00000400)
-#define WIFSTOPPED(x) ((x) & 0x00000800)
-#define WSTOPSIG(x) (((x) & 0x00FF0000) >> 16)
-#define WTERMSIG(x) (((x) & 0xFF000000) >> 24)
+#define WEXITSTATUS(x) (((x) & 0xff00) >> 8)
+#define WTERMSIG(x) ((x) & 0x7f)
+#define WSTOPSIG(x) WEXITSTATUS(x)
+#define WIFEXITED(x) (WTERMSIG(x) == 0)
+#define WIFSIGNALED(x) (((signed char) (((x) & 0x7f) + 1) >> 1) > 0)
+#define WIFSTOPPED(x) (((x) & 0xff) == 0x7f)
+#define WIFCONTINUED(x) ((x) == 0xffff)
 #define WCOREDUMP(x) ((x) & WCOREFLAG)
 
 /* glibc extension, but also useful for kernels */

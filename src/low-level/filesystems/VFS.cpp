@@ -213,7 +213,7 @@ FILE_HANDLE VFS::OpenFile(const char *path, uint32_t flags, Process *currentProc
         }
     }
 
-    DEBUG_OUT("Opening file %s (flags: 0x%x)", targetPath.data(), flags);
+    //DEBUG_OUT("Opening file %s (flags: 0x%x)", targetPath.data(), flags);
 
     if(targetPath.size() == 0)
     {

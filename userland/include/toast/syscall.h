@@ -54,6 +54,7 @@ extern "C"
 #define SYSCALL_SETKBLAYOUT         44
 #define SYSCALL_PIPE                45
 #define SYSCALL_DUP2                46
+#define SYSCALL_GETRANDOM           47
 
 static int64_t syscall(uint64_t id, ...)
 {

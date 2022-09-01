@@ -49,3 +49,4 @@
 #define SYSCALL_SETKBLAYOUT         44
 #define SYSCALL_PIPE                45
 #define SYSCALL_DUP2                46
+#define SYSCALL_GETRANDOM           47
