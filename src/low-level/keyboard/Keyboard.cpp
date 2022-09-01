@@ -213,13 +213,13 @@ bool LoadLayout(const string &name, int *error)
 
             if(position == (size_t)-1 && cursor + 1 < content.size())
             {
-                line = view.sub_string(cursor, view.size() - cursor - 1);
+                line = string(view.sub_string(cursor, view.size() - cursor - 1));
 
                 needsQuit = true;
             }
             else
             {
-                line = view.sub_string(cursor, position - cursor);
+                line = string(view.sub_string(cursor, position - cursor));
             }
 
             cursor = position + 1;
@@ -238,9 +238,9 @@ bool LoadLayout(const string &name, int *error)
 
                 if(mod != (size_t)-1)
                 {
-                    modifier = left.sub_string(mod + 1, left.size() - mod - 1);
+                    modifier = string(left.sub_string(mod + 1, left.size() - mod - 1));
 
-                    left = left.sub_string(0, mod);
+                    left = string(left.sub_string(0, mod));
                 }
 
                 auto scancode = strtol(left.data(), NULL, 16);
@@ -249,7 +249,7 @@ bool LoadLayout(const string &name, int *error)
 
                 if(k == (size_t)-1)
                 {
-                    printf("At line '%s': Missing key at right side\n");
+                    printf("At line '%s': Missing key at right side\n", line.data());
 
                     error = true;
 
@@ -269,8 +269,8 @@ bool LoadLayout(const string &name, int *error)
 
                 item.scancode = scancode;
                 item.modifier = modifier;
-                item.value = right;
-                item.key = KeyFromString(key);
+                item.value = string(right);
+                item.key = KeyFromString(string(key));
 
                 layout->items.push_back(item);
             }

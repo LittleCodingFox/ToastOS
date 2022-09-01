@@ -72,6 +72,7 @@ int64_t SyscallWaitPID(InterruptStack *stack)
 
                 child.info->didWaitPID = true;
 
+                *status = WEXITSTATUS(child.info->exitCode);
                 *retpid = child.info->ID;
 
                 return 0;
@@ -117,6 +118,7 @@ int64_t SyscallWaitPID(InterruptStack *stack)
 
                 child.info->didWaitPID = true;
 
+                *status = WEXITSTATUS(child.info->exitCode);
                 *retpid = child.info->ID;
 
                 return 0;
@@ -155,6 +157,7 @@ int64_t SyscallWaitPID(InterruptStack *stack)
                 continue;
             }
 
+            *status = WEXITSTATUS(child.info->exitCode);
             *retpid = child.info->ID;
 
             return 0;
@@ -178,6 +181,7 @@ int64_t SyscallWaitPID(InterruptStack *stack)
                 continue;
             }
 
+            *status = WEXITSTATUS(process->info->exitCode);
             *retpid = pid;
 
             return 0;
