@@ -290,6 +290,11 @@ bool TarFS::FindInode(const char *path, TarFS::Inode **inode)
 
                     target = inode;
 
+                    if(target->children.size() == 0)
+                    {
+                        ScanInodes(target);
+                    }
+
                     break;
                 }
             }
@@ -536,6 +541,11 @@ FileSystemHandle TarFS::GetFileHandle(const char *path)
             }
 
             delete [] temp;
+        }
+
+        if(inode->children.size() == 0)
+        {
+            ScanInodes(inode);
         }
 
         for(auto &child : inode->children)
