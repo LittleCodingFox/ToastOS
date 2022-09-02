@@ -7,12 +7,16 @@
     {
         DEBUG_OUT("SanitizeUserPointer: %p failed", userPtr);
 
+        KernelDumpStacktrace();
+
         return false;
     }
 
     if(userPtr == NULL)
     {
         DEBUG_OUT("SanitizeUserPointer: %p failed", userPtr);
+
+        KernelDumpStacktrace();
 
         return false;
     }

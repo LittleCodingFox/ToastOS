@@ -55,6 +55,18 @@ extern "C"
 #define SYSCALL_PIPE                45
 #define SYSCALL_DUP2                46
 #define SYSCALL_GETRANDOM           47
+#define SYSCALL_GETHOSTNAME         48
+#define SYSCALL_IOCTL               49
+#define SYSCALL_PSELECT             50
+#define SYSCALL_TTYNAME             51
+#define SYSCALL_TCGETATTR           52
+#define SYSCALL_TCSETATTR           53
+#define SYSCALL_TCFLOW              54
+#define SYSCALL_READLINK            55
+#define SYSCALL_SYSINFO             56
+#define SYSCALL_GETRUSAGE           57
+#define SYSCALL_GETRLIMIT           58
+#define SYSCALL_FCHDIR              59
 
 static int64_t syscall(uint64_t id, ...)
 {

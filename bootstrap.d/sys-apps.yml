@@ -1,4 +1,56 @@
+sources:
+  - name: file
+    subdir: ports
+    git: 'https://github.com/file/file.git'
+    tag: 'FILE5_42'
+    version: '5.42'
+    tools_required:
+      - host-autoconf-v2.69
+      - host-automake-v1.15
+      - host-libtool
+    regenerate:
+      - args: ['autoreconf', '-f', '-i']
+
+tools:
+  - name: host-file
+    architecture: noarch
+    from_source: file
+    tools_required:
+      - host-autoconf-v2.69
+      - host-automake-v1.15
+      - host-libtool
+    revision: 2
+    configure:
+      - args:
+        - '@THIS_SOURCE_DIR@/configure'
+        - '--prefix=@PREFIX@'
+    compile:
+      - args: ['make', '-j@PARALLELISM@']
+    install:
+      - args: ['make', 'install']
+
 packages:
+  - name: file
+    from_source: file
+    tools_required:
+      - host-gcc
+      - host-file
+    pkgs_required:
+      - mlibc
+      - zlib
+    configure:
+      - args:
+        - '@THIS_SOURCE_DIR@/configure'
+        - '--host=x86_64-toast'
+        - '--prefix=/usr'
+        - '--disable-bzlib'
+        - '--disable-xzlib'
+    build:
+      - args: ['make', '-j@PARALLELISM@']
+      - args: ['make', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+
   - name: coreutils
     source:
       subdir: 'ports'

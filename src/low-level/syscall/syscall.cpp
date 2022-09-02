@@ -53,6 +53,18 @@ int64_t SyscallSetKBLayout(InterruptStack *stack);
 int64_t SyscallPipe(InterruptStack *stack);
 int64_t SyscallDup2(InterruptStack *stack);
 int64_t SyscallGetRandom(InterruptStack *stack);
+int64_t SyscallGetHostname(InterruptStack *stack);
+int64_t Syscallioctl(InterruptStack *stack);
+int64_t Syscallpselect(InterruptStack *stack);
+int64_t SyscallTTYName(InterruptStack *stack);
+int64_t SyscallTCGetAttr(InterruptStack *stack);
+int64_t SyscallTCSetAttr(InterruptStack *stack);
+int64_t SyscallTCFlow(InterruptStack *stack);
+int64_t SyscallReadLink(InterruptStack *stack);
+int64_t SyscallSysInfo(InterruptStack *stack);
+int64_t SyscallGetRusage(InterruptStack *stack);
+int64_t SyscallGetRLimit(InterruptStack *stack);
+int64_t SyscallFchdir(InterruptStack *stack);
 
 SyscallPointer syscallHandlers[] =
 {
@@ -104,6 +116,18 @@ SyscallPointer syscallHandlers[] =
     (SyscallPointer)SyscallPipe,
     (SyscallPointer)SyscallDup2,
     (SyscallPointer)SyscallGetRandom,
+    (SyscallPointer)SyscallGetHostname,
+    (SyscallPointer)Syscallioctl,
+    (SyscallPointer)Syscallpselect,
+    (SyscallPointer)SyscallTTYName,
+    (SyscallPointer)SyscallTCGetAttr,
+    (SyscallPointer)SyscallTCSetAttr,
+    (SyscallPointer)SyscallTCFlow,
+    (SyscallPointer)SyscallReadLink,
+    (SyscallPointer)SyscallSysInfo,
+    (SyscallPointer)SyscallGetRusage,
+    (SyscallPointer)SyscallGetRLimit,
+    (SyscallPointer)SyscallFchdir,
 };
 
 void SyscallHandler(InterruptStack *stack)

@@ -80,6 +80,7 @@ public:
     int FileType(FILE_HANDLE handle);
     uint32_t FileFlags(FILE_HANDLE handle);
     void SetFileFlags(FILE_HANDLE handle, uint32_t flags);
+    bool ReadLink(const char *path, string &link, Process *currentProcess);
 
     uint64_t FileLength(FILE_HANDLE handle);
     uint64_t FileOffset(FILE_HANDLE handle);

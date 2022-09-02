@@ -12,10 +12,19 @@ int64_t SyscallIsATTY(InterruptStack *stack)
     DEBUG_OUT("Syscall: isatty fd: %i", fd);
 #endif
 
-    if(fd == 1)
+    auto current = processManager->CurrentProcess();
+
+    if(current == NULL || current->isValid == false)
     {
-        return 1;
+        return 0;
     }
 
-    return 0;
+    auto procfd = current->info->GetFD(fd);
+
+    if(procfd == NULL)
+    {
+        return 0;
+    }
+
+    return procfd->type == PROCESS_FD_STDOUT || procfd->type == PROCESS_FD_STDIN;
 }

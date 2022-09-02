@@ -399,6 +399,75 @@ FILE_HANDLE VFS::OpenFile(const char *path, uint32_t flags, Process *currentProc
     return INVALID_FILE_HANDLE;
 }
 
+bool VFS::ReadLink(const char *path, string &link, Process *currentProcess)
+{
+    string targetPath = path;
+
+    if(targetPath.size() > 0 && currentProcess != NULL)
+    {
+        if(targetPath.size() >= 2 && targetPath[0] == '.' && targetPath[1] == '/')
+        {
+            auto pathView = frg::string_view(targetPath);
+
+            targetPath = currentProcess->cwd + pathView.sub_string(2, pathView.size() - 2);
+        }
+        else if(targetPath[0] != '/')
+        {
+            targetPath = currentProcess->cwd + targetPath;
+        }
+    }
+
+    if(targetPath.size() == 0)
+    {
+        return false;
+    }
+
+
+    for(auto &mountPoint : mountPoints)
+    {
+        if(targetPath == mountPoint->path) //Virtual directory
+        {
+            return false;
+        }
+
+        if(strstr(targetPath.data(), mountPoint->path) == targetPath.data())
+        {
+            uint64_t length = targetPath.size() - strlen(mountPoint->path);
+
+            char *buffer = new char[length + 1];
+
+            memcpy(buffer, targetPath.data() + strlen(mountPoint->path), length);
+
+            buffer[length] = '\0';
+
+            auto mountHandle = mountPoint->fileSystem->GetFileHandle(buffer);
+
+            if(mountHandle != 0)
+            {
+                if(mountPoint->fileSystem->FileHandleType(mountHandle) == FILE_HANDLE_SYMLINK)
+                {
+                    link = mountPoint->fileSystem->FileLink(mountHandle);
+
+                    delete [] buffer;
+
+                    return true;
+                }
+            }
+
+            delete [] buffer;
+        }
+    }
+
+    if(targetPath.size() > 0 && targetPath[targetPath.size() - 1] != '/')
+    {
+        targetPath += "/";
+
+        return ReadLink(targetPath.data(), link, currentProcess);
+    }
+
+    return false;
+}
+
 void VFS::CloseFile(FILE_HANDLE handle)
 {
     FileHandle *fileHandle = GetFileHandle(handle);

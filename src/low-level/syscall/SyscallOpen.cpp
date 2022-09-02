@@ -24,7 +24,7 @@ int64_t SyscallOpen(InterruptStack *stack)
 
     if(currentProcess == NULL || currentProcess->isValid == false)
     {
-        DEBUG_OUT("syscall_open: Current process is invalid", 0);
+        //DEBUG_OUT("syscall_open: Current process is invalid", 0);
 
         return -ENOENT;
     }
@@ -35,14 +35,14 @@ int64_t SyscallOpen(InterruptStack *stack)
 
     if(handle == INVALID_FILE_HANDLE)
     {
-        DEBUG_OUT("syscall_open: Failed to open %s (flags: 0x%x)!", path, flags);
+        //DEBUG_OUT("syscall_open: Failed to open %s (flags: 0x%x)!", path, flags);
 
         return -ENOENT;
     }
 
     if(error != 0)
     {
-        DEBUG_OUT("syscall_open: Failed to open %s (flags: 0x%x)!", path, flags);
+        //DEBUG_OUT("syscall_open: Failed to open %s (flags: 0x%x)!", path, flags);
 
         return -error;
     }

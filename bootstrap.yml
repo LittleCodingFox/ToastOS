@@ -1,4 +1,5 @@
 imports:
+  - file: bootstrap.d/apps-editors.yml
   - file: bootstrap.d/apps-shells.yml
   - file: bootstrap.d/games-fps.yml
   - file: bootstrap.d/dev-libs.yml
