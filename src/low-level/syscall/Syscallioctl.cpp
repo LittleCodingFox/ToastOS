@@ -23,7 +23,7 @@ int64_t Syscallioctl(InterruptStack *stack)
 
     if(!SanitizeUserPointer(result) || !SanitizeUserPointer(arg))
     {
-        return ENOENT;
+        return -EINVAL;
     }
 
     //TODO

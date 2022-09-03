@@ -67,6 +67,7 @@ extern "C"
 #define SYSCALL_GETRUSAGE           57
 #define SYSCALL_GETRLIMIT           58
 #define SYSCALL_FCHDIR              59
+#define SYSCALL_UNAME               60
 
 static int64_t syscall(uint64_t id, ...)
 {

@@ -21,7 +21,7 @@ int64_t SyscallIsATTY(InterruptStack *stack)
 
     auto procfd = current->info->GetFD(fd);
 
-    if(procfd == NULL)
+    if(procfd == NULL || procfd->isValid == false || procfd->impl == NULL)
     {
         return 0;
     }
