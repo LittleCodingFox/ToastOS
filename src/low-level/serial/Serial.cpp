@@ -71,9 +71,15 @@ void Serial::WriteNoLock(char c)
 
 void Serial::Print(const char *string)
 {
+    ScopedLock lock(this->lock);
+
+    Initialize();
+
     while(*string)
     {
-        Write(*string);
+        while(SerialPortIsTransmitFIFOEmpty(port) == false);
+
+        outport8(port, *string);
 
         string++;
     }
@@ -81,9 +87,13 @@ void Serial::Print(const char *string)
 
 void Serial::PrintNoLock(const char *string)
 {
+    Initialize();
+
     while(*string)
     {
-        WriteNoLock(*string);
+        while(SerialPortIsTransmitFIFOEmpty(port) == false);
+
+        outport8(port, *string);
 
         string++;
     }
@@ -91,14 +101,40 @@ void Serial::PrintNoLock(const char *string)
 
 void Serial::PrintLine(const char *string)
 {
-    Print(string);
-    Print("\n");
+    ScopedLock lock(this->lock);
+
+    Initialize();
+
+    while(*string)
+    {
+        while(SerialPortIsTransmitFIFOEmpty(port) == false);
+
+        outport8(port, *string);
+
+        string++;
+    }
+
+    while(SerialPortIsTransmitFIFOEmpty(port) == false);
+
+    outport8(port, '\n');
 }
 
 void Serial::PrintLineNoLock(const char *string)
 {
-    PrintNoLock(string);
-    PrintNoLock("\n");
+    Initialize();
+
+    while(*string)
+    {
+        while(SerialPortIsTransmitFIFOEmpty(port) == false);
+
+        outport8(port, *string);
+
+        string++;
+    }
+
+    while(SerialPortIsTransmitFIFOEmpty(port) == false);
+
+    outport8(port, '\n');
 }
 
 extern "C" void SerialPortOutStreamCOM1(char character, void *arg)

@@ -50,4 +50,6 @@ public:
     static RegisterState ReadRegisters();
     static uint64_t ReadCS();
     static uint64_t ReadSS();
+    static void SwapGS();
+    static uint64_t ReadGS();
 };

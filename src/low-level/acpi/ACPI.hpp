@@ -1,13 +1,19 @@
 #pragma once
 #include "kernel.h"
 
-struct PACKED RSDP2
-{
-    uint8_t signature[8];
+struct PACKED RSDPDescriptor {
+
+    char signature[8];
     uint8_t checksum;
-    uint8_t OEMID[6];
+    char OEMID[6];
     uint8_t revision;
-    uint32_t RSDTAddress;
+    uint32_t rsdtAddress;
+};
+
+struct PACKED RSDPDescriptor2
+{
+    RSDPDescriptor firstPart;
+
     uint32_t length;
     uint64_t XSDTAddress;
     uint8_t extendedChecksum;
@@ -16,7 +22,7 @@ struct PACKED RSDP2
 
 struct PACKED SDTHeader
 {
-    uint8_t signature[4];
+    char signature[4];
     uint32_t length;
     uint8_t revision;
     uint8_t checksum;
@@ -40,6 +46,13 @@ struct PACKED ACPIDeviceConfig
     uint8_t startBus;
     uint8_t endBus;
     uint32_t reserved;
+};
+
+struct PACKED MADT
+{
+    SDTHeader header;
+    uint32_t localAPICAddress;
+    uint32_t flags;
 };
 
 namespace ACPI

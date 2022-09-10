@@ -34,7 +34,7 @@ uint64_t Registers::ReadCS()
 {
   uint64_t outValue = 0;
 
-  asm ("mov %%cs, %0" : "=r"(outValue) : /* no input */);
+  asm volatile ("mov %%cs, %0" : "=r"(outValue) : /* no input */);
 
   return outValue;
 }
@@ -43,7 +43,7 @@ uint64_t Registers::ReadSS()
 {
   uint64_t outValue = 0;
 
-  asm ("mov %%ss, %0" : "=r"(outValue) : /* no input */);
+  asm volatile ("mov %%ss, %0" : "=r"(outValue) : /* no input */);
 
   return outValue;
 }
@@ -52,7 +52,7 @@ uint64_t Registers::ReadCR0()
 {
   uint64_t outValue = 0;
 
-  asm ("mov %%cr0, %0" : "=r"(outValue) : /* no input */);
+  asm volatile ("mov %%cr0, %0" : "=r"(outValue) : /* no input */);
 
   return outValue;
 }
@@ -72,7 +72,7 @@ uint64_t Registers::ReadRSP()
 {
   uint64_t outValue = 0;
 
-  asm ("mov %%rsp, %0" : "=r"(outValue) : /* no input */);
+  asm volatile ("mov %%rsp, %0" : "=r"(outValue) : /* no input */);
 
   return outValue;
 }
@@ -81,7 +81,7 @@ uint64_t Registers::ReadCR2()
 {
   uint64_t outValue = 0;
 
-  asm ("mov %%cr2, %0" : "=r"(outValue) : /* no input */);
+  asm volatile ("mov %%cr2, %0" : "=r"(outValue) : /* no input */);
 
   return outValue;
 }
@@ -90,7 +90,7 @@ uint64_t Registers::ReadCR3()
 {
   uint64_t outValue = 0;
 
-  asm ("mov %%cr3, %0" : "=r"(outValue) : /* no input */);
+  asm volatile ("mov %%cr3, %0" : "=r"(outValue) : /* no input */);
 
   return outValue;
 }
@@ -99,31 +99,45 @@ uint64_t Registers::ReadCR4()
 {
   uint64_t outValue = 0;
 
-  asm ("mov %%cr4, %0" : "=r"(outValue) : /* no input */);
+  asm volatile ("mov %%cr4, %0" : "=r"(outValue) : /* no input */);
+
+  return outValue;
+}
+
+void Registers::SwapGS()
+{
+  asm volatile ("swapgs");
+}
+
+uint64_t Registers::ReadGS()
+{
+  uint64_t outValue = 0;
+
+  asm volatile ("mov %%gs:0x0, %0" : "=r" (outValue));
 
   return outValue;
 }
 
 void Registers::WriteCR0(uint64_t value)
 {
-  asm ("mov %0, %%cr0" : /* no output */ : "r"(value));
+  asm volatile ("mov %0, %%cr0" : /* no output */ : "r"(value));
 }
 
 void Registers::WriteCR3(uint64_t value)
 {
-  asm ("mov %0, %%cr3" : /* no output */ : "r"(value));
+  asm volatile ("mov %0, %%cr3" : /* no output */ : "r"(value));
 }
 
 void Registers::WriteCR4(uint64_t value)
 {
-  asm ("mov %0, %%cr4" : /* no output */ : "r"(value));
+  asm volatile ("mov %0, %%cr4" : /* no output */ : "r"(value));
 }
 
 uint64_t Registers::ReadMSR(uint64_t msr)
 {
   uint32_t low = 0, high = 0;
 
-  asm("rdmsr" : "=a"(low), "=d"(high) : "c"(msr));
+  asm volatile ("rdmsr" : "=a"(low), "=d"(high) : "c"(msr));
 
   return (low | ((uint64_t)high << 32));
 }
@@ -133,5 +147,5 @@ void Registers::WriteMSR(uint64_t msr, uint64_t value)
   uint32_t lo = (uint32_t)value;
   uint32_t hi = value >> 32;
 
-  asm ("wrmsr" : /* no output */ : "a"(lo), "d"(hi), "c"(msr));
+  asm volatile ("wrmsr" : /* no output */ : "a"(lo), "d"(hi), "c"(msr));
 }

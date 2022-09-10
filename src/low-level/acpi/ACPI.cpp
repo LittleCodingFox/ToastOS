@@ -5,7 +5,7 @@
 
 namespace ACPI
 {
-    struct [[gnu::packed]] XSDT
+    struct PACKED XSDT
     {
         SDTHeader header;
         uint64_t entries[];
@@ -18,7 +18,7 @@ namespace ACPI
 
         for(uint32_t i = 0; i < entries; i++)
         {
-            SDTHeader *outHeader = (SDTHeader *)TranslateToHighHalfMemoryAddress(xsdt->entries[i]);
+            volatile SDTHeader *outHeader = (volatile SDTHeader *)TranslateToHighHalfMemoryAddress(xsdt->entries[i]);
 
             printf("[ACPI] Table entry %u: %.*s\n", i, 4, outHeader->signature);
         }
@@ -31,11 +31,11 @@ namespace ACPI
 
         for(uint32_t i = 0; i < entries; i++)
         {
-            SDTHeader *outHeader = (SDTHeader *)TranslateToHighHalfMemoryAddress(xsdt->entries[i]);
+            volatile SDTHeader *outHeader = (volatile SDTHeader *)TranslateToHighHalfMemoryAddress(xsdt->entries[i]);
 
-            if(memcmp(outHeader->signature, signature, 4) == 0)
+            if(memcmp((const void *)outHeader->signature, signature, 4) == 0)
             {
-                return outHeader;
+                return (void *)outHeader;
             }
         }
 
