@@ -191,6 +191,7 @@ void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_fr
 
 void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
 {
+    /*
     (void)rsdp;
 
     printf("[ACPI] Initializing ACPI\n");
@@ -249,7 +250,9 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
     EnumeratePCI();
     */
 
+    /*
     globalPartitionManager->Initialize();
+    */
 }
 
 vtconsole_t *console = NULL;
