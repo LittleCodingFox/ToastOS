@@ -243,6 +243,7 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
 
         return;
     }
+    */
 
     /*
     SetPCIMCFG(mcfg);
