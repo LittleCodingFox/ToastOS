@@ -17,7 +17,7 @@ int64_t SyscallGetHostname(InterruptStack *stack)
     }
 
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: gethostname", path, flags);
+    DEBUG_OUT("Syscall: gethostname %p %llu", buffer, size);
 #endif
 
     static const char *hostname = "toast";

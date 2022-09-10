@@ -1,0 +1,71 @@
+packages:
+  - name: sdl2
+    metadata:
+      summary: Simple Direct Media Layer version 2
+      description: The Simple DirectMedia Layer Version 2 (SDL2 for short) is a cross-platform library designed to make it easy to write multimedia software, such as games and emulators.
+      spdx: 'Zlib'
+      website: 'https://www.libsdl.org/'
+      categories: ['media-libs']
+    source:
+      subdir: 'ports'
+      git: 'https://github.com/libsdl-org/SDL.git'
+      tag: 'release-2.0.14'
+      version: '2.0.14'
+    tools_required:
+      - host-gcc
+      - host-cmake
+      - host-pkg-config
+    pkgs_required:
+      - mlibc
+      - mesa
+      - libiconv
+    revision: 6
+    configure:
+      - args:
+        - 'cmake'
+        - '-GNinja'
+        - '-DCMAKE_TOOLCHAIN_FILE=@SOURCE_ROOT@/scripts/CMakeToolchain-x86_64-toast.txt'
+        - '-DCMAKE_INSTALL_PREFIX=/usr'
+        - '-DALTIVEC=OFF'
+        - '-DDISKAUDIO=OFF'
+        - '-DVIDEO_DIRECTFB=ON'
+        - '-DVIDEO_OPENGL=ON'
+        - '-DVIDEO_OPENGLES=ON'
+        - '-DPTHREADS=ON'
+        - '-DPTHREADS_SEM=OFF'
+        - '-DOSS=OFF'
+        - '-DALSA=OFF'
+        - '-DJACK=OFF'
+        - '-DESD=OFF'
+        - '-DPULSEAUDIO=OFF'
+        - '-DARTS=OFF'
+        - '-DNAS=OFF'
+        - '-DSNDIO=OFF'
+        - '-DFUSIONSOUND=OFF'
+        - '-DLIBSAMPLERATE=OFF'
+        - '-DRPATH=OFF'
+        - '-DCLOCK_GETTIME=OFF'
+        - '-DINPUT_TSLIB=OFF'
+        - '-DVIDEO_X11=OFF'
+        - '-DVIDEO_WAYLAND=OFF'
+        - '-DVIDEO_WAYLAND_QT_TOUCH=OFF'
+        - '-DVIDEO_RPI=OFF'
+        - '-DVIDEO_COCOA=OFF'
+        - '-DDIRECTX=OFF'
+        - '-DWASAPI=OFF'
+        - '-DRENDER_D3D=OFF'
+        - '-DVIDEO_VIVANTE=OFF'
+        - '-DVIDEO_VULKAN=OFF'
+        - '-DVIDEO_KMSDRM=OFF'
+        - '-DKMSDRM_SHARED=OFF'
+        - '-DSDL_DLOPEN=ON'
+        - '-DHIDAPI=OFF'
+        - '-DSDL_SHARED=ON'
+        - '-DSDL_STATIC=OFF'
+        - '@THIS_SOURCE_DIR@/'
+    build:
+      - args: ['ninja']
+      - args: ['ninja', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+        quiet: true
