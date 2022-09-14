@@ -48,6 +48,7 @@ LIBKCOBJECTS		= $(LIBCSRC:$(LIBCSRCDIR)/%.c=$(LIBKOBJDIR)/%.o)
 LIBCASMOBJECTS		= $(LIBCASMSRC:$(LIBCSRCDIR)/%.asm=$(LIBCOBJDIR)/%_asm.o)
 
 KASANEXCLUSIONS		= $(wildcard $(SRCDIR)/*.cpp)
+KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/drivers/AHCI/*.cpp)
 KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/gdt/*.cpp)
 KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/interrupts/*.cpp)
 KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/kasan/*.cpp)

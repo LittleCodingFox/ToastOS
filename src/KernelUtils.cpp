@@ -24,6 +24,7 @@
 #include "kasan/kasan.hpp"
 #include "mouse/Mouse.hpp"
 #include "pci/PCI.hpp"
+#include "drivers/AHCI/AHCIDriver.hpp"
 #include <lai/core.h>
 #include <lai/helpers/sci.h>
 #include <lai/helpers/pm.h>
@@ -197,11 +198,11 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
 {
     (void)rsdp;
 
-    printf("[ACPI] Initializing ACPI\n");
+    DEBUG_OUT("[ACPI] Initializing ACPI", 0);
 
     if(rsdp == NULL)
     {
-        printf("[ACPI] Missing RSDP!\n");
+        DEBUG_OUT("[ACPI] Missing RSDP!", 0);
 
         return;
     }
@@ -215,14 +216,14 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
     memcpy(signature, (const void *)rsdpStruct->signature, 8);
     memcpy(OEMID, (const void *)rsdpStruct->OEMID, 6);
 
-    printf("[ACPI] RSDP Signature: %s\n[ACPI] OEMID: %s\n[ACPI] Revision: %u\n",
+    DEBUG_OUT("[ACPI] RSDP Signature: %s\n[ACPI] OEMID: %s\n[ACPI] Revision: %u",
         signature,
         OEMID,
         rsdpStruct->revision);
 
     if(rsdpStruct->revision == 0)
     {
-        printf("[ACPI] Unsupported ACPI revision\n");
+        DEBUG_OUT("[ACPI] Unsupported ACPI revision", 0);
 
         return;
     }
@@ -231,7 +232,7 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
 
     if(rsdpStructReal->XSDTAddress == 0)
     {
-        printf("[ACPI] Failed to get XSDT!\n");
+        DEBUG_OUT("[ACPI] Failed to get XSDT!", 0);
 
         return;
     }
@@ -244,7 +245,7 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
 
     if(mcfg == NULL)
     {
-        printf("[ACPI] Failed to get MCFG!\n");
+        DEBUG_OUT("[ACPI] Failed to get MCFG!", 0);
 
         return;
     }
@@ -259,12 +260,10 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
 
     PCIEnumerateDevices(0x8086, 0x2922, [](PCIDevice *device) {
 
-        printf("Found AHCI device\n");        
+        Drivers::AHCI::PrepareDevice(device);
     });
 
-    /*
     globalPartitionManager->Initialize();
-    */
 }
 
 vtconsole_t *console = NULL;
@@ -325,7 +324,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     InitializeMemory(memmap, framebuffer);
 
-    printf("[INTERRUPTS] Initializing Interrupts\n");
+    DEBUG_OUT("[INTERRUPTS] Initializing Interrupts", 0);
 
     interrupts.Init();
 
@@ -399,7 +398,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     globalInputSystem.initialize();
 
-    printf("[Timer] Initializing timer\n");
+    DEBUG_OUT("[Timer] Initializing timer", 0);
 
     timer.initialize();
 
@@ -413,7 +412,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     InitializeACPI(rsdp);
 
-    printf("[CMOS] Initializing cmos\n");
+    DEBUG_OUT("[CMOS] Initializing cmos", 0);
 
     cmos.Initialize();
 

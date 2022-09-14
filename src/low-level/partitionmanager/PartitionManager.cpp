@@ -10,7 +10,7 @@ void PartitionManager::Initialize()
 {
     frg::vector<GenericDevice *, frg_allocator> diskDevices = globalDeviceManager.GetDevices(DEVICE_TYPE_DISK);
 
-    printf("[PartitionManager] Found %i disk devices\n", diskDevices.size());
+    DEBUG_OUT("[PartitionManager] Found %i disk devices", diskDevices.size());
 
     for(uint32_t i = 0; i < diskDevices.size(); i++)
     {
@@ -22,20 +22,20 @@ void PartitionManager::Initialize()
         DiskInfo diskInfo;
         diskInfo.device = (GenericIODevice *)diskDevices[i];
 
-        printf("[PartitionManager] Getting partition table for %u\n", i);
+        DEBUG_OUT("[PartitionManager] Getting partition table for %u", i);
 
         diskInfo.table = new GPT::PartitionTable(diskInfo.device);
 
         if(!diskInfo.table->Parse())
         {
-            printf("[PartitionManager] Failed to parse partitions for %u\n", i);
+            DEBUG_OUT("[PartitionManager] Failed to parse partitions for %u", i);
 
             delete diskInfo.table;
 
             continue;
         }
 
-        printf("[PartitionManager] Added %u partitions for %u\n", diskInfo.table->PartitionCount(), i);
+        DEBUG_OUT("[PartitionManager] Added %u partitions for %u", diskInfo.table->PartitionCount(), i);
 
         disks.push_back(diskInfo);
     }
@@ -44,18 +44,18 @@ void PartitionManager::Initialize()
     {
         DiskInfo &disk = disks[i];
 
-        printf("[PartitionManager] Partitions for disk %s:\n", disk.device->name());
+        DEBUG_OUT("[PartitionManager] Partitions for disk %s:", disk.device->name());
 
         for(uint32_t j = 0; j < disk.table->PartitionCount(); j++)
         {
             GPT::Partition &partition = disk.table->GetPartition(j);
 
-            printf("[PartitionManager] \t%s with size: %s, type: %s)\n", partition.GetID().ToString(), partition.SizeString(), partition.GetType().ToString());
+            DEBUG_OUT("[PartitionManager] \t%s with size: %s, type: %s)", partition.GetID().ToString(), partition.SizeString(), partition.GetType().ToString());
 
 /*
             if(disk.fileSystem != NULL)
             {
-                printf("Found volume %s\n", disk.fileSystem->VolumeName());
+                DEBUG_OUT("Found volume %s", disk.fileSystem->VolumeName());
 
                 //TODO: Dynamic mount points
                 vfs->AddMountPoint("/", disk.fileSystem);
