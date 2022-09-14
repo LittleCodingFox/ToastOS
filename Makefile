@@ -30,6 +30,9 @@ EXTSRC				= $(call rwildcard, $(SRCDIR)/../ext-libs/vtconsole,*.cpp)
 EXTCSRC				= $(call rwildcard, $(SRCDIR)/../ext-libs/printf,*.c)
 EXTCSRC				+= $(call rwildcard, $(SRCDIR)/../ext-libs/liballoc,*.c)
 EXTCSRC				+= $(call rwildcard, $(SRCDIR)/../ext-libs/osdev-paging-x64,*.c)
+EXTCSRC				+= $(call rwildcard, $(SRCDIR)/../lai/core,*.c)
+EXTCSRC				+= $(call rwildcard, $(SRCDIR)/../lai/drivers,*.c)
+EXTCSRC				+= $(call rwildcard, $(SRCDIR)/../lai/helpers,*.c)
 LIBCSRC				= $(call rwildcard,$(LIBCSRCDIR),*.c)
 ASMSRC				= $(call rwildcard,$(SRCDIR),*.asm)
 ASSRC				= $(call rwildcard,$(SRCDIR),*.s)
@@ -61,12 +64,22 @@ KASANEXCLUSIONS 	+= $(wildcard $(SRCDIR)/low-level/*.cpp)
 
 KASANOBJECTS 		= $(KASANEXCLUSIONS:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
-INCLUDEDIRS			= -Isrc -Iklibc -Isrc/include -Isrc/low-level -Iext-libs -Iext-libs/liballoc/ -Ifrigg/include -Icxxshim/stage2/include
+INCLUDEDIRS			= 	-Isrc \
+						-Iklibc \
+						-Isrc/include \
+						-Isrc/low-level \
+						-Iext-libs \
+						-Iext-libs/liballoc/ \
+						-Ifrigg/include \
+						-Icxxshim/stage2/include \
+						-Ilai/include
+
 ASMFLAGS			= -g -F dwarf
 ASFLAGS 			= -nostdlib -fpic
 CFLAGS				= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -nostdlib -mno-red-zone -Wall -fpic -O3 -fno-omit-frame-pointer -g \
 	-fno-stack-protector -fno-rtti -fno-exceptions -mno-3dnow -mno-mmx -mno-sse -mno-sse2 -mno-avx -fno-builtin \
 	-Werror -Wno-ambiguous-reversed-operator -Wno-c99-designator -Wno-deprecated-volatile -Wno-initializer-overrides \
+	-Wno-unused-private-field -Wno-ignored-attributes\
 	-DPRINTF_DISABLE_SUPPORT_FLOAT=1 -DPRINTF_DISABLE_SUPPORT_EXPONENTIAL=1 --target=x86_64-pc-none-elf -march=x86-64
 CFLAGS_INTERNAL		= 
 LDFLAGS				= -T $(SRCDIR)/link.ld -static -Bsymbolic -nostdlib -Map=linker.map -zmax-page-size=0x1000

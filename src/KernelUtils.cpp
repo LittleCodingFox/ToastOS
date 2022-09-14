@@ -23,6 +23,10 @@
 #include "input/InputSystem.hpp"
 #include "kasan/kasan.hpp"
 #include "mouse/Mouse.hpp"
+#include "pci/PCI.hpp"
+#include <lai/core.h>
+#include <lai/helpers/sci.h>
+#include <lai/helpers/pm.h>
 
 PageTableManager pageTableManager;
 
@@ -191,7 +195,6 @@ void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_fr
 
 void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
 {
-    /*
     (void)rsdp;
 
     printf("[ACPI] Initializing ACPI\n");
@@ -203,14 +206,14 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
         return;
     }
 
-    RSDP2 *rsdpStruct = (RSDP2 *)rsdp->rsdp;
+    volatile RSDPDescriptor *rsdpStruct = (volatile RSDPDescriptor *)rsdp->rsdp;
 
     char signature[9] = { 0 };
 
     char OEMID[7] = { 0 };
 
-    memcpy(signature, rsdpStruct->signature, 8);
-    memcpy(OEMID, rsdpStruct->OEMID, 6);
+    memcpy(signature, (const void *)rsdpStruct->signature, 8);
+    memcpy(OEMID, (const void *)rsdpStruct->OEMID, 6);
 
     printf("[ACPI] RSDP Signature: %s\n[ACPI] OEMID: %s\n[ACPI] Revision: %u\n",
         signature,
@@ -224,18 +227,20 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
         return;
     }
 
-    if(rsdpStruct->XSDTAddress == 0)
+    volatile RSDPDescriptor2 *rsdpStructReal = (volatile RSDPDescriptor2 *)rsdpStruct;
+
+    if(rsdpStructReal->XSDTAddress == 0)
     {
         printf("[ACPI] Failed to get XSDT!\n");
 
         return;
     }
 
-    volatile SDTHeader *xsdt = (volatile SDTHeader *)TranslateToHighHalfMemoryAddress(rsdpStruct->XSDTAddress);
+    xsdt = (volatile SDTHeader *)TranslateToHighHalfMemoryAddress(rsdpStructReal->XSDTAddress);
 
     ACPI::DumpTables(xsdt);
 
-    volatile MCFGHeader *mcfg = (volatile MCFGHeader *)ACPI::FindTable(xsdt, "MCFG");
+    mcfg = (volatile MCFGHeader *)ACPI::FindTable(xsdt, "MCFG");
 
     if(mcfg == NULL)
     {
@@ -243,13 +248,19 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
 
         return;
     }
-    */
 
-    /*
-    SetPCIMCFG(mcfg);
+    madt = (volatile MADT *)ACPI::FindTable(xsdt, "APIC");
 
-    EnumeratePCI();
-    */
+    lai_create_namespace();
+
+    lai_enable_acpi(1);
+
+    InitializePCI();
+
+    PCIEnumerateDevices(0x8086, 0x2922, [](PCIDevice *device) {
+
+        printf("Found AHCI device\n");        
+    });
 
     /*
     globalPartitionManager->Initialize();
@@ -400,7 +411,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     globalPartitionManager.initialize();
 
-    //InitializeACPI(rsdp);
+    InitializeACPI(rsdp);
 
     printf("[CMOS] Initializing cmos\n");
 

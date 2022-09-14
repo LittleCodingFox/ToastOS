@@ -2,6 +2,9 @@
 #include "debug.hpp"
 #include "paging/PageTableManager.hpp"
 #include <string.h>
+#include <lai/core.h>
+#include <lai/helpers/sci.h>
+#include <lai/helpers/pm.h>
 
 namespace ACPI
 {
@@ -26,6 +29,20 @@ namespace ACPI
 
     void *FindTable(volatile SDTHeader *header, const char *signature)
     {
+        if(strcmp(signature, "DSDT") == 0)
+        {
+            acpi_fadt_t *fadt = (acpi_fadt_t *)FindTable(header, "FACP");
+
+            if(fadt == nullptr)
+            {
+                return nullptr;
+            }
+
+            uint64_t dsdt = fadt->x_dsdt;
+
+            return (void *)TranslateToHighHalfMemoryAddress(dsdt);
+        }
+
         uint32_t entries = (header->length - sizeof(SDTHeader)) / sizeof(uint64_t);
         volatile XSDT *xsdt = reinterpret_cast<volatile XSDT *>(header);
 

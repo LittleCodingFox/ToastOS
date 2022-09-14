@@ -10,3 +10,6 @@
 [submodule "ext-libs/osdev-paging-x64"]
 	path = ext-libs/osdev-paging-x64
 	url = https://github.com/LittleCodingFox/osdev-paging-x64.git
+[submodule "lai"]
+	path = lai
+	url = https://github.com/managarm/lai.git
