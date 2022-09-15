@@ -263,6 +263,11 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
         Drivers::AHCI::PrepareDevice(device);
     });
 
+    PCIEnumerateDevices(0, 0, 0x0C, 0x03, 0x30, [](PCIDevice *device) {
+
+        DEBUG_OUT("Found xHCI controller with vendor %04x and device %04x", device->Vendor(), device->Device());
+    });
+
     globalPartitionManager->Initialize();
 }
 

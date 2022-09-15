@@ -155,3 +155,4 @@ private:
 
 void InitializePCI();
 void PCIEnumerateDevices(uint16_t vendor, uint16_t device, void (*callback)(PCIDevice *device));
+void PCIEnumerateDevices(uint16_t vendor, uint16_t device, uint8_t classID, uint8_t subclassID, uint8_t progif, void (*callback)(PCIDevice *device));

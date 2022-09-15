@@ -85,6 +85,11 @@ void PCIWriteDword(uint32_t bus, uint32_t slot, uint32_t func, PCIRegister reg, 
 
 void PCIEnumerateDevices(uint16_t vendor, uint16_t device, void (*callback)(PCIDevice *device))
 {
+	PCIEnumerateDevices(vendor, device, 0, 0, 0, callback);
+}
+
+void PCIEnumerateDevices(uint16_t vendor, uint16_t device, uint8_t classID, uint8_t subclassID, uint8_t progif, void (*callback)(PCIDevice *device))
+{
 	if(callback == nullptr)
 	{
 		return;
@@ -92,9 +97,19 @@ void PCIEnumerateDevices(uint16_t vendor, uint16_t device, void (*callback)(PCID
 
 	for(auto &d : *devices.get())
 	{
-		if(d->Vendor() == vendor && d->Device() == device)
+		if(vendor != 0 && device != 0)
 		{
-			callback(d.get());
+			if(d->Vendor() == vendor && d->Device() == device)
+			{
+				callback(d.get());
+			}
+		}
+		else
+		{
+			if(d->BaseClass() == classID && d->SubClass() == subclassID && d->ProgIf() == progif)
+			{
+				callback(d.get());
+			}
 		}
 	}
 }
