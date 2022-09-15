@@ -14,12 +14,12 @@ static char *symbolData = NULL;
 static size_t symbolDataSize = 0;
 static bool kernelStacktraceAvailable = false;
 
-bool KernelStacktraceAvailable()
+extern "C" bool KernelStacktraceAvailable()
 {
   return kernelStacktraceAvailable;
 }
 
-void KernelInitStacktrace(char *symbols, size_t size)
+extern "C" void KernelInitStacktrace(char *symbols, size_t size)
 {
   symbolData = symbols;
   symbolDataSize = size;
@@ -27,7 +27,7 @@ void KernelInitStacktrace(char *symbols, size_t size)
   kernelStacktraceAvailable = true;
 }
 
-char* SymbolForAddress(uintptr_t* address)
+extern "C" char* SymbolForAddress(uintptr_t* address)
 {
   uintptr_t last = 0;
   uintptr_t current = 0;
@@ -62,7 +62,7 @@ char* SymbolForAddress(uintptr_t* address)
   return NULL;
 }
 
-void KernelDumpStacktrace()
+extern "C" void KernelDumpStacktrace()
 {
   DEBUG_OUT("%s", "kernel stacktrace:");
 
@@ -93,7 +93,7 @@ void KernelDumpStacktrace()
   DEBUG_OUT("%s", "stacktrace end");
 }
 
-void KernelDumpStacktraceNoLock()
+extern "C" void KernelDumpStacktraceNoLock()
 {
   DEBUG_OUT_NOLOCK("%s", "kernel stacktrace:");
 
