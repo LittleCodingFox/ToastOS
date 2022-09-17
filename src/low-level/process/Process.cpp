@@ -9,7 +9,6 @@
 #include "paging/PageTableManager.hpp"
 #include "ports/Ports.hpp"
 #include "registers/Registers.hpp"
-#include "timer/Timer.hpp"
 #include "syscall/syscall.hpp"
 #include "stacktrace/stacktrace.hpp"
 #include "filesystems/VFS.hpp"

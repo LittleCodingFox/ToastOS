@@ -10,7 +10,7 @@
 #include "ports/Ports.hpp"
 #include "registers/Registers.hpp"
 #include "stacktrace/stacktrace.hpp"
-#include "timer/Timer.hpp"
+#include "pit/PIT.hpp"
 #include "vtconsole/vtconsole.h"
 #include "partitionmanager/PartitionManager.hpp"
 #include "tss/tss.hpp"
@@ -30,6 +30,8 @@
 #include "pci/PCI.hpp"
 #include "smp/SMP.hpp"
 #include "drivers/AHCI/AHCIDriver.hpp"
+#include "madt/MADT.hpp"
+#include "lapic/LAPIC.hpp"
 
 PageTableManager pageTableManager;
 
@@ -254,6 +256,12 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
 
     lai_enable_acpi(1);
 
+    InitializeMADT();
+
+    InitializePIT();
+
+    InitializeLAPIC();
+
     InitializePCI();
 
     PCIEnumerateDevices(0x8086, 0x2922, [](PCIDevice *device) {
@@ -402,15 +410,11 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     globalInputSystem.initialize();
 
-    DEBUG_OUT("[Timer] Initializing timer", 0);
-
-    timer.initialize();
-
-    timer->RegisterHandler(RefreshFramebuffer);
-
     vfs.initialize();
 
     globalPartitionManager.initialize();
+
+    DEBUG_OUT("[ACPI] Initializing acpi", 0);
 
     InitializeACPI(rsdp);
 
@@ -449,7 +453,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
         InitializeSMP(smp);
     }
 
-    timer->Initialize();
+    //timer->Initialize();
 }
 
 void _putchar(char character)

@@ -53,7 +53,12 @@ struct PACKED MADT
     SDTHeader header;
     uint32_t localAPICAddress;
     uint32_t flags;
+    char entries[];
 };
+
+extern volatile MCFGHeader *mcfg;
+extern volatile MADT *madt;
+extern volatile SDTHeader *xsdt;
 
 namespace ACPI
 {

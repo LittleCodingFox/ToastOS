@@ -1,16 +1,10 @@
 #include "FramebufferRenderer.hpp"
 #include "debug.hpp"
 #include "paging/PageFrameAllocator.hpp"
-#include "timer/Timer.hpp"
 #include <stdlib.h>
 #include <string.h>
 
 FramebufferRenderer* globalRenderer;
-
-void RefreshFramebuffer(InterruptStack *stack)
-{
-    //globalRenderer->SwapBuffers();
-}
 
 FramebufferRenderer::FramebufferRenderer(Framebuffer* targetFramebuffer, psf2_font_t* font) : lockedCount(0),
     doubleBuffer(NULL), initialized(false), doubleBufferSize(0), graphicsType(GRAPHICS_TYPE_CONSOLE), backgroundColor(0)

@@ -9,7 +9,6 @@
 #include "paging/PageTableManager.hpp"
 #include "ports/Ports.hpp"
 #include "registers/Registers.hpp"
-#include "timer/Timer.hpp"
 #include "syscall/syscall.hpp"
 #include "stacktrace/stacktrace.hpp"
 #include "filesystems/VFS.hpp"
@@ -167,10 +166,13 @@ void SwitchProcess(InterruptStack *stack)
 
 ProcessManager::ProcessManager() : futexes(NULL)
 {
+    //TODO
+    /*
     if(timer)
     {
         timer->RegisterHandler(::SwitchProcess);
     }
+    */
 }
 
 bool ProcessManager::IsLocked()

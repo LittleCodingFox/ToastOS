@@ -31,11 +31,16 @@ class IDT
 {
 private:
     IDTDescEntry idt[IDT_ENTRIES];
+    uint8_t freeVector;
 public:
+    IDT() : freeVector(32) {}
+    uint8_t AllocateVector();
+    void SetIST(uint8_t vector, uint8_t ist);
+    void SetFlags(uint8_t vector, uint8_t flags);
     void Init();
     void Load();
-    void RegisterGate(uint16_t n, uint64_t handler, uint8_t type, uint8_t dpl, uint8_t ist);
-    void RegisterInterrupt(uint16_t n, uint64_t handler, uint8_t dpl = 0, uint8_t ist = 0);
+    void RegisterGate(uint8_t vector, uint64_t handler, uint8_t type, uint8_t dpl, uint8_t ist);
+    void RegisterInterrupt(uint8_t vector, uint64_t handler, uint8_t dpl = 0, uint8_t ist = 0);
 };
 
 extern IDT idt;

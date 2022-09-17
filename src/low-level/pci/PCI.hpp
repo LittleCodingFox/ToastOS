@@ -10,10 +10,6 @@
 #define PCI_BAR_IO  1
 #define PCI_BAR_MEM 2
 
-extern volatile MCFGHeader *mcfg;
-extern volatile MADT *madt;
-extern volatile SDTHeader *xsdt;
-
 enum class PCIBarType
 {
     IO,

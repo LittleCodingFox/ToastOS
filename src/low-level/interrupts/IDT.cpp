@@ -1,5 +1,6 @@
 #include "IDT.hpp"
 #include "gdt/gdt.hpp"
+#include "Panic.hpp"
 #include <string.h>
 
 struct PACKED IDTR
@@ -25,20 +26,48 @@ void IDT::Load()
     asm ("lidt %0" : : "m"(idtRegister));
 }
 
-void IDT::RegisterGate(uint16_t n, uint64_t handler, uint8_t type, uint8_t dpl, uint8_t ist)
+static AtomicLock lock;
+
+uint8_t IDT::AllocateVector()
 {
-    idt[n].ptrLow = (uint16_t)handler;
-    idt[n].ptrMid = (uint16_t)(handler >> 16);
-    idt[n].ptrHigh = (uint32_t)(handler >> 32);
-    idt[n].selector = GDTKernelBaseSelector;
-    idt[n].ist = ist;
-    idt[n].type = type;
-    idt[n].s = 0;
-    idt[n].dpl = dpl;
-    idt[n].present = 1;
+    lock.Lock();
+
+    if(freeVector == 0xF0)
+    {
+        Panic("IDT Exhausted");
+    }
+
+    uint8_t outValue = freeVector++;
+
+    lock.Unlock();
+
+    return outValue;
 }
 
-void IDT::RegisterInterrupt(uint16_t n, uint64_t handler, uint8_t dpl, uint8_t ist)
+void IDT::SetIST(uint8_t vector, uint8_t ist)
 {
-    RegisterGate(n, handler, IDT_INTERRUPT_GATE, dpl, ist);
+    idt[vector].ist = ist;
+}
+
+void IDT::SetFlags(uint8_t vector, uint8_t flags)
+{
+    idt[vector].flags = flags;
+}
+
+void IDT::RegisterGate(uint8_t vector, uint64_t handler, uint8_t type, uint8_t dpl, uint8_t ist)
+{
+    idt[vector].ptrLow = (uint16_t)handler;
+    idt[vector].ptrMid = (uint16_t)(handler >> 16);
+    idt[vector].ptrHigh = (uint32_t)(handler >> 32);
+    idt[vector].selector = GDTKernelBaseSelector;
+    idt[vector].ist = ist;
+    idt[vector].type = type;
+    idt[vector].s = 0;
+    idt[vector].dpl = dpl;
+    idt[vector].present = 1;
+}
+
+void IDT::RegisterInterrupt(uint8_t vector, uint64_t handler, uint8_t dpl, uint8_t ist)
+{
+    RegisterGate(vector, handler, IDT_INTERRUPT_GATE, dpl, ist);
 }

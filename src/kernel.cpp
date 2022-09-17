@@ -6,7 +6,6 @@
 #include "liballoc/liballoc.h"
 #include "printf/printf.h"
 #include "vtconsole/vtconsole.h"
-#include "timer/Timer.hpp"
 #include "KernelUtils.hpp"
 #include "elf/elf.hpp"
 #include "filesystems/VFS.hpp"

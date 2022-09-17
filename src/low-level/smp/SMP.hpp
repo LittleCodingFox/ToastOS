@@ -18,6 +18,7 @@ struct CPUInfo
     int APICID;
     uint8_t *stack;
     bool bsp;
+    uint32_t LAPICFrequency;
     
     GDT *gdt;
     
@@ -26,8 +27,9 @@ struct CPUInfo
     uint8_t tssStack[0x100000];
     uint8_t ist2Stack[0x100000];
     RoundRobinScheduler scheduler;
+    void (*timerFunction)(InterruptStack *stack);
 
-    CPUInfo() : APICID(0), stack(nullptr), bsp(false), gdt(nullptr) {}
+    CPUInfo() : APICID(0), stack(nullptr), bsp(false), LAPICFrequency(0), gdt(nullptr), timerFunction(nullptr) {}
 };
 
 uint32_t CPUCount();
