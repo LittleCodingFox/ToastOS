@@ -5,6 +5,7 @@
 #include <stivale2.h>
 #include "tss/tss.hpp"
 #include "gdt/gdt.hpp"
+#include "schedulers/RoundRobinScheduler.hpp"
 
 #define SMP_STACK_SIZE  0x100000
 #define CPUID_XSAVE     ((uint32_t)1 << 26)
@@ -24,6 +25,7 @@ struct CPUInfo
     TSS tss;
     uint8_t tssStack[0x100000];
     uint8_t ist2Stack[0x100000];
+    RoundRobinScheduler scheduler;
 
     CPUInfo() : APICID(0), stack(nullptr), bsp(false), gdt(nullptr) {}
 };

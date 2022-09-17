@@ -7,6 +7,7 @@
 #include "interrupts/IDT.hpp"
 #include "interrupts/Interrupts.hpp"
 #include "sse/sse.hpp"
+#include "process/Process.hpp"
 
 static uint8_t stack[SMP_STACK_SIZE];
 
@@ -20,7 +21,19 @@ uint32_t CPUCount()
 
 CPUInfo *CurrentCPUInfo()
 {
-    return (CPUInfo *)KernelGSBase();
+    CPUInfo *info = (CPUInfo *)KernelGSBase();
+
+    for(uint32_t i = 0; i < cpuCount; i++)
+    {
+        if(info == cpuInfos + i)
+        {
+            return info;
+        }
+    }
+
+    DEBUG_OUT("smp: Failed to get current CPU", "");
+
+    return nullptr;
 }
 
 CPUInfo *CPUInfoFor(uint32_t index)
@@ -163,6 +176,8 @@ void InitializeSMP(stivale2_struct_tag_smp *smp)
         {
             cpuInfos[i].stack = stack;
             cpuInfos[i].bsp = true;
+
+            SetKernelGSBase(&cpuInfos[smpInfo->lapic_id]);
 
             continue;
         }

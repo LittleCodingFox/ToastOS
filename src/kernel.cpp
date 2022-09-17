@@ -48,15 +48,6 @@ static struct stivale2_header stivaleHeader = {
     .tags = (uint64_t)&smpTag,
 };
 
-void KernelTask()
-{
-    //Idle process
-    for(;;)
-    {
-        asm volatile("hlt");
-    }
-}
-
 extern "C" void _start(stivale2_struct *stivale2Struct)
 {
     InitializeKernel(stivale2Struct);

@@ -17,6 +17,16 @@
 #include "Panic.hpp"
 #include "kasan/kasan.hpp"
 #include "user/UserAccess.hpp"
+#include "smp/SMP.hpp"
+
+void KernelTask()
+{
+    //Idle process
+    for(;;)
+    {
+        asm volatile("hlt");
+    }
+}
 
 #define UPDATE_PROCESS_ACTIVE_PERMISSIONS(pcb) \
     switch(pcb->activePermissionLevel)\
@@ -145,7 +155,7 @@ void SwitchProcess(InterruptStack *stack)
     processManager->SwitchProcess(stack, true);
 }
 
-ProcessManager::ProcessManager(IScheduler *scheduler) : scheduler(scheduler), futexes(NULL)
+ProcessManager::ProcessManager() : futexes(NULL)
 {
     if(timer)
     {
@@ -169,6 +179,19 @@ void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
     lock.Lock();
 
     interrupts.DisableInterrupts();
+
+    CPUInfo *info = CurrentCPUInfo();
+
+    if(info == nullptr)
+    {
+        lock.Unlock();
+
+        interrupts.EnableInterrupts();
+
+        return;
+    }
+
+    IScheduler *scheduler = &info->scheduler;
 
     ProcessControlBlock *current = scheduler->CurrentThread();
     ProcessControlBlock *next = scheduler->NextThread();
@@ -271,6 +294,17 @@ ProcessManager::ProcessPair *ProcessManager::CurrentProcess()
 
     pid_t pid = 0;
 
+    CPUInfo *info = CurrentCPUInfo();
+
+    if(info == nullptr)
+    {
+        lock.Unlock();
+
+        return nullptr;
+    }
+
+    IScheduler *scheduler = &info->scheduler;
+
     if(scheduler != NULL && scheduler->CurrentThread() != NULL)
     {
         pid = scheduler->CurrentThread()->process->ID;
@@ -289,6 +323,17 @@ ProcessControlBlock *ProcessManager::CurrentThread()
 
     ProcessControlBlock *pcb = NULL;
 
+    CPUInfo *info = CurrentCPUInfo();
+
+    if(info == nullptr)
+    {
+        lock.Unlock();
+
+        return nullptr;
+    }
+
+    IScheduler *scheduler = &info->scheduler;
+
     if(scheduler != NULL && scheduler->CurrentThread() != NULL)
     {
         pcb = scheduler->CurrentThread();
@@ -302,6 +347,17 @@ ProcessControlBlock *ProcessManager::CurrentThread()
 ProcessControlBlock *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, const char *name, const char *cwd, uint64_t permissionLevel)
 {
     lock.Lock();
+
+    CPUInfo *info = CurrentCPUInfo();
+
+    if(info == nullptr)
+    {
+        lock.Unlock();
+
+        return nullptr;
+    }
+
+    IScheduler *scheduler = &info->scheduler;
 
     PageTable *pageTableFrame = (PageTable *)globalAllocator.RequestPage();
 
@@ -412,6 +468,17 @@ ProcessControlBlock *ProcessManager::LoadImage(const void *image, const char *na
     uint64_t permissionLevel, uint64_t IDOverride)
 {
     lock.Lock();
+
+    CPUInfo *info = CurrentCPUInfo();
+
+    if(info == nullptr)
+    {
+        lock.Unlock();
+
+        return nullptr;
+    }
+
+    IScheduler *scheduler = &info->scheduler;
 
     PageTable *pageTableFrame = (PageTable *)globalAllocator.RequestPage();
     PageTable *currentTable = (PageTable *)Registers::ReadCR3();
@@ -702,12 +769,16 @@ void ProcessManager::Exit(int exitCode, bool forceRemove)
 {
     lock.Lock();
 
-    if(scheduler == NULL)
+    CPUInfo *info = CurrentCPUInfo();
+
+    if(info == nullptr)
     {
         lock.Unlock();
 
         return;
     }
+
+    IScheduler *scheduler = &info->scheduler;
 
     if(scheduler->CurrentThread() != NULL)
     {
@@ -851,6 +922,17 @@ uid_t ProcessManager::GetGID()
 int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
 {
     lock.Lock();
+
+    CPUInfo *info = CurrentCPUInfo();
+
+    if(info == nullptr)
+    {
+        lock.Unlock();
+
+        return 0;
+    }
+
+    IScheduler *scheduler = &info->scheduler;
 
     auto current = scheduler->CurrentThread();
 
@@ -1031,6 +1113,17 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
 ProcessControlBlock *ProcessManager::AddThread(uint64_t rip, uint64_t rsp)
 {
     lock.Lock();
+
+    CPUInfo *info = CurrentCPUInfo();
+
+    if(info == nullptr)
+    {
+        lock.Unlock();
+
+        return nullptr;
+    }
+
+    IScheduler *scheduler = &info->scheduler;
 
     auto current = scheduler->CurrentThread();
     auto thread = scheduler->AddThread(current->process, rip, rsp, ++processIDCounter, false);
@@ -1254,12 +1347,16 @@ void ProcessManager::ExitThread()
 
     lock.Lock();
 
-    if(scheduler == NULL)
+    CPUInfo *info = CurrentCPUInfo();
+
+    if(info == nullptr)
     {
         lock.Unlock();
 
         return;
     }
+
+    IScheduler *scheduler = &info->scheduler;
 
     if(scheduler->CurrentThread() != NULL)
     {
@@ -1396,6 +1493,15 @@ void ProcessManager::FutexWait(int *pointer, int expected, InterruptStack *stack
     }
 
     interrupts.DisableInterrupts();
+
+    CPUInfo *info = CurrentCPUInfo();
+
+    if(info == nullptr)
+    {
+        return;
+    }
+
+    IScheduler *scheduler = &info->scheduler;
 
     auto currentThread = CurrentThread();
 

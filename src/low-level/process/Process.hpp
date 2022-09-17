@@ -16,6 +16,8 @@ extern "C" void ProcessYield();
  */
 void ProcessYieldIfAvailable();
 
+void KernelTask();
+
 constexpr int PROCESS_STACK_SIZE = 0x4000;
 
 static_assert((PROCESS_STACK_SIZE * sizeof(uint64_t)) % 0x1000 == 0, "Misaligned process stack size");
@@ -271,7 +273,6 @@ class ProcessManager
 public:
     struct ProcessPair;
 private:
-    IScheduler *scheduler;
     vector<ProcessPair> processes;
     FutexPair *futexes;
 
@@ -289,7 +290,7 @@ public:
 
     AtomicLock lock;
 
-    ProcessManager(IScheduler *scheduler);
+    ProcessManager();
 
     ProcessControlBlock *LoadImage(const void *image, const char *name, const char **argv, const char **envp, const char *cwd,
         uint64_t permissionLevel, uint64_t IDOverride = 0);

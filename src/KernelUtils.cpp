@@ -410,8 +410,6 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     timer.initialize();
 
-    timer->Initialize();
-
     timer->RegisterHandler(RefreshFramebuffer);
 
     vfs.initialize();
@@ -439,7 +437,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     InitializeMouse();
 
-    processManager.initialize(new RoundRobinScheduler());
+    processManager.initialize();
 
     DEBUG_OUT("%s", "Finished initializing the kernel");
 
@@ -454,6 +452,8 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
     {
         InitializeSMP(smp);
     }
+
+    timer->Initialize();
 }
 
 void _putchar(char character)
