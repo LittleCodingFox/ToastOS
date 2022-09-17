@@ -1,14 +1,13 @@
 #include "gdt.hpp"
-#include "tss/tss.hpp"
 #include "debug.hpp"
 
-static uint8_t tssStack[0x100000];
-static uint8_t ist2Stack[0x100000];
+uint8_t bootstrapTssStack[0x100000];
+uint8_t bootstrapist2Stack[0x100000];
 
-TSS tss = { 0 };
+TSS bootstrapTSS = { 0 };
 
 __attribute__((aligned(0x1000)))
-GDT gdt = {
+GDT bootstrapGDT = {
     {
         .limitLow = 0,
         .baseLow = 0,
@@ -63,16 +62,16 @@ GDT gdt = {
     }, //TSS
 };
 
-GDTDescriptor gdtr = {
-    .size = sizeof(gdt) - 1,
-    .offset = (uint64_t)&gdt
+GDTDescriptor bootstrapGDTR = {
+    .size = sizeof(bootstrapGDT) - 1,
+    .offset = (uint64_t)&bootstrapGDT
 };
 
-void LoadGDT()
+void LoadGDT(GDT *gdt, TSS *tss, uint8_t *tssStack, uint8_t *ist2Stack, int stackSize, GDTDescriptor *gdtr)
 {
-    uint64_t address = (uint64_t)&tss;
-    
-    gdt.tss = (TSSDescriptor) {
+    uint64_t address = (uint64_t)tss;
+
+    gdt->tss = (TSSDescriptor) {
         .length = 104,
         .baseLow = (uint16_t)address,
         .baseMid = (uint8_t)(address >> 16),
@@ -81,19 +80,32 @@ void LoadGDT()
         .baseUp = (uint32_t)(address >> 32),
     };
 
-    tss.rsp0 = (uint64_t)&tssStack[sizeof(tssStack)];
-    tss.ist2 = (uint64_t)&ist2Stack[sizeof(ist2Stack)];
+    tss->rsp0 = (uint64_t)tssStack + stackSize;
+    tss->ist2 = (uint64_t)ist2Stack + stackSize;
 
+    /*
     DEBUG_OUT("%s", "GDT Offsets:");
-    DEBUG_OUT("GDT Null: 0x%llx", (uint64_t)&gdt.null - (uint64_t)&gdt);
-    DEBUG_OUT("GDT Kernel Code: 0x%llx", (uint64_t)&gdt.kernelCode - (uint64_t)&gdt);
-    DEBUG_OUT("GDT Kernel Data: 0x%llx", (uint64_t)&gdt.kernelData - (uint64_t)&gdt);
-    DEBUG_OUT("GDT User Data: 0x%llx", (uint64_t)&gdt.userData - (uint64_t)&gdt);
-    DEBUG_OUT("GDT User Code: 0x%llx", (uint64_t)&gdt.userCode - (uint64_t)&gdt);
-    DEBUG_OUT("GDT TSS: 0x%llx", (uint64_t)&gdt.tss - (uint64_t)&gdt);
+    DEBUG_OUT("GDT Null: 0x%llx", (uint64_t)&gdt->null - (uint64_t)gdt);
+    DEBUG_OUT("GDT Kernel Code: 0x%llx", (uint64_t)&gdt->kernelCode - (uint64_t)gdt);
+    DEBUG_OUT("GDT Kernel Data: 0x%llx", (uint64_t)&gdt->kernelData - (uint64_t)gdt);
+    DEBUG_OUT("GDT User Data: 0x%llx", (uint64_t)&gdt->userData - (uint64_t)gdt);
+    DEBUG_OUT("GDT User Code: 0x%llx", (uint64_t)&gdt->userCode - (uint64_t)gdt);
+    DEBUG_OUT("GDT TSS: 0x%llx", (uint64_t)&gdt->tss - (uint64_t)gdt);
+    */
 
-    asm volatile("lgdt %0" : : "m"(gdtr));
-    asm volatile("push $0x08\nlea 1f(%%rip), %%rax\npush %%rax\nlretq\n1:\n" : : : "rax", "memory");
-    asm volatile("mov %0, %%ds\nmov %0, %%es\nmov %0, %%gs\nmov %0, %%fs\nmov %0, %%ss\n" : : "a"((uint16_t)0x10));
+    asm volatile("lgdt %0" : : "m"(*gdtr));
+
+    asm volatile("push $0x08\n"
+                "lea 1f(%%rip), %%rax\n"
+                "push %%rax\n"
+                "lretq\n"
+                "1:\n" : : : "rax", "memory");
+
+    asm volatile("mov %0, %%ds\n"
+                "mov %0, %%es\n"
+                "mov %0, %%gs\n"
+                "mov %0, %%fs\n"
+                "mov %0, %%ss\n" : : "a"((uint16_t)0x10));
+
     asm volatile("ltr %0" : : "a"((uint16_t)GDTTSSSegment));
 }

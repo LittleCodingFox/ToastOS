@@ -35,8 +35,8 @@
     }
 
 #define UPDATETSS(task) \
-    tss.rsp0 = (uint64_t)&task->process->kernelStack[PROCESS_STACK_SIZE]; \
-    tss.ist1 = (uint64_t)&task->process->istStack[PROCESS_STACK_SIZE];
+    bootstrapTSS.rsp0 = (uint64_t)&task->process->kernelStack[PROCESS_STACK_SIZE]; \
+    bootstrapTSS.ist1 = (uint64_t)&task->process->istStack[PROCESS_STACK_SIZE];
 
 #if DEBUG_PROCESSES
 #define HANDLEFORK(task) \

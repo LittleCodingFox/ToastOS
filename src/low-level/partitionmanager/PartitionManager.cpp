@@ -50,6 +50,8 @@ void PartitionManager::Initialize()
         {
             GPT::Partition &partition = disk.table->GetPartition(j);
 
+            (void)partition;
+
             DEBUG_OUT("[PartitionManager] \t%s with size: %s, type: %s)", partition.GetID().ToString(), partition.SizeString(), partition.GetType().ToString());
 
 /*

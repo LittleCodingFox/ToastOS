@@ -19,5 +19,3 @@ struct PACKED TSS
     uint16_t reserved3;
     uint16_t iopbOffset;
 };
-
-extern TSS tss;

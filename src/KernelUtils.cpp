@@ -1,5 +1,9 @@
 #include <string.h>
+#include <lai/core.h>
+#include <lai/helpers/sci.h>
+#include <lai/helpers/pm.h>
 #include "KernelUtils.hpp"
+#include "tss/tss.hpp"
 #include "gdt/gdt.hpp"
 #include "interrupts/IDT.hpp"
 #include "interrupts/Interrupts.hpp"
@@ -24,10 +28,8 @@
 #include "kasan/kasan.hpp"
 #include "mouse/Mouse.hpp"
 #include "pci/PCI.hpp"
+#include "smp/SMP.hpp"
 #include "drivers/AHCI/AHCIDriver.hpp"
-#include <lai/core.h>
-#include <lai/helpers/sci.h>
-#include <lai/helpers/pm.h>
 
 PageTableManager pageTableManager;
 
@@ -318,6 +320,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
     stivale2_struct_tag_memmap *memmap = (stivale2_struct_tag_memmap *)Stivale2GetTag(stivale2Struct, STIVALE2_STRUCT_TAG_MEMMAP_ID);
     stivale2_struct_tag_modules *modules = (stivale2_struct_tag_modules *)Stivale2GetTag(stivale2Struct, STIVALE2_STRUCT_TAG_MODULES_ID);
     stivale2_struct_tag_rsdp *rsdp = (stivale2_struct_tag_rsdp *)Stivale2GetTag(stivale2Struct, STIVALE2_STRUCT_TAG_RSDP_ID);
+    stivale2_struct_tag_smp *smp = (stivale2_struct_tag_smp *)Stivale2GetTag(stivale2Struct, STIVALE2_STRUCT_TAG_SMP_ID);
 
     (void)rsdp;
 
@@ -325,7 +328,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
     stivale2_module *font = Stivale2GetModule(modules, "font.psf");
     stivale2_module *initrd = Stivale2GetModule(modules, "initrd");
 
-    LoadGDT();
+    LoadGDT(&bootstrapGDT, &bootstrapTSS, bootstrapTssStack, bootstrapist2Stack, sizeof(bootstrapTssStack), &bootstrapGDTR);
 
     InitializeMemory(memmap, framebuffer);
 
@@ -446,6 +449,11 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     DEBUG_OUT("Memory Stats: Free: %lluMB; Used: %lluMB; Reserved: %lluMB", globalAllocator.GetFreeRAM() / MBSize,
         globalAllocator.GetUsedRAM() / MBSize, globalAllocator.GetReservedRAM() / MBSize);
+
+    if(smp != NULL)
+    {
+        InitializeSMP(smp);
+    }
 }
 
 void _putchar(char character)

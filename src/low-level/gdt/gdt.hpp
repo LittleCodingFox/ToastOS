@@ -1,5 +1,6 @@
 #pragma once
 #include "kernel.h"
+#include "tss/tss.hpp"
 
 #define GDTAccessDPL(n) (n << 5)
 
@@ -63,6 +64,12 @@ struct PACKED __attribute__((aligned(0x1000))) GDT
     TSSDescriptor tss; //0x30
 };
 
-extern GDT gdt;
+static_assert(sizeof(GDT) <= 0x1000);
 
-void LoadGDT();
+extern GDT bootstrapGDT;
+extern TSS bootstrapTSS;
+extern GDTDescriptor bootstrapGDTR;
+extern uint8_t bootstrapTssStack[0x100000];
+extern uint8_t bootstrapist2Stack[0x100000];
+
+void LoadGDT(GDT *gdt, TSS *tss, uint8_t *tssStack, uint8_t *ist2Stack, int stackSize, GDTDescriptor *gdtr);

@@ -22,6 +22,7 @@ namespace ACPI
         for(uint32_t i = 0; i < entries; i++)
         {
             volatile SDTHeader *outHeader = (volatile SDTHeader *)TranslateToHighHalfMemoryAddress(xsdt->entries[i]);
+            (void)outHeader;
 
             DEBUG_OUT("[ACPI] Table entry %u: %.*s", i, 4, outHeader->signature);
         }

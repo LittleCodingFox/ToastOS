@@ -12,8 +12,9 @@
 #include "filesystems/VFS.hpp"
 #include "process/Process.hpp"
 #include "framebuffer/FramebufferRenderer.hpp"
+#include "smp/SMP.hpp"
 
-static uint8_t stack[0x100000];
+static uint8_t stack[SMP_STACK_SIZE];
 
 const char *startAppPath = "/bin/init";
 
@@ -31,12 +32,20 @@ static stivale2_header_tag_framebuffer framebufferTag = {
     .framebuffer_bpp = 0,
 };
 
+static stivale2_header_tag_smp smpTag = {
+    .tag = {
+        .identifier = STIVALE2_HEADER_TAG_SMP_ID,
+        .next = (uint64_t)&framebufferTag,
+    },
+    .flags = 0,
+};
+
 __attribute__((section(".stivale2hdr"), used))
 static struct stivale2_header stivaleHeader = {
     .entry_point = 0,
     .stack = (uintptr_t)stack + sizeof(stack),
     .flags = (1 << 1) | (1 << 2),
-    .tags = (uint64_t)&framebufferTag,
+    .tags = (uint64_t)&smpTag,
 };
 
 void KernelTask()
