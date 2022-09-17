@@ -45,8 +45,18 @@ void KernelTask()
     }
 
 #define UPDATETSS(task) \
-    bootstrapTSS.rsp0 = (uint64_t)&task->process->kernelStack[PROCESS_STACK_SIZE]; \
-    bootstrapTSS.ist1 = (uint64_t)&task->process->istStack[PROCESS_STACK_SIZE];
+    { \
+        if(info->bsp) \
+        { \
+            bootstrapTSS.rsp0 = (uint64_t)&task->process->kernelStack[PROCESS_STACK_SIZE]; \
+            bootstrapTSS.ist1 = (uint64_t)&task->process->istStack[PROCESS_STACK_SIZE]; \
+        } \
+        else \
+        { \
+            info->tss.rsp0 = (uint64_t)&task->process->kernelStack[PROCESS_STACK_SIZE]; \
+            info->tss.ist1 = (uint64_t)&task->process->istStack[PROCESS_STACK_SIZE]; \
+        } \
+    }
 
 #if DEBUG_PROCESSES
 #define HANDLEFORK(task) \
@@ -280,6 +290,13 @@ void ProcessManager::SwapTasks(ProcessControlBlock *next)
 #endif
 
     LoadFSBase(next->fsBase);
+
+    CPUInfo *info = CurrentCPUInfo();
+
+    if(info == nullptr)
+    {
+        return;
+    }
 
     UPDATE_PROCESS_ACTIVE_PERMISSIONS(next);
 

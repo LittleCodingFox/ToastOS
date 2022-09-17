@@ -108,10 +108,6 @@ void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_fr
     //Enable write protection
     Registers::WriteCR0(Registers::ReadCR0() | (1 << 16));
 
-    //Enable NXE bit
-    uint64_t efer = Registers::ReadMSR(Registers::IA32_EFER);
-    Registers::WriteMSR(Registers::IA32_EFER, efer | (1 << 11));
-
     // Program the PAT. Each byte configures a single entry.
     // 00: Uncacheable
     // 01: Write Combining

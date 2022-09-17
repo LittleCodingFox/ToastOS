@@ -23,8 +23,8 @@ extern "C"
 void DumpSerialString(const char *msg);
 
 #ifdef KERNEL_DEBUG
-#define DEBUG_OUT(msg, ...)    { fctprintf(&SerialPortOutStreamCOM1, NULL, msg "\n", __VA_ARGS__); }
-#define DEBUG_OUT_NOLOCK(msg, ...)  { fctprintf(&SerialPortOutStreamCOM1NoLock, NULL, msg "\n", __VA_ARGS__); }
+#define DEBUG_OUT(msg, ...)    { char buffer[10240]; snprintf(buffer, sizeof(buffer), msg "\n", __VA_ARGS__); SerialCOM1.Print(buffer); }
+#define DEBUG_OUT_NOLOCK(msg, ...)  { char buffer[10240]; snprintf(buffer, sizeof(buffer), msg "\n", __VA_ARGS__); SerialCOM1.PrintNoLock(buffer); }
 #else
 #define DEBUG_OUT(msg, ...)
 #define DEBUG_OUT_NOLOCK(msg, ...)

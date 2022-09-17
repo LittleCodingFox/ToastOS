@@ -8,6 +8,7 @@
 #include "interrupts/Interrupts.hpp"
 #include "sse/sse.hpp"
 #include "process/Process.hpp"
+#include "printf/printf.h"
 
 static uint8_t stack[SMP_STACK_SIZE];
 
@@ -143,10 +144,6 @@ void BootstrapSMP(stivale2_smp_info *smp)
     //Enable write protection
     Registers::WriteCR0(Registers::ReadCR0() | (1 << 16));
 
-    //Enable NXE bit
-    uint64_t efer = Registers::ReadMSR(Registers::IA32_EFER);
-    Registers::WriteMSR(Registers::IA32_EFER, efer | (1 << 11));
-
     // Program the PAT. Each byte configures a single entry.
     // 00: Uncacheable
     // 01: Write Combining
@@ -154,15 +151,24 @@ void BootstrapSMP(stivale2_smp_info *smp)
     // 06: Write Back
     //Registers::WriteMSR(0x277, 0x00'00'01'00'00'00'04'06);
     Registers::WriteMSR(0x0277, 0x0000000005010406);
+
+    char buffer[100];
+
+    sprintf(buffer, "KernelTask %i", smp->lapic_id);
+
+    processManager->CreateFromEntryPoint((uint64_t)KernelTask, buffer, "/home/toast/", PROCESS_PERMISSION_KERNEL);
     
-    for(;;);
+    for(;;)
+    {
+        asm volatile("hlt");
+    }
 }
 
 void InitializeSMP(stivale2_struct_tag_smp *smp)
 {
     cpuCount = smp->cpu_count;
 
-    DEBUG_OUT("Initializing %i CPUs", cpuCount);
+    DEBUG_OUT("smp: Initializing %i CPUs", cpuCount);
 
     cpuInfos = new CPUInfo[cpuCount];
 
@@ -192,7 +198,7 @@ void InitializeSMP(stivale2_struct_tag_smp *smp)
                 PAGING_FLAG_WRITABLE);
         }
 
-        smpInfo->target_stack = (uint64_t)cpuInfos[i].stack;
+        smpInfo->target_stack = (uint64_t)cpuInfos[i].stack + SMP_STACK_SIZE;
 
         smpInfo->goto_address = (uint64_t)BootstrapSMP;
     }
