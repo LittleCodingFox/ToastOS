@@ -23,12 +23,12 @@ static uint8_t timerVector = 0;
 
 static inline uint32_t LAPICRead(uint32_t reg)
 {
-    return *((volatile uint32_t *)((uintptr_t)0xfee00000 + HIGHER_HALF_MEMORY_OFFSET + reg));
+    return *((volatile uint32_t *)((uintptr_t)0xFEE00000 + HIGHER_HALF_MEMORY_OFFSET + reg));
 }
 
 static inline void LAPICWrite(uint32_t reg, uint32_t value)
 {
-    *((volatile uint32_t *)((uintptr_t)0xfee00000 + HIGHER_HALF_MEMORY_OFFSET + reg)) = value;
+    *((volatile uint32_t *)((uintptr_t)0xFEE00000 + HIGHER_HALF_MEMORY_OFFSET + reg)) = value;
 }
 
 static inline void LAPICTimerStop()
@@ -134,7 +134,7 @@ void LAPICTimerCalibrate()
     {
         info->LAPICFrequency = (samples / totalTicks) * PIT_DIVIDEND;
 
-        DEBUG_OUT("LAPIC frequency for %i: %u", info->APICID, info->LAPICFrequency / 1000000);
+        DEBUG_OUT("LAPIC frequency for %i: %u", info->APICID, info->LAPICFrequency);
     }
 
     LAPICTimerStop();

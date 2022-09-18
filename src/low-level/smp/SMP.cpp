@@ -10,6 +10,7 @@
 #include "process/Process.hpp"
 #include "printf/printf.h"
 #include "lapic/LAPIC.hpp"
+#include "Panic.hpp"
 
 static uint8_t stack[SMP_STACK_SIZE];
 
@@ -36,11 +37,6 @@ CPUInfo *CurrentCPUInfo()
     DEBUG_OUT("smp: Failed to get current CPU", "");
 
     return nullptr;
-}
-
-CPUInfo *CPUInfoFor(uint32_t index)
-{
-    return &cpuInfos[index];
 }
 
 void SetKernelGSBase(void *address)
@@ -138,7 +134,6 @@ void BootstrapSMP(stivale2_smp_info *smp)
     info->tss = {0};
 
     idt.Load();
-    interrupts.EnableInterrupts();
 
     LoadGDT(info->gdt, &info->tss, info->tssStack, info->ist2Stack, sizeof(info->tssStack), &info->gdtr);
 
@@ -164,6 +159,8 @@ void BootstrapSMP(stivale2_smp_info *smp)
     processManager->CreateFromEntryPoint((uint64_t)KernelTask, buffer, "/home/toast/", PROCESS_PERMISSION_KERNEL);
 
     initializedCPUs++;
+
+    interrupts.EnableInterrupts();
 
     processManager->Wait();
 }

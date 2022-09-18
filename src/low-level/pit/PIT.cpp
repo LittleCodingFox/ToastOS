@@ -10,6 +10,7 @@
 uint16_t PITGetCurrentCount()
 {
     outport8(0x43, 0x00);
+    
     uint8_t low = inport8(0x40);
     uint8_t high = inport8(0x40) << 8;
 
