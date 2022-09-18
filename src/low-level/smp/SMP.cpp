@@ -39,6 +39,25 @@ CPUInfo *CurrentCPUInfo()
     return nullptr;
 }
 
+CPUInfo *LowestLoadCPU()
+{
+    uint32_t lowestThreadCount = 9999;
+    CPUInfo *lowest = nullptr;
+
+    for(uint32_t i = 0; i < cpuCount; i++)
+    {
+        CPUInfo *info = cpuInfos + i;
+
+        if(info->scheduler.ThreadCount() < lowestThreadCount)
+        {
+            lowest = info;
+            lowestThreadCount = info->scheduler.ThreadCount();
+        }
+    }
+
+    return lowest;
+}
+
 void SetKernelGSBase(void *address)
 {
     Registers::WriteMSR(0xC0000102, (uint64_t)address);

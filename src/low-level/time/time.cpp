@@ -66,6 +66,8 @@ void DisarmTimer(Timer *timer)
 
 void InitializeTime()
 {
+    armedTimers.initialize();
+    
     realtimeTime.tv_sec = cmos.BootTime();
 
     InitializePIT();

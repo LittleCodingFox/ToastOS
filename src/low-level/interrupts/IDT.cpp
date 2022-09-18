@@ -1,4 +1,5 @@
 #include "IDT.hpp"
+#include "Interrupts.hpp"
 #include "gdt/gdt.hpp"
 #include "Panic.hpp"
 #include <string.h>
@@ -40,6 +41,11 @@ uint8_t IDT::AllocateVector()
     }
 
     uint8_t outValue = freeVector++;
+
+    if(outValue == IRQ1 || outValue == IRQ12)
+    {
+        outValue = freeVector++;
+    }
 
     lock.Unlock();
 

@@ -11,6 +11,7 @@ private:
     AtomicLock lock;
 public:
     RoundRobinScheduler() : threads(nullptr) {}
+    virtual int ThreadCount() override;
     virtual ProcessControlBlock *CurrentThread() override;
     virtual ProcessControlBlock *AddThread(Process *process, uint64_t rip, uint64_t rsp, pid_t tid, bool isMainThread) override;
     virtual ProcessControlBlock *NextThread() override;

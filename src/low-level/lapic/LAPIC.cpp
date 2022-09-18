@@ -64,7 +64,7 @@ void InitializeLAPIC()
         idt.SetIST(timerVector, 1);
     }
 
-    idt.RegisterInterrupt(timerVector, (uint64_t)LAPICTimerHandler);
+    interrupts.RegisterHandler(timerVector, LAPICTimerHandler);
 
     LAPICWrite(LAPIC_REG_LVT_TIMER, LAPICRead(LAPIC_REG_LVT_TIMER) | (1 << 8) | timerVector);
 

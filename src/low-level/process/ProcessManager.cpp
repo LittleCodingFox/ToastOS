@@ -157,8 +157,6 @@ void ProcessYieldIfAvailable()
 
 void SwitchProcess(InterruptStack *stack)
 {
-    DEBUG_OUT("SwitchProcess", "");
-
     LAPICTimerOneShot(100, (void *)SwitchProcess);
 
     processManager->SwitchProcess(stack);
@@ -175,6 +173,11 @@ bool ProcessManager::IsLocked()
 
 void ProcessManager::SwitchProcess(InterruptStack *stack)
 {
+    if(IsLocked())
+    {
+        return;
+    }
+
     lock.Lock();
 
     interrupts.DisableInterrupts();
@@ -938,7 +941,17 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
         return 0;
     }
 
+    CPUInfo *lowest = LowestLoadCPU();
+
+    if(lowest == nullptr)
+    {
+        lock.Unlock();
+
+        return 0;
+    }
+
     IScheduler *scheduler = &info->scheduler;
+    IScheduler *lowestScheduler = &lowest->scheduler;
 
     auto current = scheduler->CurrentThread();
 
@@ -1042,7 +1055,7 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
     newProcess->sigprocmask = current->process->sigprocmask;
     newProcess->ppid = current->process->ID;
 
-    auto pcb = scheduler->AddThread(newProcess, newProcess->rip, newProcess->rsp, current->tid, true);
+    auto pcb = lowestScheduler->AddThread(newProcess, newProcess->rip, newProcess->rsp, current->tid, true);
 
     newProcess->fds = current->process->fds;
     newProcess->pipes = current->process->pipes;

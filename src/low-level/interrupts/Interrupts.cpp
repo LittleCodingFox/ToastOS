@@ -147,8 +147,10 @@ void Interrupts::Init()
     RegisterHandler(EXCEPTION_BP, BreakpointHandler);
     RegisterHandler(EXCEPTION_PF, PageFaultHandler);
     RegisterHandler(EXCEPTION_DF, DoubleFaultHandler);
+
     RegisterHandler(IRQ1, KeyboardHandler);
     RegisterHandler(IRQ12, MouseHandler);
+    
     RegisterHandler(0x30, SwitchProcess);
     RegisterHandler(0x80, SyscallHandler);
 

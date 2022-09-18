@@ -4,6 +4,7 @@
 #include "RoundRobinScheduler.hpp"
 #include "registers/Registers.hpp"
 #include "Panic.hpp"
+#include "smp/SMP.hpp"
 
 ProcessControlBlock *RoundRobinScheduler::CurrentThread()
 {
@@ -17,9 +18,34 @@ ProcessControlBlock *RoundRobinScheduler::CurrentThread()
     return NULL;
 }
 
+int RoundRobinScheduler::ThreadCount()
+{
+    ScopedLock lock(this->lock);
+
+    if(threads == nullptr)
+    {
+        return 0;
+    }
+
+    int counter = 1;
+
+    ProcessControlBlock *t = threads;
+
+    while(t->next != threads)
+    {
+        counter++;
+
+        t = t->next;
+    }
+
+    return counter;
+}
+
 ProcessControlBlock *RoundRobinScheduler::AddThread(Process *process, uint64_t rip, uint64_t rsp, pid_t tid, bool isMainThread)
 {
     lock.Lock();
+
+    CPUInfo *info = CurrentCPUInfo();
     
     ProcessControlBlock *node = new ProcessControlBlock();
 
@@ -75,7 +101,7 @@ ProcessControlBlock *RoundRobinScheduler::AddThread(Process *process, uint64_t r
         }
     }
 
-    DEBUG_OUT("Added thread %p (pid: %i, tid: %i)", node, node->process->ID, node->tid);
+    DEBUG_OUT("[smp %i] Added thread %p (pid: %i, tid: %i)", info->APICID, node, node->process->ID, node->tid);
 
     lock.Unlock();
 

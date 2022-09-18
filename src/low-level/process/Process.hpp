@@ -259,6 +259,7 @@ struct FutexPair
 class IScheduler
 {
 public:
+    virtual int ThreadCount() = 0;
     virtual ProcessControlBlock *CurrentThread() = 0;
     virtual ProcessControlBlock *AddThread(Process *process, uint64_t rip, uint64_t rsp, pid_t tid, bool isMainThread) = 0;
     virtual ProcessControlBlock *NextThread() = 0;

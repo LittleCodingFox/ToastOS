@@ -88,6 +88,8 @@ QEMU_FLAGS			=
 QEMU_EXTRA_FLAGS 	= 
 CFLAGS_KASAN		= -fsanitize=kernel-address -mllvm -asan-mapping-offset=0xdfffe00000000000 -mllvm -asan-globals=false
 
+SMP					?= 2
+
 ifeq ($(UBSAN), 1)
 	CFLAGS_INTERNAL += -fsanitize=undefined -fno-sanitize=function
 endif
@@ -209,7 +211,7 @@ debug-gdb-linux: debug-linux
 
 run-qemu-linux:
 	qemu-system-x86_64 -drive file=$(BINDIR)/$(OS_NAME).img,format=raw,index=0,media=disk \
-	-bios /usr/share/qemu/OVMF.fd -display gtk $(QEMU_FLAGS) $(QEMU_EXTRA_FLAGS) -vga std -smp 4 \
+	-bios /usr/share/qemu/OVMF.fd -display gtk $(QEMU_FLAGS) $(QEMU_EXTRA_FLAGS) -vga std -smp $(SMP) \
 	-m 4G -cpu qemu64 -machine type=q35 -serial file:./debug.log -net none -d int --no-reboot 2>qemu.log
 
 debug-qemu-linux: QEMU_FLAGS = -s -S

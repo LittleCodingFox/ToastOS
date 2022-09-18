@@ -35,6 +35,7 @@ struct CPUInfo
 
 uint32_t CPUCount();
 CPUInfo *CurrentCPUInfo();
+CPUInfo *LowestLoadCPU();
 void InitializeSMP(stivale2_struct_tag_smp *smp);
 
 void *KernelGSBase();
