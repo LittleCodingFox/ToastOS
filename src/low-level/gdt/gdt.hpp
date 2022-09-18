@@ -70,6 +70,7 @@ extern GDT bootstrapGDT;
 extern TSS bootstrapTSS;
 extern GDTDescriptor bootstrapGDTR;
 extern uint8_t bootstrapTssStack[0x100000];
+extern uint8_t bootstrapist1Stack[0x100000];
 extern uint8_t bootstrapist2Stack[0x100000];
 
-void LoadGDT(GDT *gdt, TSS *tss, uint8_t *tssStack, uint8_t *ist2Stack, int stackSize, GDTDescriptor *gdtr);
+void LoadGDT(GDT *gdt, TSS *tss, uint8_t *tssStack, uint8_t *ist1Stack, uint8_t *ist2Stack, int stackSize, GDTDescriptor *gdtr);

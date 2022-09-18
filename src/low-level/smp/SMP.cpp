@@ -133,9 +133,13 @@ void BootstrapSMP(stivale2_smp_info *smp)
 
     info->tss = {0};
 
+    info->tssStack = (uint8_t *)TranslateToHighHalfMemoryAddress((uint64_t)globalAllocator.RequestPages(SMP_STACK_SIZE / 0x1000));
+    info->ist1Stack = (uint8_t *)TranslateToHighHalfMemoryAddress((uint64_t)globalAllocator.RequestPages(SMP_STACK_SIZE / 0x1000));
+    info->ist2Stack = (uint8_t *)TranslateToHighHalfMemoryAddress((uint64_t)globalAllocator.RequestPages(SMP_STACK_SIZE / 0x1000));
+
     idt.Load();
 
-    LoadGDT(info->gdt, &info->tss, info->tssStack, info->ist2Stack, sizeof(info->tssStack), &info->gdtr);
+    LoadGDT(info->gdt, &info->tss, info->tssStack, info->ist1Stack, info->ist2Stack, sizeof(info->tssStack), &info->gdtr);
 
     SetKernelGSBase(&cpuInfos[smp->lapic_id]);
 
@@ -209,6 +213,6 @@ void InitializeSMP(stivale2_struct_tag_smp *smp)
 
     while(initializedCPUs != cpuCount)
     {
-        asm volatile("hlt");
+        asm volatile("pause");
     }
 }

@@ -129,7 +129,7 @@ void Interrupts::Init()
     idt.RegisterInterrupt(0x80, (uint64_t)exc128, 3, 1); //Syscalls
 
     // Hardware interrupts
-    idt.RegisterInterrupt(IRQ0, (uint64_t)irq0, 0, 2);
+    idt.RegisterInterrupt(IRQ0, (uint64_t)irq0);
     idt.RegisterInterrupt(IRQ1, (uint64_t)irq1);
     idt.RegisterInterrupt(IRQ2, (uint64_t)irq2);
     idt.RegisterInterrupt(IRQ3, (uint64_t)irq3);

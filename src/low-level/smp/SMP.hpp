@@ -24,8 +24,9 @@ struct CPUInfo
     
     GDTDescriptor gdtr;
     TSS tss;
-    uint8_t tssStack[0x100000];
-    uint8_t ist2Stack[0x100000];
+    uint8_t *tssStack;
+    uint8_t *ist1Stack;
+    uint8_t *ist2Stack;
     RoundRobinScheduler scheduler;
     void (*timerFunction)(InterruptStack *stack);
 

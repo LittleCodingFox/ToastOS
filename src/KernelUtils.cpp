@@ -329,7 +329,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
     stivale2_module *font = Stivale2GetModule(modules, "font.psf");
     stivale2_module *initrd = Stivale2GetModule(modules, "initrd");
 
-    LoadGDT(&bootstrapGDT, &bootstrapTSS, bootstrapTssStack, bootstrapist2Stack, sizeof(bootstrapTssStack), &bootstrapGDTR);
+    LoadGDT(&bootstrapGDT, &bootstrapTSS, bootstrapTssStack, bootstrapist1Stack, bootstrapist2Stack, sizeof(bootstrapTssStack), &bootstrapGDTR);
 
     InitializeMemory(memmap, framebuffer);
 
@@ -434,8 +434,6 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     InitializeMouse();
 
-    InitializeTime();
-
     processManager.initialize();
 
     DEBUG_OUT("%s", "Finished initializing the kernel");
@@ -453,6 +451,8 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
     }
 
     InitializeLAPIC();
+
+    InitializeTime();
 }
 
 void _putchar(char character)

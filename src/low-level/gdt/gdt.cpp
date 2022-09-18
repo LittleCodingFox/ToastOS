@@ -2,6 +2,7 @@
 #include "debug.hpp"
 
 uint8_t bootstrapTssStack[0x100000];
+uint8_t bootstrapist1Stack[0x100000];
 uint8_t bootstrapist2Stack[0x100000];
 
 TSS bootstrapTSS = { 0 };
@@ -67,7 +68,7 @@ GDTDescriptor bootstrapGDTR = {
     .offset = (uint64_t)&bootstrapGDT
 };
 
-void LoadGDT(GDT *gdt, TSS *tss, uint8_t *tssStack, uint8_t *ist2Stack, int stackSize, GDTDescriptor *gdtr)
+void LoadGDT(GDT *gdt, TSS *tss, uint8_t *tssStack, uint8_t *ist1Stack, uint8_t *ist2Stack, int stackSize, GDTDescriptor *gdtr)
 {
     uint64_t address = (uint64_t)tss;
 
@@ -81,6 +82,7 @@ void LoadGDT(GDT *gdt, TSS *tss, uint8_t *tssStack, uint8_t *ist2Stack, int stac
     };
 
     tss->rsp0 = (uint64_t)tssStack + stackSize;
+    tss->ist1 = (uint64_t)ist1Stack + stackSize;
     tss->ist2 = (uint64_t)ist2Stack + stackSize;
 
     /*

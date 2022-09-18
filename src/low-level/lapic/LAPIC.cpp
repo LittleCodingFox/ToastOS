@@ -41,8 +41,6 @@ static void LAPICTimerHandler(InterruptStack *stack)
 {
     LAPICEOI();
 
-    DEBUG_OUT("LAPIC Timer", "");
-
     CPUInfo *info = CurrentCPUInfo();
 
     if(info != nullptr && info->timerFunction != NULL)
@@ -63,7 +61,7 @@ void InitializeLAPIC()
     if(timerVector == 0)
     {
         timerVector = idt.AllocateVector();
-        //idt.SetIST(timerVector, 1);
+        idt.SetIST(timerVector, 1);
     }
 
     idt.RegisterInterrupt(timerVector, (uint64_t)LAPICTimerHandler);

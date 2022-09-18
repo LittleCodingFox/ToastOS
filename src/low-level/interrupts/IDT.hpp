@@ -10,6 +10,7 @@ struct __attribute__((packed)) IDTDescEntry
     uint16_t ptrLow; 
     uint16_t selector;  
     uint8_t ist;
+
     union
     {
         uint8_t flags;
@@ -22,6 +23,7 @@ struct __attribute__((packed)) IDTDescEntry
             uint8_t present : 1;
         };
     };
+
     uint16_t ptrMid;
     uint32_t ptrHigh;
     uint32_t reserved;
@@ -30,14 +32,13 @@ struct __attribute__((packed)) IDTDescEntry
 class IDT
 {
 private:
-    IDTDescEntry idt[IDT_ENTRIES];
+    IDTDescEntry entries[IDT_ENTRIES];
     uint8_t freeVector;
 public:
-    IDT() : freeVector(32) {}
     uint8_t AllocateVector();
+    void Init();
     void SetIST(uint8_t vector, uint8_t ist);
     void SetFlags(uint8_t vector, uint8_t flags);
-    void Init();
     void Load();
     void RegisterGate(uint8_t vector, uint64_t handler, uint8_t type, uint8_t dpl, uint8_t ist);
     void RegisterInterrupt(uint8_t vector, uint64_t handler, uint8_t dpl = 0, uint8_t ist = 0);
