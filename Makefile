@@ -209,7 +209,7 @@ debug-gdb-linux: debug-linux
 
 run-qemu-linux:
 	qemu-system-x86_64 -drive file=$(BINDIR)/$(OS_NAME).img,format=raw,index=0,media=disk \
-	-bios /usr/share/qemu/OVMF.fd -display gtk $(QEMU_FLAGS) $(QEMU_EXTRA_FLAGS) -vga std -smp 16 \
+	-bios /usr/share/qemu/OVMF.fd -display gtk $(QEMU_FLAGS) $(QEMU_EXTRA_FLAGS) -vga std -smp 2 \
 	-m 4G -cpu qemu64 -machine type=q35 -serial file:./debug.log -net none -d int --no-reboot 2>qemu.log
 
 debug-qemu-linux: QEMU_FLAGS = -s -S

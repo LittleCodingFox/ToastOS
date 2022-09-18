@@ -4,7 +4,7 @@
 #include "debug.hpp"
 #include "errno.h"
 #include "cmos/cmos.hpp"
-#include "pit/PIT.hpp"
+#include "time/time.hpp"
 #include "user/UserAccess.hpp"
 
 int64_t SyscallClock(InterruptStack *stack)
@@ -26,20 +26,16 @@ int64_t SyscallClock(InterruptStack *stack)
     DEBUG_OUT("Syscall: Clock clock: %i secs: %p nanos: %p", clock, secs, nanos);
 #endif
 
-    /*
-    auto ms = PITGetCurrentCount() * (1000 / PIT_DIVIDEND);
-
     if(clock == CLOCK_MONOTONIC || clock == CLOCK_MONOTONIC_RAW)
     {
-        *secs = ms / 1000;
-        *nanos = (ms % 1000) * 1000000;
+        *secs = monotonicTime.tv_sec;
+        *nanos = monotonicTime.tv_nsec;
     }
     else if(clock == CLOCK_REALTIME)
     {
-        *secs = cmos.CurrentTime();
-        *nanos = *secs * 1000000000 + (ms % 1000) * 1000000;
+        *secs = realtimeTime.tv_sec;
+        *nanos = realtimeTime.tv_nsec;
     }
-    */
 
     //TODO
 

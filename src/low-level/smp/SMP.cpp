@@ -9,6 +9,7 @@
 #include "sse/sse.hpp"
 #include "process/Process.hpp"
 #include "printf/printf.h"
+#include "lapic/LAPIC.hpp"
 
 static uint8_t stack[SMP_STACK_SIZE];
 
@@ -61,6 +62,8 @@ void *GSBase()
 {
     return (void *)Registers::ReadMSR(0xC0000101);
 }
+
+int initializedCPUs = 0;
 
 void BootstrapSMP(stivale2_smp_info *smp)
 {
@@ -152,16 +155,17 @@ void BootstrapSMP(stivale2_smp_info *smp)
     //Registers::WriteMSR(0x277, 0x00'00'01'00'00'00'04'06);
     Registers::WriteMSR(0x0277, 0x0000000005010406);
 
+    InitializeLAPIC();
+
     char buffer[100];
 
     sprintf(buffer, "KernelTask %i", smp->lapic_id);
 
     processManager->CreateFromEntryPoint((uint64_t)KernelTask, buffer, "/home/toast/", PROCESS_PERMISSION_KERNEL);
-    
-    for(;;)
-    {
-        asm volatile("hlt");
-    }
+
+    initializedCPUs++;
+
+    processManager->Wait();
 }
 
 void InitializeSMP(stivale2_struct_tag_smp *smp)
@@ -182,6 +186,9 @@ void InitializeSMP(stivale2_struct_tag_smp *smp)
         {
             cpuInfos[i].stack = stack;
             cpuInfos[i].bsp = true;
+            cpuInfos[i].APICID = smp->bsp_lapic_id;
+
+            initializedCPUs++;
 
             SetKernelGSBase(&cpuInfos[smpInfo->lapic_id]);
 
@@ -201,5 +208,10 @@ void InitializeSMP(stivale2_struct_tag_smp *smp)
         smpInfo->target_stack = (uint64_t)cpuInfos[i].stack + SMP_STACK_SIZE;
 
         smpInfo->goto_address = (uint64_t)BootstrapSMP;
+    }
+
+    while(initializedCPUs != cpuCount)
+    {
+        asm volatile("hlt");
     }
 }

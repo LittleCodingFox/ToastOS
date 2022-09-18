@@ -41,6 +41,8 @@ static void LAPICTimerHandler(InterruptStack *stack)
 {
     LAPICEOI();
 
+    DEBUG_OUT("LAPIC Timer", "");
+
     CPUInfo *info = CurrentCPUInfo();
 
     if(info != nullptr && info->timerFunction != NULL)
@@ -61,7 +63,7 @@ void InitializeLAPIC()
     if(timerVector == 0)
     {
         timerVector = idt.AllocateVector();
-        idt.SetIST(timerVector, 1);
+        //idt.SetIST(timerVector, 1);
     }
 
     idt.RegisterInterrupt(timerVector, (uint64_t)LAPICTimerHandler);
@@ -97,6 +99,7 @@ void LAPICTimerOneShot(uint32_t us, void *function)
     }
 
     uint32_t ticks = us * (info->LAPICFrequency / 1000000);
+
     LAPICWrite(LAPIC_REG_LVT_TIMER, timerVector);
     LAPICWrite(LAPIC_REG_TIMER_DIV, 0);
     LAPICWrite(LAPIC_REG_TIMER_INITCNT, ticks);
@@ -130,6 +133,8 @@ void LAPICTimerCalibrate()
     if(info != nullptr)
     {
         info->LAPICFrequency = (samples / totalTicks) * PIT_DIVIDEND;
+
+        DEBUG_OUT("LAPIC frequency for %i: %u", info->APICID, info->LAPICFrequency / 1000000);
     }
 
     LAPICTimerStop();

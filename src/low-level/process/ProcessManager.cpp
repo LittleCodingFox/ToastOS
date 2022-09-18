@@ -17,6 +17,7 @@
 #include "kasan/kasan.hpp"
 #include "user/UserAccess.hpp"
 #include "smp/SMP.hpp"
+#include "lapic/LAPIC.hpp"
 
 void KernelTask()
 {
@@ -156,23 +157,15 @@ void ProcessYieldIfAvailable()
 
 void SwitchProcess(InterruptStack *stack)
 {
-    if(processManager->IsLocked())
-    {
-        return;
-    }
+    DEBUG_OUT("SwitchProcess", "");
 
-    processManager->SwitchProcess(stack, true);
+    LAPICTimerOneShot(100, (void *)SwitchProcess);
+
+    processManager->SwitchProcess(stack);
 }
 
 ProcessManager::ProcessManager() : futexes(NULL)
 {
-    //TODO
-    /*
-    if(timer)
-    {
-        timer->RegisterHandler(::SwitchProcess);
-    }
-    */
 }
 
 bool ProcessManager::IsLocked()
@@ -180,14 +173,8 @@ bool ProcessManager::IsLocked()
     return lock.IsLocked();
 }
 
-void ProcessManager::SwitchProcess(InterruptStack *stack, bool fromTimer)
+void ProcessManager::SwitchProcess(InterruptStack *stack)
 {
-    if(fromTimer)
-    {
-        //Called from timer, so must finish up PIC
-        outport8(PIC1, PIC_EOI);
-    }
-
     lock.Lock();
 
     interrupts.DisableInterrupts();
@@ -1789,4 +1776,20 @@ void ProcessManager::ClearProcessVMMap(void *virt, uint64_t pages)
 
         entry.virt = NULL;
     }
+}
+
+void ProcessManager::Wait()
+{
+    interrupts.DisableInterrupts();
+
+    LAPICTimerOneShot(20000, (void *)::SwitchProcess);
+
+    interrupts.EnableInterrupts();
+
+    for(;;)
+    {
+        asm volatile("hlt");
+    }
+
+    __builtin_unreachable();
 }

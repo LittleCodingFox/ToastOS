@@ -95,5 +95,5 @@ extern "C" void _start(stivale2_struct *stivale2Struct)
         printf("Failed to open app at %s: File not found or empty\n", startAppPath);
     }
 
-    for(;;);
+    processManager->Wait();
 }

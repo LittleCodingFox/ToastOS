@@ -25,7 +25,7 @@ void PITSetReloadValue(uint16_t count)
 
 void PITSetFrequency(uint64_t frequency)
 {
-    uint8_t divisor = PIT_DIVIDEND / frequency;
+    uint64_t divisor = PIT_DIVIDEND / frequency;
 
     if(PIT_DIVIDEND % frequency > frequency / 2)
     {
@@ -35,10 +35,12 @@ void PITSetFrequency(uint64_t frequency)
     PITSetReloadValue((uint16_t)divisor);
 }
 
+void TimerHandler();
+
 static void PITTimerHandler(InterruptStack *stack)
 {
     LAPICEOI();
-    //TODO
+    TimerHandler();
 }
 
 void InitializePIT()

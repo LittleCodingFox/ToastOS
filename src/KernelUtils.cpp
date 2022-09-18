@@ -32,6 +32,7 @@
 #include "drivers/AHCI/AHCIDriver.hpp"
 #include "madt/MADT.hpp"
 #include "lapic/LAPIC.hpp"
+#include "time/time.hpp"
 
 PageTableManager pageTableManager;
 
@@ -258,10 +259,6 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
 
     InitializeMADT();
 
-    InitializePIT();
-
-    InitializeLAPIC();
-
     InitializePCI();
 
     PCIEnumerateDevices(0x8086, 0x2922, [](PCIDevice *device) {
@@ -437,6 +434,8 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     InitializeMouse();
 
+    InitializeTime();
+
     processManager.initialize();
 
     DEBUG_OUT("%s", "Finished initializing the kernel");
@@ -453,7 +452,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
         InitializeSMP(smp);
     }
 
-    //timer->Initialize();
+    InitializeLAPIC();
 }
 
 void _putchar(char character)

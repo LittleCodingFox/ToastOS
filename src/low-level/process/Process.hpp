@@ -301,7 +301,7 @@ public:
     ProcessPair *GetProcess(pid_t pid);
     vector<ProcessPair> GetChildProcesses(pid_t ppid);
 
-    void SwitchProcess(InterruptStack *stack, bool fromTimer);
+    void SwitchProcess(InterruptStack *stack);
 
     bool IsLocked();
 
@@ -336,6 +336,8 @@ public:
     gid_t GetGID();
 
     int32_t Fork(InterruptStack *interruptStack, pid_t *child);
+
+    void Wait();
 };
 
 extern box<ProcessManager> processManager;
