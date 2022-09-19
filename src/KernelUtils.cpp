@@ -247,8 +247,6 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
     if(mcfg == NULL)
     {
         DEBUG_OUT("[ACPI] Failed to get MCFG!", 0);
-
-        return;
     }
 
     madt = (volatile MADT *)ACPI::FindTable(xsdt, "APIC");
@@ -453,6 +451,8 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
     InitializeLAPIC();
 
     InitializeTime();
+
+    interrupts.EnableInterrupts();
 }
 
 void _putchar(char character)

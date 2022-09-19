@@ -30,6 +30,11 @@ namespace ACPI
 
     void *FindTable(volatile SDTHeader *header, const char *signature)
     {
+        return FindTable(header, signature, -1);
+    }
+
+    void *FindTable(volatile SDTHeader *header, const char *signature, int index)
+    {
         if(strcmp(signature, "DSDT") == 0)
         {
             acpi_fadt_t *fadt = (acpi_fadt_t *)FindTable(header, "FACP");
@@ -51,7 +56,7 @@ namespace ACPI
         {
             volatile SDTHeader *outHeader = (volatile SDTHeader *)TranslateToHighHalfMemoryAddress(xsdt->entries[i]);
 
-            if(memcmp((const void *)outHeader->signature, signature, 4) == 0)
+            if(memcmp((const void *)outHeader->signature, signature, 4) == 0 && (index == -1 || index == i))
             {
                 return (void *)outHeader;
             }

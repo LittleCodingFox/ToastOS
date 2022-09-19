@@ -64,4 +64,5 @@ namespace ACPI
 {
     void DumpTables(volatile SDTHeader *header);
     void *FindTable(volatile SDTHeader *header, const char *signature);
+    void *FindTable(volatile SDTHeader *header, const char *signature, int index);
 }

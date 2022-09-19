@@ -14,6 +14,7 @@
 #include "paging/PageFrameAllocator.hpp"
 #include "paging/PageTableManager.hpp"
 #include "kasan/kasan.hpp"
+#include "lapic/LAPIC.hpp"
 
 Interrupts interrupts;
 
@@ -86,10 +87,6 @@ void Interrupts::Init()
     outport8(PIC1_DATA, 0x01);
     outport8(PIC2_DATA, 0x01);
 
-    // unmask all IRQs
-    outport8(PIC1_DATA, 0x00);
-    outport8(PIC2_DATA, 0x00);
-
     // Exceptions
     idt.RegisterInterrupt(0, (uint64_t)exc0);
     idt.RegisterInterrupt(1, (uint64_t)exc1);
@@ -155,8 +152,6 @@ void Interrupts::Init()
     RegisterHandler(0x80, SyscallHandler);
 
     idt.Load();
-
-    EnableInterrupts();
 }
 
 void Interrupts::EnableInterrupts()
@@ -241,6 +236,8 @@ void interruptIntHandler(InterruptStack stack)
 
 void interruptIRQHandler(InterruptStack stack)
 {
+    LAPICEOI();
+
     InterruptHandler handler = interrupts.GetHandler(stack.id);
 
     if (handler != NULL)
