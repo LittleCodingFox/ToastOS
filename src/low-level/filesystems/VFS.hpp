@@ -94,6 +94,7 @@ public:
 
     dirent *ReadEntries(FILE_HANDLE handle);
     void CloseDir(FILE_HANDLE handle);
+    bool MakeDir(const char *path, mode_t mode, Process *currentProcess);
 
     struct stat Stat(FILE_HANDLE handle, int *error);
 };

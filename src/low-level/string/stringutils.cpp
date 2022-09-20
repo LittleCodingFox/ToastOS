@@ -37,6 +37,10 @@ vector<string> SplitString(const frg::string<frg_allocator> &str, char separator
 
         outValues.push_back(out);
     }
+    else if(lastIndex == -1 && outValues.size() == 0)
+    {
+        outValues.push_back(str);
+    }
 
     return outValues;
 }

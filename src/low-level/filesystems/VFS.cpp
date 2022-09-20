@@ -422,7 +422,6 @@ bool VFS::ReadLink(const char *path, string &link, Process *currentProcess)
         return false;
     }
 
-
     for(auto &mountPoint : mountPoints)
     {
         if(targetPath == mountPoint->path) //Virtual directory
@@ -708,4 +707,43 @@ struct stat VFS::Stat(FILE_HANDLE handle, int *error)
     }
 
     return fileHandle->stat;
+}
+
+bool VFS::MakeDir(const char *path, mode_t mode, Process *currentProcess)
+{
+    string targetPath = path;
+
+    if(targetPath.size() > 0 && currentProcess != NULL)
+    {
+        if(targetPath.size() >= 2 && targetPath[0] == '.' && targetPath[1] == '/')
+        {
+            auto pathView = frg::string_view(targetPath);
+
+            targetPath = currentProcess->cwd + pathView.sub_string(2, pathView.size() - 2);
+        }
+        else if(targetPath[0] != '/')
+        {
+            targetPath = currentProcess->cwd + targetPath;
+        }
+    }
+
+    if(targetPath.size() == 0)
+    {
+        return false;
+    }
+
+    for(auto &mountPoint : mountPoints)
+    {
+        if(targetPath == mountPoint->path) //Virtual directory
+        {
+            return false;
+        }
+
+        if(strstr(targetPath.data(), mountPoint->path) == targetPath.data())
+        {
+            return mountPoint->fileSystem->MakeDir(targetPath.data() + strlen(mountPoint->path), mode);
+        }
+    }
+
+    return false;
 }

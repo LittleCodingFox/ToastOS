@@ -45,6 +45,10 @@ vector<dirent> TarFS::Inode::GetEntries()
 
     entries.push_back(current);
 
+    strcpy(current.d_name, "..");
+
+    entries.push_back(current);
+
     for(auto &child : children)
     {
         dirent entry = {0};
@@ -470,6 +474,8 @@ FileSystemHandle TarFS::GetFileHandle(const char *path, uint32_t flags)
     Inode *inode = NULL;
     bool found = FindInode(path, &inode);
 
+    bool created = false;
+
     if(inode == NULL)
     {
         if(found || strlen(path) == 0)
@@ -513,6 +519,8 @@ FileSystemHandle TarFS::GetFileHandle(const char *path, uint32_t flags)
 
                 if(parent != nullptr)
                 {
+                    created = true;
+
                     inode = new Inode();
 
                     inode->ID = ++inodeCounter;
@@ -540,7 +548,7 @@ FileSystemHandle TarFS::GetFileHandle(const char *path, uint32_t flags)
 
     if(inode == nullptr ||
         ((flags & O_DIRECTORY) == O_DIRECTORY && inode->type != TAR_DIRECTORY) ||
-        ((flags & O_CREAT) == O_CREAT && (flags & O_EXCL) == O_EXCL) ||
+        ((flags & O_CREAT) == O_CREAT && (flags & O_EXCL) == O_EXCL && created == false) ||
         ((flags & O_NOFOLLOW) == O_NOFOLLOW && inode->type == TAR_SYMLINK))
     {
         return 0;
@@ -769,4 +777,61 @@ void TarFS::DebugListDirectories()
 const char *TarFS::VolumeName()
 {
     return "tarfs";
+}
+
+bool TarFS::MakeDir(const char *path, mode_t mode)
+{
+    Inode *inode = nullptr;
+
+    if(FindInode(path, &inode))
+    {
+        return false;
+    }
+
+    string temp = path;
+    string name;
+
+    char *p = strrchr(temp.data(), '/');
+
+    Inode *parent = nullptr;
+
+    if(p == nullptr)
+    {
+        parent = root;
+        name = path;
+    }
+    else
+    {
+        *p = 0;
+
+        if(FindInode(temp.data(), &inode))
+        {
+            parent = inode;
+        }
+
+        name = p + 1;
+    }
+
+    if(parent != nullptr)
+    {
+        inode = new Inode();
+        inode->ID = ++inodeCounter;
+        inode->type = TAR_DIRECTORY;
+        inode->name = name;
+        inode->parent = parent;
+
+        parent->children.push_back(inode);
+
+        for(auto &child : fileHandles)
+        {
+            if(child.inode == parent)
+            {
+                child.entries = parent->GetEntries();
+            }
+        }
+
+        return true;
+    }
+
+    return false;
 }

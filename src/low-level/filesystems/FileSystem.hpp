@@ -61,4 +61,6 @@ public:
     virtual dirent *ReadEntries(FileSystemHandle handle) = 0;
 
     virtual void CloseDir(FileSystemHandle handle) = 0;
+
+    virtual bool MakeDir(const char *path, mode_t mode) = 0;
 };

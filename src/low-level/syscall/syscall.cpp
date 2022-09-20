@@ -66,6 +66,7 @@ int64_t SyscallGetRusage(InterruptStack *stack);
 int64_t SyscallGetRLimit(InterruptStack *stack);
 int64_t SyscallFchdir(InterruptStack *stack);
 int64_t SyscallUname(InterruptStack *stack);
+int64_t SyscallMKDir(InterruptStack *stack);
 
 SyscallPointer syscallHandlers[] =
 {
@@ -130,6 +131,7 @@ SyscallPointer syscallHandlers[] =
     (SyscallPointer)SyscallGetRLimit,
     (SyscallPointer)SyscallFchdir,
     (SyscallPointer)SyscallUname,
+    (SyscallPointer)SyscallMKDir,
 };
 
 void SyscallHandler(InterruptStack *stack)

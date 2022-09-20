@@ -108,6 +108,7 @@ makedirs:
 	mkdir -p obj
 	mkdir -p $(LIBCOBJDIR)
 	mkdir -p dist/bin
+	mkdir -p dist/tmp
 
 $(COBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
 	mkdir -p $(shell dirname $@)

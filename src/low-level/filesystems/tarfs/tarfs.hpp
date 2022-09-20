@@ -8,6 +8,7 @@
 #include "kernel.h"
 #include "devicemanager/GenericIODevice.hpp"
 #include "filesystems/FileSystem.hpp"
+#include "cmos/cmos.hpp"
 
 enum TarFileType
 {
@@ -125,4 +126,6 @@ public:
     virtual dirent *ReadEntries(FileSystemHandle handle) override;
 
     virtual void CloseDir(FileSystemHandle handle) override;
+
+    virtual bool MakeDir(const char *path, mode_t mode) override;
 };
