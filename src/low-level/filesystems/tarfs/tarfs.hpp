@@ -65,17 +65,19 @@ private:
 
         Inode() : parent(nullptr), header(nullptr), type(0), gid(0), uid(0), ID(0), isHeader(false) {}
         string FullPath();
+        vector<dirent> GetEntries();
     };
 
     struct FileHandleData
     {
         uint64_t ID;
         Inode *inode;
+        uint32_t flags;
 
         int currentEntry;
         vector<dirent> entries;
 
-        FileHandleData() : ID(0), inode(nullptr), currentEntry(0) {}
+        FileHandleData() : ID(0), inode(nullptr), flags(0), currentEntry(0) {}
     };
 
     uint64_t fileHandleCounter;

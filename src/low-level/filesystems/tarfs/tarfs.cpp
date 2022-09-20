@@ -32,6 +32,57 @@ string TarFS::Inode::FullPath()
     return targetPath;
 }
 
+vector<dirent> TarFS::Inode::GetEntries()
+{
+    vector<dirent> entries;
+
+    dirent current = {0};
+
+    current.d_ino = 0;
+    current.d_reclen = sizeof(dirent);
+    strcpy(current.d_name, ".");
+    current.d_type = DT_DIR;
+
+    entries.push_back(current);
+
+    for(auto &child : children)
+    {
+        dirent entry = {0};
+
+        entry.d_ino = child->ID;
+        entry.d_reclen = sizeof(dirent);
+
+        memcpy(entry.d_name, child->name.data(), child->name.size());
+
+        entry.d_name[child->name.size()] = '\0';
+
+        switch(child->type)
+        {
+            case TAR_FILE:
+
+                entry.d_type = DT_REG;
+
+                break;
+
+            case TAR_SYMLINK:
+
+                entry.d_type = DT_LNK;
+
+                break;
+
+            case TAR_DIRECTORY:
+
+                entry.d_type = DT_DIR;
+
+                break;
+        }
+
+        entries.push_back(entry);
+    }
+
+    return entries;
+}
+
 uint64_t TarFS::GetHeaderIndex(TarHeader *target)
 {
     uint64_t counter = 0;
@@ -426,56 +477,72 @@ FileSystemHandle TarFS::GetFileHandle(const char *path, uint32_t flags)
             FileHandleData data;
             data.ID = ++fileHandleCounter;
             data.inode = root;
-
-            dirent current = {0};
-
-            current.d_ino = 0;
-            current.d_reclen = sizeof(dirent);
-            strcpy(current.d_name, ".");
-            current.d_type = DT_DIR;
-
-            data.entries.push_back(current);
-
-            for(auto &child : root->children)
-            {
-                dirent entry = {0};
-
-                entry.d_ino = child->ID;
-                entry.d_reclen = sizeof(dirent);
-
-                memcpy(entry.d_name, child->name.data(), child->name.size());
-
-                entry.d_name[child->name.size()] = '\0';
-
-                switch(child->type)
-                {
-                    case TAR_FILE:
-
-                        entry.d_type = DT_REG;
-
-                        break;
-
-                    case TAR_SYMLINK:
-
-                        entry.d_type = DT_LNK;
-
-                        break;
-
-                    case TAR_DIRECTORY:
-
-                        entry.d_type = DT_DIR;
-
-                        break;
-                }
-
-                data.entries.push_back(entry);
-            }
+            data.entries = root->GetEntries();
 
             fileHandles.push_back(data);
 
             return data.ID;
         }
+        else
+        {
+            if((flags & O_CREAT) == O_CREAT)
+            {
+                string temp = path;
+                string name;
 
+                char *p = strrchr(temp.data(), '/');
+
+                Inode *parent = nullptr;
+
+                if(p == nullptr)
+                {
+                    parent = root;
+                    name = path;
+                }
+                else
+                {
+                    *p = '\0';
+
+                    FindInode(temp.data(), &parent);
+
+                    if(parent != nullptr)
+                    {
+                        name = p + 1;
+                    }
+                }
+
+                if(parent != nullptr)
+                {
+                    inode = new Inode();
+
+                    inode->ID = ++inodeCounter;
+                    inode->type = TAR_FILE;
+                    inode->parent = parent;
+                    inode->name = name;
+
+                    parent->children.push_back(inode);
+
+                    for(auto &handle : fileHandles)
+                    {
+                        if(handle.inode == parent)
+                        {
+                            handle.entries = parent->GetEntries();
+                        }
+                    }
+                }
+            }
+            else
+            {
+                return 0;
+            }
+        }
+    }
+
+    if(inode == nullptr ||
+        ((flags & O_DIRECTORY) == O_DIRECTORY && inode->type != TAR_DIRECTORY) ||
+        ((flags & O_CREAT) == O_CREAT && (flags & O_EXCL) == O_EXCL) ||
+        ((flags & O_NOFOLLOW) == O_NOFOLLOW && inode->type == TAR_SYMLINK))
+    {
         return 0;
     }
 
@@ -483,60 +550,13 @@ FileSystemHandle TarFS::GetFileHandle(const char *path, uint32_t flags)
 
     data.ID = ++fileHandleCounter;
     data.inode = inode;
+    data.flags = flags;
 
     if(inode->type == TAR_DIRECTORY)
     {
         data.currentEntry = 0;
 
-        dirent current = {0};
-
-        current.d_ino = inode->ID;
-        current.d_reclen = sizeof(dirent);
-        strcpy(current.d_name, ".");
-        current.d_type = DT_DIR;
-
-        data.entries.push_back(current);
-
-        dirent previous = current;
-
-        strcpy(previous.d_name, "..");
-
-        data.entries.push_back(previous);
-
-        for(auto &child : inode->children)
-        {
-            dirent entry = {0};
-
-            entry.d_ino = child->ID;
-            entry.d_reclen = sizeof(dirent);
-
-            memcpy(entry.d_name, child->name.data(), child->name.size());
-
-            entry.d_name[child->name.size()] = '\0';
-
-            switch(child->type)
-            {
-                case TAR_FILE:
-
-                    entry.d_type = DT_REG;
-
-                    break;
-
-                case TAR_SYMLINK:
-
-                    entry.d_type = DT_LNK;
-
-                    break;
-
-                case TAR_DIRECTORY:
-
-                    entry.d_type = DT_DIR;
-
-                    break;
-            }
-
-            data.entries.push_back(entry);
-        }
+        data.entries = inode->GetEntries();
     }
 
     fileHandles.push_back(data);
@@ -635,7 +655,10 @@ uint64_t TarFS::ReadFile(FileSystemHandle handle, void *buffer, uint64_t cursor,
 {
     auto file = GetHandle(handle);
 
-    if(file == NULL || file->inode == NULL)
+    if(file == NULL ||
+        file->inode == NULL ||
+        (file->flags & O_WRONLY) == O_WRONLY ||
+        (file->flags & O_PATH) == O_PATH)
     {
         return 0;
     }
@@ -685,7 +708,35 @@ uint64_t TarFS::ReadFile(FileSystemHandle handle, void *buffer, uint64_t cursor,
 
 uint64_t TarFS::WriteFile(FileSystemHandle handle, const void *buffer, uint64_t cursor, uint64_t size)
 {
-    return 0;
+    auto file = GetHandle(handle);
+
+    if(file == NULL ||
+        file->inode == NULL ||
+        file->inode->type != TAR_FILE ||
+        (file->flags & O_RDONLY) == O_RDONLY ||
+        (file->flags & O_PATH) == O_PATH)
+    {
+        return 0;
+    }
+
+    if(file->inode->isHeader)
+    {
+        file->inode->isHeader = false;
+    }
+
+    if(file->flags & O_APPEND)
+    {
+        cursor = file->inode->data.size();
+    }
+
+    if(cursor + size > file->inode->data.size())
+    {
+        file->inode->data.resize(cursor + size);
+    }
+
+    memcpy(file->inode->data.data(), buffer, size);
+
+    return size;
 }
 
 void TarFS::ListSubdirs(Inode *inode, uint32_t indentation)
