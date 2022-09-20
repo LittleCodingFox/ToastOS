@@ -747,3 +747,81 @@ bool VFS::MakeDir(const char *path, mode_t mode, Process *currentProcess)
 
     return false;
 }
+
+bool VFS::Rename(const char *path, const char *newPath, Process *currentProcess)
+{
+    string targetPath = path;
+
+    if(targetPath.size() > 0 && currentProcess != NULL)
+    {
+        if(targetPath.size() >= 2 && targetPath[0] == '.' && targetPath[1] == '/')
+        {
+            auto pathView = frg::string_view(targetPath);
+
+            targetPath = currentProcess->cwd + pathView.sub_string(2, pathView.size() - 2);
+        }
+        else if(targetPath[0] != '/')
+        {
+            targetPath = currentProcess->cwd + targetPath;
+        }
+    }
+
+    if(targetPath.size() == 0)
+    {
+        return false;
+    }
+
+    for(auto &mountPoint : mountPoints)
+    {
+        if(targetPath == mountPoint->path) //Virtual directory
+        {
+            return false;
+        }
+
+        if(strstr(targetPath.data(), mountPoint->path) == targetPath.data())
+        {
+            return mountPoint->fileSystem->Rename(targetPath.data() + strlen(mountPoint->path), newPath);
+        }
+    }
+
+    return false;
+}
+
+bool VFS::RemoveDir(const char *path, Process *currentProcess)
+{
+    string targetPath = path;
+
+    if(targetPath.size() > 0 && currentProcess != NULL)
+    {
+        if(targetPath.size() >= 2 && targetPath[0] == '.' && targetPath[1] == '/')
+        {
+            auto pathView = frg::string_view(targetPath);
+
+            targetPath = currentProcess->cwd + pathView.sub_string(2, pathView.size() - 2);
+        }
+        else if(targetPath[0] != '/')
+        {
+            targetPath = currentProcess->cwd + targetPath;
+        }
+    }
+
+    if(targetPath.size() == 0)
+    {
+        return false;
+    }
+
+    for(auto &mountPoint : mountPoints)
+    {
+        if(targetPath == mountPoint->path) //Virtual directory
+        {
+            return false;
+        }
+
+        if(strstr(targetPath.data(), mountPoint->path) == targetPath.data())
+        {
+            return mountPoint->fileSystem->RemoveDir(targetPath.data() + strlen(mountPoint->path));
+        }
+    }
+
+    return false;
+}

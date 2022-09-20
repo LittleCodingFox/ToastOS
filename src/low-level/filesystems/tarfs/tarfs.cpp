@@ -742,7 +742,7 @@ uint64_t TarFS::WriteFile(FileSystemHandle handle, const void *buffer, uint64_t 
         file->inode->data.resize(cursor + size);
     }
 
-    memcpy(file->inode->data.data(), buffer, size);
+    memcpy(file->inode->data.data() + cursor, buffer, size);
 
     return size;
 }
@@ -793,6 +793,14 @@ bool TarFS::MakeDir(const char *path, mode_t mode)
 
     char *p = strrchr(temp.data(), '/');
 
+    //Check for end `/`
+    if(p == temp.data() + (temp.size() - 1))
+    {
+        *p = '\0';
+
+        p = strrchr(temp.data(), '/');
+    }
+
     Inode *parent = nullptr;
 
     if(p == nullptr)
@@ -834,4 +842,94 @@ bool TarFS::MakeDir(const char *path, mode_t mode)
     }
 
     return false;
+}
+
+bool TarFS::Rename(const char *path, const char *newPath)
+{
+    Inode *inode;
+
+    if(FindInode(path, &inode) == false)
+    {
+        return false;
+    }
+
+    char *p = (char *)strrchr(newPath, '/');
+    char *p2 = (char *)strrchr(path, '/');
+
+    if(p == nullptr || p2 == nullptr)
+    {
+        return false;
+    }
+
+    if(p != nullptr)
+    {
+        *p = '\0';
+    }
+
+    if(p2 != nullptr)
+    {
+        *p2 = '\0';
+    }
+
+    Inode *a = nullptr, *b = nullptr;
+
+    if(FindInode(p, &a) == false || FindInode(p2, &b) == false || a != b)
+    {
+        *p = '/';
+        *p2 = '/';
+
+        return false;
+    }
+
+    *p = '/';
+    *p2 = '/';
+
+    inode->name = p + 1;
+
+    return true;
+}
+
+bool TarFS::RemoveDir(const char *path)
+{
+    Inode *inode;
+
+    if(FindInode(path, &inode) == false)
+    {
+        return false;
+    }
+
+    RemoveInode(inode);
+
+    return true;
+}
+
+void TarFS::RemoveInode(Inode *inode)
+{
+    for(auto &child : inode->children)
+    {
+        RemoveInode(child);
+
+        delete child;
+    }
+
+    if(inode->parent != nullptr)
+    {
+        Inode *parent = inode->parent;
+
+        vector<Inode *> children;
+
+        for(auto &child : parent->children)
+        {
+            if(child == inode)
+            {
+                continue;
+            }
+
+            children.push_back(child);
+        }
+
+        parent->children = children;
+    }
+
+    delete inode;
 }

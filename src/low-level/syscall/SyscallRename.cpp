@@ -6,21 +6,21 @@
 #include "errno.h"
 #include "user/UserAccess.hpp"
 
-size_t SyscallMKDir(InterruptStack *stack)
+size_t SyscallRename(InterruptStack *stack)
 {
     const char *path = (const char *)stack->rsi;
-    mode_t mode = (mode_t)stack->rdx;
+    const char *newPath = (const char *)stack->rdx;
 
     (void)path;
-    (void)mode;
+    (void)newPath;
 
-    if(!SanitizeUserPointer(path))
+    if(!SanitizeUserPointer(path) || !SanitizeUserPointer(newPath))
     {
         return 0;
     }
 
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: mkdir path: %p; mode: %x", path, mode);
+    DEBUG_OUT("Syscall: rename path: %p; newPath: %p", path, newPath);
 #endif
 
     auto process = processManager->CurrentProcess();
@@ -30,7 +30,7 @@ size_t SyscallMKDir(InterruptStack *stack)
         return ENOENT;
     }
 
-    if(vfs->MakeDir(path, mode, process->info) == false)
+    if(vfs->Rename(path, newPath, process->info) == false)
     {
         return ENOENT;
     }

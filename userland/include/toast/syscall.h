@@ -69,6 +69,8 @@ extern "C"
 #define SYSCALL_FCHDIR              59
 #define SYSCALL_UNAME               60
 #define SYSCALL_MKDIR               61
+#define SYSCALL_RMDIR               62
+#define SYSCALL_RENAME              63
 
 static int64_t syscall(uint64_t id, ...)
 {

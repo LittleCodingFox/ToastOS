@@ -63,4 +63,8 @@ public:
     virtual void CloseDir(FileSystemHandle handle) = 0;
 
     virtual bool MakeDir(const char *path, mode_t mode) = 0;
+
+    virtual bool Rename(const char *path, const char *newPath) = 0;
+
+    virtual bool RemoveDir(const char *path) = 0;
 };

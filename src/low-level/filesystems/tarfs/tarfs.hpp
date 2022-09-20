@@ -97,6 +97,7 @@ private:
     bool FindInode(const char *path, Inode **inode);
     void ListSubdirs(Inode *inode, uint32_t indentation);
     string ResolveLink(Inode *inode);
+    void RemoveInode(Inode *inode);
 public:
     TarFS(uint8_t *data) : FileSystem(NULL), fileHandleCounter(0), inodeCounter(0), data(data)
     {
@@ -128,4 +129,8 @@ public:
     virtual void CloseDir(FileSystemHandle handle) override;
 
     virtual bool MakeDir(const char *path, mode_t mode) override;
+
+    virtual bool Rename(const char *path, const char *newPath) override;
+
+    virtual bool RemoveDir(const char *path) override;
 };
