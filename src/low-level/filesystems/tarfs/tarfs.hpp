@@ -45,41 +45,57 @@ static_assert(sizeof(TarHeader) == 500);
 class TarFS : public FileSystem
 {
 private:
-    struct FileHandleData
-    {
-        uint64_t ID;
-        TarHeader *header;
-        uint64_t length;
-
-        int currentEntry = 0;
-        vector<dirent> entries;
-    };
-
     struct Inode
     {
         string name;
         string link;
-        TarHeader *header;
         Inode *parent;
+        TarHeader *header;
         vector<Inode *> children;
+        int type;
+        gid_t gid;
+        uid_t uid;
+        timespec atime;
+        timespec mtime;
+        timespec ctime;
+        int ID;
+        bool isHeader;
+
+        vector<uint8_t> data;
+
+        Inode() : parent(nullptr), header(nullptr), type(0), gid(0), uid(0), ID(0), isHeader(false) {}
+        string FullPath();
+    };
+
+    struct FileHandleData
+    {
+        uint64_t ID;
+        Inode *inode;
+
+        int currentEntry;
+        vector<dirent> entries;
+
+        FileHandleData() : ID(0), inode(nullptr), currentEntry(0) {}
     };
 
     uint64_t fileHandleCounter;
+    uint64_t inodeCounter;
     uint8_t *data;
 
     vector<FileHandleData> fileHandles;
     vector<TarHeader *> headers;
-    vector<Inode *> inodes;
+
+    Inode *root;
 
     uint64_t GetHeaderIndex(TarHeader *header);
     FileHandleData *GetHandle(FileSystemHandle handle);
-    void AddInode(TarHeader *header, Inode *parent);
+    Inode *AddInode(TarHeader *header, Inode *parent);
     void ScanInodes(Inode *inode);
     bool FindInode(const char *path, Inode **inode);
     void ListSubdirs(Inode *inode, uint32_t indentation);
-    string ResolveLink(TarHeader *header);
+    string ResolveLink(Inode *inode);
 public:
-    TarFS(uint8_t *data) : FileSystem(NULL), fileHandleCounter(0), data(data)
+    TarFS(uint8_t *data) : FileSystem(NULL), fileHandleCounter(0), inodeCounter(0), data(data)
     {
         Initialize(0, 0);
     }
@@ -88,7 +104,7 @@ public:
 
     virtual bool Exists(const char *path) override;
 
-    virtual FileSystemHandle GetFileHandle(const char *path) override;
+    virtual FileSystemHandle GetFileHandle(const char *path, uint32_t flags) override;
     virtual void DisposeFileHandle(FileSystemHandle handle) override;
     virtual int FileHandleType(FileSystemHandle handle) override;
 

@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <time.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include "threading/lock.hpp"
 #include "devicemanager/GenericIODevice.hpp"
 #include "gpt/GPT.hpp"
@@ -37,7 +38,7 @@ public:
 
     virtual const char *VolumeName() = 0;
 
-    virtual FileSystemHandle GetFileHandle(const char *path) = 0;
+    virtual FileSystemHandle GetFileHandle(const char *path, uint32_t flags) = 0;
 
     virtual void DisposeFileHandle(FileSystemHandle handle) = 0;
 

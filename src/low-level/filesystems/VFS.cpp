@@ -297,7 +297,7 @@ FILE_HANDLE VFS::OpenFile(const char *path, uint32_t flags, Process *currentProc
             FileHandle *handle = NewFileHandle();
 
             handle->path = "";
-            handle->fsHandle = mountPoint->fileSystem->GetFileHandle("");
+            handle->fsHandle = mountPoint->fileSystem->GetFileHandle("", flags);
             handle->mountPoint = mountPoint;
             handle->fileType = FILE_HANDLE_DIRECTORY;
             handle->virtualFile = NULL;
@@ -320,7 +320,7 @@ FILE_HANDLE VFS::OpenFile(const char *path, uint32_t flags, Process *currentProc
 
             buffer[length] = '\0';
 
-            auto mountHandle = mountPoint->fileSystem->GetFileHandle(buffer);
+            auto mountHandle = mountPoint->fileSystem->GetFileHandle(buffer, flags);
 
             if(mountHandle != 0)
             {
@@ -440,7 +440,7 @@ bool VFS::ReadLink(const char *path, string &link, Process *currentProcess)
 
             buffer[length] = '\0';
 
-            auto mountHandle = mountPoint->fileSystem->GetFileHandle(buffer);
+            auto mountHandle = mountPoint->fileSystem->GetFileHandle(buffer, O_RDONLY);
 
             if(mountHandle != 0)
             {
@@ -448,10 +448,14 @@ bool VFS::ReadLink(const char *path, string &link, Process *currentProcess)
                 {
                     link = mountPoint->fileSystem->FileLink(mountHandle);
 
+                    mountPoint->fileSystem->DisposeFileHandle(mountHandle);
+
                     delete [] buffer;
 
                     return true;
                 }
+
+                mountPoint->fileSystem->DisposeFileHandle(mountHandle);
             }
 
             delete [] buffer;

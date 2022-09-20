@@ -46,6 +46,8 @@ ProcessControlBlock *RoundRobinScheduler::AddThread(Process *process, uint64_t r
     lock.Lock();
 
     CPUInfo *info = CurrentCPUInfo();
+
+    (void)info;
     
     ProcessControlBlock *node = new ProcessControlBlock();
 

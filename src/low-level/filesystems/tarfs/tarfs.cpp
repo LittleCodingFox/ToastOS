@@ -1,6 +1,8 @@
 #include "tarfs.hpp"
 #include "frg/string.hpp"
 #include "string/stringutils.hpp"
+#include "paging/PageFrameAllocator.hpp"
+#include "Panic.hpp"
 
 uint64_t OctToInt(const char *str)
 {
@@ -12,6 +14,22 @@ uint64_t OctToInt(const char *str)
     }
 
     return size;
+}
+
+string TarFS::Inode::FullPath()
+{
+    string targetPath = name;
+
+    Inode *p = parent;
+
+    while(p != nullptr && p->name.size() != 0)
+    {
+        targetPath = p->name + "/" + targetPath;
+
+        p = p->parent;
+    }
+
+    return targetPath;
 }
 
 uint64_t TarFS::GetHeaderIndex(TarHeader *target)
@@ -56,26 +74,47 @@ void TarFS::Initialize(uint64_t sector, uint64_t sectorCount)
         headers.push_back(header);
     }
 
-    DEBUG_OUT("TARFS: Found %llu headers", headers.size());
+    DEBUG_OUT("tarfs: Found %llu headers", headers.size());
+
+    root = new Inode();
+
+    root->isHeader = false;
+    root->name = "";
+    root->type = TAR_DIRECTORY;
 
     for(auto &header : headers)
     {
         if(!strstr(header->name, "/"))
         {
-            AddInode(header, NULL);
+            Inode *inode = AddInode(header, root);
+
+            ScanInodes(inode);
         }
     }
 }
 
-void TarFS::AddInode(TarHeader *header, TarFS::Inode *parent)
+TarFS::Inode *TarFS::AddInode(TarHeader *header, TarFS::Inode *parent)
 {
     auto inode = new Inode();
 
     auto end = strrchr(header->name, '/');
 
     inode->name = header->name;
-    inode->header = header;
     inode->parent = parent;
+    inode->type = header->type;
+    inode->header = header;
+    inode->isHeader = true;
+    inode->gid = OctToInt(header->gid);
+    inode->uid = OctToInt(header->uid);
+    inode->atime.tv_sec = OctToInt(header->mtime);
+    inode->mtime.tv_sec = OctToInt(header->mtime);
+    inode->ctime.tv_sec = OctToInt(header->mtime);
+    inode->ID = ++inodeCounter;
+
+    if(header->type == TAR_SYMLINK)
+    {
+        inode->link = header->link;
+    }
 
     if(end != NULL)
     {
@@ -139,39 +178,39 @@ void TarFS::AddInode(TarHeader *header, TarFS::Inode *parent)
     {
         parent->children.push_back(inode);
     }
-    else
-    {
-        inodes.push_back(inode);
-    }
+
+    return inode;
 }
 
-string TarFS::ResolveLink(TarHeader *header)
+string TarFS::ResolveLink(TarFS::Inode *inode)
 {
-    string targetPath = header->name;
+    string targetPath = inode->FullPath();
 
-    if(header->type == TAR_SYMLINK)
+    if(inode->type == TAR_SYMLINK)
     {
-        targetPath = header->link;
+        string linkPath = inode->link;
 
-        if(targetPath[0] != '/')
+        if(linkPath[0] != '/')
         {
             char *newPath = NULL;
-            char *ptr = strrchr(header->name, '/');
+            char *ptr = strrchr(targetPath.data(), '/');
 
             if(ptr != NULL)
             {
-                int length = (int)(ptr - header->name) + 1;
+                int length = (int)(ptr - targetPath.data()) + 1;
 
-                newPath = new char[length + strlen(header->link) + 1];
+                newPath = new char[length + linkPath.size() + 1];
 
-                memcpy(newPath, header->name, length);
-                memcpy(newPath + length, header->link, strlen(header->link));
+                memcpy(newPath, targetPath.data(), length);
+                memcpy(newPath + length, linkPath.data(), linkPath.size());
 
-                newPath[length + strlen(header->link)] = '\0';
+                newPath[length + linkPath.size()] = '\0';
 
                 targetPath = newPath;
 
                 delete [] newPath;
+
+                return targetPath;
             }
         }
     }
@@ -181,7 +220,7 @@ string TarFS::ResolveLink(TarHeader *header)
 
 void TarFS::ScanInodes(TarFS::Inode *inode)
 {
-    auto path = ResolveLink(inode->header);
+    auto path = inode->FullPath();
 
     for(auto &tarHeader : headers)
     {
@@ -195,7 +234,7 @@ void TarFS::ScanInodes(TarFS::Inode *inode)
             int found = 0;
             bool invalid = false;
 
-            for(uint32_t i = path.size(); i < strlen(tarHeader->name); i++)
+            for(uint32_t i = path.size() + 1; i < strlen(tarHeader->name); i++)
             {
                 if(tarHeader->name[i] == '/')
                 {
@@ -219,7 +258,9 @@ void TarFS::ScanInodes(TarFS::Inode *inode)
                 continue;
             }
 
-            AddInode(tarHeader, inode);
+            Inode *child = AddInode(tarHeader, inode);
+
+            ScanInodes(child);
         }
     }
 }
@@ -247,7 +288,7 @@ bool TarFS::Exists(const char *path)
 bool TarFS::FindInode(const char *path, TarFS::Inode **inode)
 {
     auto pieces = SplitString(path, '/');
-    Inode *target = NULL;
+    Inode *target = root;
     bool isValid = false;
 
     for(uint64_t i = 0; i < pieces.size(); i++)
@@ -268,7 +309,7 @@ bool TarFS::FindInode(const char *path, TarFS::Inode **inode)
 
         if(pieces[i] == "..")
         {
-            if(target != NULL)
+            if(target != nullptr && target->parent != nullptr)
             {
                 target = target->parent;
             }
@@ -280,42 +321,15 @@ bool TarFS::FindInode(const char *path, TarFS::Inode **inode)
 
         bool found = false;
 
-        if(i == 0 || target == NULL)
+        for(auto &inode : target->children)
         {
-            for(auto &inode : inodes)
+            if(pieces[i] == inode->name)
             {
-                if(pieces[i] == inode->name)
-                {
-                    found = true;
+                found = true;
 
-                    target = inode;
+                target = inode;
 
-                    if(target->children.size() == 0)
-                    {
-                        ScanInodes(target);
-                    }
-
-                    break;
-                }
-            }
-        }
-        else
-        {
-            if(target->children.size() == 0)
-            {
-                ScanInodes(target);
-            }
-
-            for(auto &inode : target->children)
-            {
-                if(pieces[i] == inode->name)
-                {
-                    found = true;
-
-                    target = inode;
-
-                    break;
-                }
+                break;
             }
         }
 
@@ -345,14 +359,16 @@ struct stat TarFS::Stat(FileSystemHandle handle)
         return stat;
     }
 
-    if(file->header != NULL)
+    if(file->inode != nullptr)
     {
-        stat.st_uid = OctToInt(file->header->uid);
-        stat.st_gid = OctToInt(file->header->gid);
-        stat.st_ino = GetHeaderIndex(file->header);
-        stat.st_atim.tv_sec = stat.st_mtim.tv_sec = stat.st_ctim.tv_sec = OctToInt(file->header->mtime);
+        stat.st_uid = file->inode->uid;
+        stat.st_gid = file->inode->gid;
+        stat.st_ino = file->inode->ID;
+        stat.st_atim = file->inode->atime;
+        stat.st_mtim = file->inode->mtime;
+        stat.st_ctim = file->inode->ctime;
 
-        switch(file->header->type)
+        switch(file->inode->type)
         {
             case TAR_SYMLINK:
 
@@ -379,7 +395,7 @@ struct stat TarFS::Stat(FileSystemHandle handle)
     }
 
     stat.st_nlink = 1;
-    stat.st_size = file->length;
+    stat.st_size = file->inode != nullptr ? (file->inode->isHeader ? OctToInt(file->inode->header->size) : file->inode->data.size()) : 0;
     stat.st_blksize = 512;
     stat.st_blocks = stat.st_size / stat.st_blksize + 1;
 
@@ -390,29 +406,26 @@ string TarFS::FileLink(FileSystemHandle handle)
 {
     auto file = GetHandle(handle);
 
-    if(file == NULL || file->header->type != TAR_SYMLINK)
+    if(file == NULL || file->inode->type != TAR_SYMLINK)
     {
         return "";
     }
 
-    return file->header->link;
+    return file->inode->link;
 }
 
-FileSystemHandle TarFS::GetFileHandle(const char *path)
+FileSystemHandle TarFS::GetFileHandle(const char *path, uint32_t flags)
 {
     Inode *inode = NULL;
     bool found = FindInode(path, &inode);
 
     if(inode == NULL)
     {
-        if(found || strlen(path) == 0) //Virtual Root Dir
+        if(found || strlen(path) == 0)
         {
             FileHandleData data;
-
             data.ID = ++fileHandleCounter;
-            data.header = NULL;
-            data.length = 0;
-            data.currentEntry = 0;
+            data.inode = root;
 
             dirent current = {0};
 
@@ -423,28 +436,18 @@ FileSystemHandle TarFS::GetFileHandle(const char *path)
 
             data.entries.push_back(current);
 
-            dirent previous = {0};
-
-            previous.d_ino = 0;
-            previous.d_reclen = sizeof(dirent);
-            strcpy(previous.d_name, "..");
-            previous.d_type = DT_DIR;
-
-            data.entries.push_back(previous);
-
-            for(auto &child : inodes)
+            for(auto &child : root->children)
             {
-                auto childHeader = child->header;
                 dirent entry = {0};
 
-                entry.d_ino = GetHeaderIndex(childHeader) + 1;
+                entry.d_ino = child->ID;
                 entry.d_reclen = sizeof(dirent);
 
                 memcpy(entry.d_name, child->name.data(), child->name.size());
 
                 entry.d_name[child->name.size()] = '\0';
 
-                switch(childHeader->type)
+                switch(child->type)
                 {
                     case TAR_FILE:
 
@@ -476,91 +479,42 @@ FileSystemHandle TarFS::GetFileHandle(const char *path)
         return 0;
     }
 
-    auto header = inode->header;
-
     FileHandleData data;
 
     data.ID = ++fileHandleCounter;
-    data.header = inode->header;
-    data.length = OctToInt(inode->header->size);
+    data.inode = inode;
 
-    if(header->type == TAR_DIRECTORY)
+    if(inode->type == TAR_DIRECTORY)
     {
         data.currentEntry = 0;
 
         dirent current = {0};
 
-        current.d_ino = GetHeaderIndex(header) + 1;
+        current.d_ino = inode->ID;
         current.d_reclen = sizeof(dirent);
         strcpy(current.d_name, ".");
         current.d_type = DT_DIR;
 
         data.entries.push_back(current);
 
-        if(strlen(header->name) > 1)
-        {
-            char *temp = new char[strlen(header->name)];
+        dirent previous = current;
 
-            memcpy(temp, header->name, strlen(header->name) - 1);
+        strcpy(previous.d_name, "..");
 
-            temp[strlen(header->name) - 1] = '\0';
-
-            char *ptr = strrchr(temp, '/');
-
-            if(ptr != NULL)
-            {
-                temp[(uint64_t)ptr - (uint64_t)temp + 1] = '\0';
-
-                for(auto &previousHeader : headers)
-                {
-                    if(previousHeader != header && strcmp(previousHeader->name, temp) == 0)
-                    {
-                        //DEBUG_OUT("Found previous header %s for directory %s", previousHeader->name, header->name);
-
-                        dirent previous = {0};
-
-                        previous.d_ino = GetHeaderIndex(previousHeader) + 1;
-                        previous.d_reclen = sizeof(dirent);
-
-                        strcpy(previous.d_name, "..");
-                        previous.d_type = DT_DIR;
-
-                        data.entries.push_back(previous);
-
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                dirent previous = current;
-
-                strcpy(previous.d_name, "..");
-
-                data.entries.push_back(previous);
-            }
-
-            delete [] temp;
-        }
-
-        if(inode->children.size() == 0)
-        {
-            ScanInodes(inode);
-        }
+        data.entries.push_back(previous);
 
         for(auto &child : inode->children)
         {
-            auto childHeader = child->header;
             dirent entry = {0};
 
-            entry.d_ino = GetHeaderIndex(childHeader) + 1;
+            entry.d_ino = child->ID;
             entry.d_reclen = sizeof(dirent);
 
             memcpy(entry.d_name, child->name.data(), child->name.size());
 
             entry.d_name[child->name.size()] = '\0';
 
-            switch(childHeader->type)
+            switch(child->type)
             {
                 case TAR_FILE:
 
@@ -599,17 +553,12 @@ int TarFS::FileHandleType(FileSystemHandle handle)
 {
     auto file = GetHandle(handle);
 
-    if(file == NULL)
+    if(file == NULL || file->inode == NULL)
     {
         return FILE_HANDLE_UNKNOWN;
     }
 
-    if(file->header == NULL)
-    {
-        return FILE_HANDLE_DIRECTORY;
-    }
-
-    switch(file->header->type)
+    switch(file->inode->type)
     {
         case TAR_DIRECTORY:
 
@@ -662,57 +611,53 @@ uint64_t TarFS::FileLength(FileSystemHandle handle)
 {
     auto file = GetHandle(handle);
 
-    if(file == NULL || file->header == NULL)
+    if(file == NULL || file->inode == NULL)
     {
         return 0;
     }
 
-    if(file->header->type == TAR_SYMLINK)
+    if(file->inode->type == TAR_SYMLINK)
     {
-        auto path = ResolveLink(file->header);
+        auto path = ResolveLink(file->inode);
 
-        for(auto &header : headers)
+        Inode *link = nullptr;
+        
+        if(FindInode(path.data(), &link))
         {
-            if(path == header->name)
-            {
-                return OctToInt(header->size);
-            }
+            return link->isHeader ? OctToInt(link->header->size) : link->data.size();
         }
     }
 
-    return file->length;
+    return file->inode->isHeader ? OctToInt(file->inode->header->size) : file->inode->data.size();
 }
 
 uint64_t TarFS::ReadFile(FileSystemHandle handle, void *buffer, uint64_t cursor, uint64_t size)
 {
     auto file = GetHandle(handle);
 
-    if(file == NULL || file->header == NULL)
+    if(file == NULL || file->inode == NULL)
     {
         return 0;
     }
 
-    auto fileHeader = file->header;
-    uint64_t length = file->length;
+    uint64_t length = file->inode->isHeader ? OctToInt(file->inode->header->size) : file->inode->data.size();
 
-    if(fileHeader->type == TAR_SYMLINK)
+    Inode *inode = file->inode;
+
+    if(file->inode->type == TAR_SYMLINK)
     {
-        auto path = ResolveLink(file->header);
-        bool found = false;
+        auto path = ResolveLink(file->inode);
 
-        for(auto &header : headers)
+        Inode *link = nullptr;
+
+        bool found = FindInode(path.data(), &link);
+
+        if(found)
         {
-            if(path == header->name)
-            {
-                found = true;
-                fileHeader = header;
-                length = OctToInt(header->size);
-
-                break;
-            }
+            length = link->isHeader ? OctToInt(link->header->size) : link->data.size();
+            inode = link;
         }
-
-        if(!found)
+        else
         {
             return 0;
         }
@@ -733,7 +678,7 @@ uint64_t TarFS::ReadFile(FileSystemHandle handle, void *buffer, uint64_t cursor,
         size = length - cursor;
     }
 
-    memcpy(buffer, (uint8_t *)fileHeader + 512 + cursor, size);
+    memcpy(buffer, (inode->isHeader ? (uint8_t *)inode->header + 512 : inode->data.data()) + cursor, size);
 
     return size;
 }
@@ -750,12 +695,7 @@ void TarFS::ListSubdirs(Inode *inode, uint32_t indentation)
         printf("\t");
     }
 
-    if(inode->children.size() == 0)
-    {
-        ScanInodes(inode);
-    }
-
-    printf("%s (%llu - %i)\n", inode->name.data(), OctToInt(inode->header->size), inode->header->type);
+    printf("%s (%llu - %i)\n", inode->name.data(), inode->isHeader ? OctToInt(inode->header->size) : inode->data.size(), inode->header->type);
 
     for(auto &child : inode->children)
     {
@@ -767,7 +707,7 @@ void TarFS::DebugListDirectories()
 {
     printf("Listing directories\n");
 
-    for(auto &inode : inodes)
+    for(auto &inode : root->children)
     {
         ListSubdirs(inode, 0);
     }
