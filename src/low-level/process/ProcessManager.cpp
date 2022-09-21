@@ -19,6 +19,8 @@
 #include "smp/SMP.hpp"
 #include "lapic/LAPIC.hpp"
 
+#define THREAD_TIMESLICE 5000
+
 void KernelTask()
 {
     //Idle process
@@ -157,7 +159,7 @@ void ProcessYieldIfAvailable()
 
 void SwitchProcess(InterruptStack *stack)
 {
-    LAPICTimerOneShot(100, (void *)SwitchProcess);
+    LAPICTimerOneShot(THREAD_TIMESLICE, SwitchProcess);
 
     processManager->SwitchProcess(stack);
 }
@@ -1795,7 +1797,7 @@ void ProcessManager::Wait()
 {
     interrupts.DisableInterrupts();
 
-    LAPICTimerOneShot(20000, (void *)::SwitchProcess);
+    LAPICTimerOneShot(THREAD_TIMESLICE, ::SwitchProcess);
 
     interrupts.EnableInterrupts();
 

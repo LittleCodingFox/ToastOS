@@ -21,6 +21,8 @@
 
 static uint8_t timerVector = 0;
 
+static AtomicLock lock;
+
 static inline uint32_t LAPICRead(uint32_t reg)
 {
     return *((volatile uint32_t *)((uintptr_t)0xFEE00000 + HIGHER_HALF_MEMORY_OFFSET + reg));
@@ -51,6 +53,8 @@ static void LAPICTimerHandler(InterruptStack *stack)
 
 void InitializeLAPIC()
 {
+    lock.Lock();
+
     if((Registers::ReadMSR(0x1b) & 0xfffff000) != 0xfee00000)
     {
         Panic("Invalid LAPIC MSR");
@@ -69,6 +73,8 @@ void InitializeLAPIC()
     LAPICWrite(LAPIC_REG_LVT_TIMER, LAPICRead(LAPIC_REG_LVT_TIMER) | (1 << 8) | timerVector);
 
     LAPICTimerCalibrate();
+
+    lock.Unlock();
 }
 
 void LAPICEOI()
@@ -76,7 +82,7 @@ void LAPICEOI()
     LAPICWrite(LAPIC_REG_EOI, LAPIC_EOI_ACK);
 }
 
-void LAPICTimerOneShot(uint32_t us, void *function)
+void LAPICTimerOneShot(uint32_t us, void (*function)(InterruptStack *))
 {
     LAPICTimerStop();
 
@@ -88,7 +94,7 @@ void LAPICTimerOneShot(uint32_t us, void *function)
 
     if(info != nullptr)
     {
-        info->timerFunction = (void (*)(InterruptStack *))function;
+        info->timerFunction = function;
     }
 
     if(interruptsEnabled)
@@ -115,6 +121,7 @@ void LAPICTimerCalibrate()
 
     LAPICWrite(LAPIC_REG_LVT_TIMER, (1 << 16) | 0xFF);
     LAPICWrite(LAPIC_REG_TIMER_DIV, 0);
+
     PITSetReloadValue(0xFFFF);
 
     int initTick = PITGetCurrentCount();
