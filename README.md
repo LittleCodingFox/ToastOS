@@ -14,11 +14,15 @@ x86_64 OS created from scratch (very incomplete)
 * Scheduling
 * Usermode
 * tarfs ramdisk
+* SMP (multiple cores)
 * Hosted toolchain
 * mlibc-based usermode libc
-* PS/2 keyboard
-* Can run Doom
+* PS/2 keyboard and mouse
+* Input API
+* Graphics API (basic)
+* Mesa port (OpenGL ES1/2/3)
 * Coreutils (ls, cat, etc)
+* Can run Doom
 * Runs on real hardware (somewhat)
 
 # Requirements
