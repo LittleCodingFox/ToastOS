@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include "kernel.h"
 
 #define IDT_INTERRUPT_GATE  0xE
 #define IDT_TRAP_GATE       0xF
@@ -34,8 +35,10 @@ class IDT
 private:
     IDTDescEntry entries[IDT_ENTRIES];
     uint8_t freeVector;
+    box<vector<uint8_t>> reservedVectors;
 public:
     uint8_t AllocateVector();
+    bool ReserveVector(uint8_t vector);
     void Init();
     void SetIST(uint8_t vector, uint8_t ist);
     void SetFlags(uint8_t vector, uint8_t flags);

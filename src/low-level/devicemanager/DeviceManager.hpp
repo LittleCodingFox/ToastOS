@@ -1,8 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include <new>
-#include <frg/vector.hpp>
-#include <frg_allocator.hpp>
+#include "kernel.h"
 
 #define MAX_DEVICES 256
 
@@ -31,7 +30,7 @@ public:
     DeviceManager();
     void AddDevice(GenericDevice *device);
     uint32_t DeviceCount() const;
-    frg::vector<GenericDevice *, frg_allocator> GetDevices(DeviceType type);
+    vector<GenericDevice *> GetDevices(DeviceType type);
     GenericDevice *GetDevice(uint32_t ID) const;
 };
 

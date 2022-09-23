@@ -129,7 +129,7 @@ void TarFS::Initialize(uint64_t sector, uint64_t sectorCount)
         headers.push_back(header);
     }
 
-    DEBUG_OUT("tarfs: Found %llu headers", headers.size());
+    DEBUG_OUT("[tarfs] Found %llu headers", headers.size());
 
     root = new Inode();
 

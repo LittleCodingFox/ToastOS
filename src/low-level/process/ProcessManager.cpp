@@ -62,7 +62,7 @@ void KernelTask()
 
 #if DEBUG_PROCESSES
 #define HANDLEFORK(task) \
-    task->state = PROCESS_STATE_RUNNING; \
+    task->state = ProcessState::Running; \
     \
     DEBUG_OUT("Initializing fork %p for process %i: rsp: %p; rip: %p; cr3: %p", task, task->process->ID, task->rsp, task->rip, task->cr3); \
     \
@@ -71,7 +71,7 @@ void KernelTask()
     SwapTasks(task);
 #else
 #define HANDLEFORK(task) \
-    task->state = PROCESS_STATE_RUNNING; \
+    task->state = ProcessState::Running; \
     \
     lock.Unlock(); \
     \
@@ -209,14 +209,14 @@ void ProcessManager::SwitchProcess(InterruptStack *stack)
         return;
     }
 
-    while(next->state == PROCESS_STATE_BLOCKED && next != current)
+    while(next->state == ProcessState::Blocked && next != current)
     {
         scheduler->Advance();
 
         next = scheduler->NextThread();
     }
 
-    if(current == next || next->state == PROCESS_STATE_BLOCKED)
+    if(current == next || next->state == ProcessState::Blocked)
     {
         lock.Unlock();
 
@@ -225,19 +225,19 @@ void ProcessManager::SwitchProcess(InterruptStack *stack)
         return;
     }
 
-    if(current->state == PROCESS_STATE_RUNNING || current->state == PROCESS_STATE_BLOCKED)
+    if(current->state == ProcessState::Running || current->state == ProcessState::Blocked)
     {
         SAVE_TASK_STATE(current, stack);
     }
 
     //Forked processes are added as the current process, so must init them properly
-    if(current->state == PROCESS_STATE_FORKED)
+    if(current->state == ProcessState::Forked)
     {
         HANDLEFORK(current);
 
         return;
     }
-    else if(next->state == PROCESS_STATE_FORKED)
+    else if(next->state == ProcessState::Forked)
     {
         scheduler->Advance();
 
@@ -246,9 +246,9 @@ void ProcessManager::SwitchProcess(InterruptStack *stack)
         return;
     }
 
-    if(next->state == PROCESS_STATE_NEEDS_INIT)
+    if(next->state == ProcessState::NeedsInit)
     {
-        next->state = PROCESS_STATE_RUNNING;
+        next->state = ProcessState::Running;
 
 #if DEBUG_PROCESSES
         DEBUG_OUT("Initializing task %p for process %i (tid: %i): rsp: %p; rip: %p; cr3: %p", next, next->process->ID, next->tid, next->rsp, next->rip, next->cr3);
@@ -419,7 +419,7 @@ ProcessControlBlock *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, c
     newProcess->ID = ++processIDCounter;
     newProcess->permissionLevel = permissionLevel;
     newProcess->cwd = cwd;
-    newProcess->state = PROCESS_STATE_NEEDS_INIT;
+    newProcess->state = ProcessState::NeedsInit;
 
     newProcess->kernelStack = (uint64_t *)TranslateToHighHalfMemoryAddress((uint64_t)globalAllocator.RequestPages(PROCESS_STACK_PAGE_COUNT));
     newProcess->istStack = (uint64_t *)TranslateToHighHalfMemoryAddress((uint64_t)globalAllocator.RequestPages(PROCESS_STACK_PAGE_COUNT));
@@ -450,9 +450,9 @@ ProcessControlBlock *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, c
 
     newProcess->cr3 = (uint64_t)pageTableFrame;
 
-    newProcess->AddFD(PROCESS_FD_STDIN, new ProcessFDStdin());
-    newProcess->AddFD(PROCESS_FD_STDOUT, new ProcessFDStdout());
-    newProcess->AddFD(PROCESS_FD_STDERR, new ProcessFDStderr());
+    newProcess->AddFD(ProcessFDType::Stdin, new ProcessFDStdin());
+    newProcess->AddFD(ProcessFDType::Stdout, new ProcessFDStdout());
+    newProcess->AddFD(ProcessFDType::Stderr, new ProcessFDStderr());
 
     auto pcb = scheduler->AddThread(newProcess, newProcess->rip, newProcess->rsp, newProcess->ID, true);
 
@@ -543,7 +543,7 @@ ProcessControlBlock *ProcessManager::LoadImage(const void *image, const char *na
     newProcess->ID = IDOverride != 0 ? IDOverride : ++processIDCounter;
     newProcess->permissionLevel = permissionLevel;
     newProcess->cwd = cwd;
-    newProcess->state = PROCESS_STATE_NEEDS_INIT;
+    newProcess->state = ProcessState::NeedsInit;
 
     newProcess->name = name;
 
@@ -754,9 +754,9 @@ ProcessControlBlock *ProcessManager::LoadImage(const void *image, const char *na
 
     pcb->activePermissionLevel = newProcess->permissionLevel;
 
-    newProcess->AddFD(PROCESS_FD_STDIN, new ProcessFDStdin());
-    newProcess->AddFD(PROCESS_FD_STDOUT, new ProcessFDStdout());
-    newProcess->AddFD(PROCESS_FD_STDERR, new ProcessFDStderr());
+    newProcess->AddFD(ProcessFDType::Stdin, new ProcessFDStdin());
+    newProcess->AddFD(ProcessFDType::Stdout, new ProcessFDStdout());
+    newProcess->AddFD(ProcessFDType::Stderr, new ProcessFDStderr());
 
     ProcessPair pair;
 
@@ -800,11 +800,11 @@ void ProcessManager::Exit(int exitCode, bool forceRemove)
 #if DEBUG_PROCESSES
             DEBUG_OUT("Process %i is being force removed", pcb->process->ID);
 #endif
-            pcb->process->state = PROCESS_STATE_REMOVED;
+            pcb->process->state = ProcessState::Removed;
         }
         else
         {
-            pcb->process->state = PROCESS_STATE_DEAD;
+            pcb->process->state = ProcessState::Dead;
             pcb->process->exitCode = exitCode;
 
 #if DEBUG_PROCESSES
@@ -821,13 +821,13 @@ void ProcessManager::Exit(int exitCode, bool forceRemove)
 
     auto pcb = scheduler->CurrentThread();
 
-    while(pcb->state == PROCESS_STATE_BLOCKED)
+    while(pcb->state == ProcessState::Blocked)
     {
         auto next = scheduler->NextThread();
 
         pcb = next;
 
-        if(pcb->state == PROCESS_STATE_BLOCKED)
+        if(pcb->state == ProcessState::Blocked)
         {
             scheduler->Advance();
 
@@ -1083,7 +1083,7 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
     pcb->rip = newProcess->rip;
     pcb->rsi = interruptStack->rsi;
     pcb->rflags = current->rflags;
-    pcb->state = newProcess->state = PROCESS_STATE_FORKED;
+    pcb->state = newProcess->state = ProcessState::Forked;
     pcb->ss = current->ss;
     pcb->cs = current->cs;
     pcb->cr3 = newProcess->cr3;
@@ -1160,7 +1160,7 @@ ProcessManager::ProcessPair *ProcessManager::GetProcess(pid_t pid)
 
     for(auto &pair : processes)
     {
-        if(!pair.isValid || pair.info->state == PROCESS_STATE_DEAD || pair.info->state == PROCESS_STATE_REMOVED)
+        if(!pair.isValid || pair.info->state == ProcessState::Dead || pair.info->state == ProcessState::Removed)
         {
             continue;
         }
@@ -1182,7 +1182,7 @@ vector<ProcessManager::ProcessPair> ProcessManager::GetChildProcesses(pid_t ppid
 
     for(auto &pair : processes)
     {
-        if(!pair.isValid || pair.info->state == PROCESS_STATE_REMOVED)
+        if(!pair.isValid || pair.info->state == ProcessState::Removed)
         {
             continue;
         }
@@ -1207,7 +1207,7 @@ void ProcessManager::Kill(pid_t pid, int signal)
 
     ScopedLock Lock(lock);
 
-    if(process == NULL || process->info->state == PROCESS_STATE_DEAD || process->info->state == PROCESS_STATE_REMOVED)
+    if(process == NULL || process->info->state == ProcessState::Dead || process->info->state == ProcessState::Removed)
     {
         return;
     }
@@ -1389,7 +1389,7 @@ void ProcessManager::ExitThread()
 
         if(pcb->isMainThread)
         {
-            pcb->process->state = PROCESS_STATE_DEAD;
+            pcb->process->state = ProcessState::Dead;
 
             pcb->process->exitCode = 0;
 
@@ -1475,11 +1475,11 @@ void ProcessManager::ExitThread()
 
     auto pcb = scheduler->CurrentThread();
 
-    while(pcb->state == PROCESS_STATE_BLOCKED)
+    while(pcb->state == ProcessState::Blocked)
     {
         auto next = scheduler->NextThread();
 
-        if(next->state == PROCESS_STATE_BLOCKED)
+        if(next->state == ProcessState::Blocked)
         {
             scheduler->Advance();
 
@@ -1536,7 +1536,7 @@ void ProcessManager::FutexWait(int *pointer, int expected, InterruptStack *stack
         thread->next = NULL; \
         thread->pcb = currentThread; \
         \
-        currentThread->state = PROCESS_STATE_BLOCKED;\
+        currentThread->state = ProcessState::Blocked;\
 
     if(futexes == NULL)
     {
@@ -1609,7 +1609,7 @@ void ProcessManager::FutexWait(int *pointer, int expected, InterruptStack *stack
 
     auto pcb = scheduler->CurrentThread();
 
-    while(pcb->state == PROCESS_STATE_BLOCKED)
+    while(pcb->state == ProcessState::Blocked)
     {
         scheduler->Advance();
 
@@ -1660,7 +1660,7 @@ void ProcessManager::FutexWake(int *pointer)
 
     auto thread = futex->threads;
 
-    thread->pcb->state = PROCESS_STATE_RUNNING;
+    thread->pcb->state = ProcessState::Running;
 
 #if DEBUG_PROCESSES_EXTRA
     DEBUG_OUT("Futex: Woke thread %i (pid: %i)", thread->pcb->tid, thread->pcb->process->ID);

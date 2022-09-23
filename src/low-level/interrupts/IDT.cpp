@@ -17,6 +17,11 @@ void IDT::Init()
     memset(entries, 0, sizeof(entries));
 
     freeVector = 32;
+
+    reservedVectors.initialize();
+
+    ReserveVector(IRQ1);
+    ReserveVector(IRQ12);
 }
 
 void IDT::Load()
@@ -42,14 +47,34 @@ uint8_t IDT::AllocateVector()
 
     uint8_t outValue = freeVector++;
 
-    if(outValue == IRQ1 || outValue == IRQ12)
+    for(auto &v : *reservedVectors.get())
     {
-        outValue = freeVector++;
+        if(outValue == v)
+        {
+            outValue++;
+        }
+    }
+
+    if(freeVector == 0xF0)
+    {
+        Panic("IDT Exhausted");
     }
 
     lock.Unlock();
 
     return outValue;
+}
+
+bool IDT::ReserveVector(uint8_t vector)
+{
+    if(freeVector > vector)
+    {
+        return false;
+    }
+
+    reservedVectors->push_back(vector);
+
+    return true;
 }
 
 void IDT::SetIST(uint8_t vector, uint8_t ist)

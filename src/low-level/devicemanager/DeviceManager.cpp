@@ -41,9 +41,9 @@ GenericDevice *DeviceManager::GetDevice(uint32_t ID) const
     return NULL;
 }
 
-frg::vector<GenericDevice *, frg_allocator> DeviceManager::GetDevices(DeviceType type)
+vector<GenericDevice *> DeviceManager::GetDevices(DeviceType type)
 {
-    frg::vector<GenericDevice *, frg_allocator> outValue;
+    vector<GenericDevice *> outValue;
 
     for(uint32_t i = 0; i < deviceCount; i++)
     {

@@ -28,12 +28,14 @@ enum class PCIRegister : uint16_t
 {
     Vendor = 0x00,
     Device = 0x02,
+    Command = 0x04,
     HeaderType = 0x0E,
     BaseClass = 0x0B,
     SubClass = 0x0A,
     ProgIf = 0x09,
     SecBus = 0x19,
     Bar0Offset = 0x10,
+    IRQLine = 0x3C,
     IRQPin = 0x3D,
 };
 
@@ -69,6 +71,7 @@ public:
 
     void Init();
     frg::optional<PCIBar> FetchBar(int bar);
+    frg::optional<PCIBar> FindBar(PCIBarType type);
     void AttachTo(PCIBus *bus);
     void RouteIRQ(lai_state_t *state);
 

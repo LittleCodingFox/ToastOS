@@ -24,7 +24,7 @@ int64_t SyscallFchdir(InterruptStack *stack)
 
     if(processFD == NULL ||
         processFD->isValid == false ||
-        processFD->type != PROCESS_FD_HANDLE ||
+        processFD->type != ProcessFDType::Handle ||
         processFD->impl == NULL)
     {
         return ENOENT;

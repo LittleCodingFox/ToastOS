@@ -14,8 +14,10 @@
 #include "filesystems/VFS.hpp"
 #include "tss/tss.hpp"
 #include "Panic.hpp"
+#include "net/arp.hpp"
+#include "net/udp.hpp"
 
-int Process::AddFD(int type, IProcessFD *impl)
+int Process::AddFD(ProcessFDType type, IProcessFD *impl)
 {
     ScopedLock lock(this->lock);
 
@@ -36,7 +38,7 @@ ProcessFD *Process::GetFD(int fd)
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 void Process::CreatePipe(int *fds)
@@ -48,15 +50,15 @@ void Process::CreatePipe(int *fds)
 
     pipes.push_back(pipe);
 
-    fds[0] = AddFD(PROCESS_FD_PIPE, new ProcessFDPipe(pipe.pipe, true));
-    fds[1] = AddFD(PROCESS_FD_PIPE, new ProcessFDPipe(pipe.pipe, false));
+    fds[0] = AddFD(ProcessFDType::Pipe, new ProcessFDPipe(pipe.pipe, true));
+    fds[1] = AddFD(ProcessFDType::Pipe, new ProcessFDPipe(pipe.pipe, false));
 }
 
 int Process::DuplicateFD(int fd, size_t arg)
 {
     auto fdInstance = GetFD(fd);
 
-    if(fdInstance == NULL)
+    if(fdInstance == nullptr)
     {
         return fd;
     }
@@ -74,7 +76,7 @@ int Process::DuplicateFD(int fd, int newfd)
 
     ScopedLock lock(this->lock);
 
-    if(fdInstance == NULL)
+    if(fdInstance == nullptr)
     {
         return fd;
     }
@@ -126,7 +128,7 @@ void Process::IncreaseFDRefs()
     {
         if(procfd.isValid)
         {
-            if(procfd.impl == NULL)
+            if(procfd.impl == nullptr)
             {
                 continue;
             }
@@ -140,7 +142,7 @@ void Process::DisposeFDs()
 {
     for(auto &fd : fds)
     {
-        if(fd.isValid && fd.impl != NULL)
+        if(fd.isValid && fd.impl != nullptr)
         {
             fd.impl->Close();
 
@@ -148,8 +150,28 @@ void Process::DisposeFDs()
             {
                 delete fd.impl;
 
-                fd.impl = NULL;
+                fd.impl = nullptr;
             }
         }
     }
+}
+
+int Process::UDPLookup(uint16_t port)
+{
+    for(auto &fd : fds)
+    {
+        if(fd.isValid && fd.impl != nullptr && fd.type == ProcessFDType::Socket)
+        {
+            ProcessFDSocket *socket = (ProcessFDSocket *)fd.impl;
+
+            if(socket->type == SOCK_DGRAM &&
+                socket->protocol == IPPROTO_UDP &&
+                socket->port == port)
+            {
+                return fd.fd;
+            }
+        }
+    }
+
+    return -1;
 }

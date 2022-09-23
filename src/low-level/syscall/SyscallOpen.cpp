@@ -47,5 +47,5 @@ int64_t SyscallOpen(InterruptStack *stack)
         return -error;
     }
 
-    return currentProcess->info->AddFD(PROCESS_FD_HANDLE, new ProcessFDVFS(handle));
+    return currentProcess->info->AddFD(ProcessFDType::Handle, new ProcessFDVFS(handle));
 }

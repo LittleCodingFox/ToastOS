@@ -26,5 +26,5 @@ int64_t SyscallIsATTY(InterruptStack *stack)
         return 0;
     }
 
-    return procfd->type == PROCESS_FD_STDOUT || procfd->type == PROCESS_FD_STDIN;
+    return procfd->type == ProcessFDType::Stdout || procfd->type == ProcessFDType::Stdin;
 }

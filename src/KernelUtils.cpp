@@ -30,9 +30,11 @@
 #include "pci/PCI.hpp"
 #include "smp/SMP.hpp"
 #include "drivers/AHCI/AHCIDriver.hpp"
+#include "drivers/networking/RTL8139/RTL8139.hpp"
 #include "madt/MADT.hpp"
 #include "lapic/LAPIC.hpp"
 #include "time/time.hpp"
+#include "net/net.hpp"
 
 PageTableManager pageTableManager;
 
@@ -266,8 +268,10 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
 
     PCIEnumerateDevices(0, 0, 0x0C, 0x03, 0x30, [](PCIDevice *device) {
 
-        DEBUG_OUT("Found xHCI controller with vendor %04x and device %04x", device->Vendor(), device->Device());
+        DEBUG_OUT("[pci] Found xHCI controller with vendor %04x and device %04x", device->Vendor(), device->Device());
     });
+
+    Drivers::Networking::RTL8139Query();
 
     globalPartitionManager->Initialize();
 }
@@ -419,9 +423,11 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     if(initrd != NULL)
     {
+        /*
         auto tarfs = new TarFS((uint8_t *)initrd->begin);
 
         vfs->AddMountPoint("/", tarfs);
+        */
 
         //tarfs->DebugListDirectories();
     }
@@ -453,6 +459,8 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
     InitializeTime();
 
     interrupts.EnableInterrupts();
+
+    InitializeNetworking();
 }
 
 void _putchar(char character)

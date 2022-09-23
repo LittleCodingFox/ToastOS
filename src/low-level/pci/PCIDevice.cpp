@@ -93,6 +93,88 @@ frg::optional<PCIBar> PCIDevice::FetchBar(int bar)
     return PCIBar { isMMIO ? PCIBarType::MMIO : PCIBarType::IO, base, size, isPrefetch };
 }
 
+frg::optional<PCIBar> PCIDevice::FindBar(PCIBarType type)
+{
+    if(headerType & 0x7F)
+    {
+        return frg::null_opt;
+    }
+
+    for(uint32_t i = 0; i < 6; i++)
+    {
+        uint16_t barOffset = (uint16_t)PCIRegister::Bar0Offset + i * 4;
+
+        uint64_t barHigh = 0;
+        uint64_t barLow;
+        uint64_t barSizeHigh;
+        uint64_t barSizeLow;
+        uint64_t base;
+        size_t size;
+
+        barLow = PCIReadDword(bus, slot, func, barOffset);
+
+        if(barLow == 0)
+        {
+            continue;
+        }
+
+        bool isMMIO = !(barLow & 1);
+
+        if(isMMIO)
+        {
+            if(type != PCIBarType::MMIO)
+            {
+                continue;
+            }
+        }
+        else if (type != PCIBarType::IO)
+        {
+            continue;
+        }
+
+        bool isPrefetch = isMMIO && (barLow & 0b1000);
+        bool is64Bit = isMMIO && ((barLow & 0b110) == 0b100);
+
+        if(is64Bit)
+        {
+            barHigh = PCIReadDword(bus, slot, func, barOffset + 4);
+        }
+
+        base = ((barHigh << 32) | barLow) & ~(isMMIO ? 0xFull : 0x3ull);
+
+        PCIWriteDword(bus, slot, func, barOffset, 0xFFFFFFFF);
+
+        barSizeLow = PCIReadDword(bus, slot, func, barOffset);
+
+        PCIWriteDword(bus, slot, func, barOffset, barLow);
+
+        if(is64Bit)
+        {
+            PCIWriteDword(bus, slot, func, barOffset + 4, 0xFFFFFFFF);
+
+            barSizeHigh = PCIReadDword(bus, slot, func, barOffset + 4);
+
+            PCIWriteDword(bus, slot, func, barOffset + 4, barHigh);
+        }
+        else
+        {
+            barSizeHigh = 0xFFFFFFFF;
+        }
+
+        size = ~(((barSizeHigh << 32) | barSizeLow) & ~(isMMIO ? 0xFull : 0x3ull));
+
+        if(isMMIO == false)
+        {
+            base &= 0xFFFF;
+            size &= 0xFFFF;
+        }
+
+        return PCIBar { isMMIO ? PCIBarType::MMIO : PCIBarType::IO, base, size, isPrefetch };
+    }
+
+    return frg::null_opt;
+}
+
 void PCIDevice::AttachTo(PCIBus *bus)
 {
     parent = bus;

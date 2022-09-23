@@ -24,14 +24,15 @@ static_assert((PROCESS_STACK_SIZE * sizeof(uint64_t)) % 0x1000 == 0, "Misaligned
 
 constexpr int PROCESS_STACK_PAGE_COUNT = PROCESS_STACK_SIZE * sizeof(uint64_t) / 0x1000;
 
-enum ProcessFDType
+enum class ProcessFDType
 {
-    PROCESS_FD_UNKNOWN,
-    PROCESS_FD_HANDLE,
-    PROCESS_FD_PIPE,
-    PROCESS_FD_STDIN,
-    PROCESS_FD_STDOUT,
-    PROCESS_FD_STDERR
+    Unknown,
+    Handle,
+    Pipe,
+    Stdin,
+    Stdout,
+    Stderr,
+    Socket,
 };
 
 class IProcessFD
@@ -70,12 +71,12 @@ struct ProcessPipe
 struct ProcessFD
 {
     int fd;
-    int type;
+    ProcessFDType type;
     bool isValid;
     IProcessFD *impl;
 
-    ProcessFD() : fd(0), type(PROCESS_FD_UNKNOWN), isValid(false), impl(NULL) {}
-    ProcessFD(int fd, int type, bool isValid, IProcessFD *impl) : fd(fd), type(type), isValid(isValid), impl(impl) {}
+    ProcessFD() : fd(0), type(ProcessFDType::Unknown), isValid(false), impl(NULL) {}
+    ProcessFD(int fd, ProcessFDType type, bool isValid, IProcessFD *impl) : fd(fd), type(type), isValid(isValid), impl(impl) {}
 };
 
 #include "fd/ProcessFDPipe.hpp"
@@ -83,6 +84,7 @@ struct ProcessFD
 #include "fd/ProcessFDStdin.hpp"
 #include "fd/ProcessFDStdout.hpp"
 #include "fd/ProcessFDVFS.hpp"
+#include "fd/ProcessFDSocket.hpp"
 
 enum ProcessPermissionLevel
 {
@@ -90,15 +92,15 @@ enum ProcessPermissionLevel
     PROCESS_PERMISSION_USER
 };
 
-enum ProcessState
+enum class ProcessState
 {
-    PROCESS_STATE_NEEDS_INIT = 0,
-    PROCESS_STATE_IDLE,
-    PROCESS_STATE_BLOCKED,
-    PROCESS_STATE_RUNNING,
-    PROCESS_STATE_FORKED,
-    PROCESS_STATE_DEAD,
-    PROCESS_STATE_REMOVED
+    NeedsInit = 0,
+    Idle,
+    Blocked,
+    Running,
+    Forked,
+    Dead,
+    Removed
 };
 
 struct ProcessVMMap
@@ -136,7 +138,7 @@ struct Process
     pid_t ppid;
 
     sigset_t sigprocmask;
-    uint64_t state;
+    ProcessState state;
     int exitCode;
     bool didWaitPID;
 
@@ -147,10 +149,10 @@ struct Process
     AtomicLock lock;
 
     Process() : ID(0), permissionLevel(0), argv(NULL), environment(NULL), kernelStack(NULL), istStack(NULL), stack(NULL),
-        rip(0), rsp(0), cr3(0), rflags(0), sleepTicks(0), fdCounter(0), uid(0), gid(0), ppid(0), sigprocmask(0), state(PROCESS_STATE_NEEDS_INIT),
+        rip(0), rsp(0), cr3(0), rflags(0), sleepTicks(0), fdCounter(0), uid(0), gid(0), ppid(0), sigprocmask(0), state(ProcessState::NeedsInit),
         exitCode(0), didWaitPID(false), elf(NULL) {}
 
-    int AddFD(int type, IProcessFD *impl);
+    int AddFD(ProcessFDType type, IProcessFD *impl);
     ProcessFD *GetFD(int fd);
     void CreatePipe(int *fds);
     int DuplicateFD(int fd, size_t arg);
@@ -158,6 +160,7 @@ struct Process
     void CloseFD(int fd);
     void IncreaseFDRefs();
     void DisposeFDs();
+    int UDPLookup(uint16_t port);
 };
 
 struct ProcessControlBlock
@@ -191,7 +194,7 @@ struct ProcessControlBlock
 
     Process *process;
 
-    uint64_t state;
+    ProcessState state;
 
     pid_t tid;
 
@@ -205,31 +208,31 @@ struct ProcessControlBlock
     {
         switch(state)
         {
-            case PROCESS_STATE_BLOCKED:
+            case ProcessState::Blocked:
 
                 return "BLOCKED";
 
-            case PROCESS_STATE_DEAD:
+            case ProcessState::Dead:
 
                 return "DEAD";
 
-            case PROCESS_STATE_FORKED:
+            case ProcessState::Forked:
 
                 return "FORKED";
 
-            case PROCESS_STATE_IDLE:
+            case ProcessState::Idle:
 
                 return "IDLE";
 
-            case PROCESS_STATE_NEEDS_INIT:
+            case ProcessState::NeedsInit:
 
                 return "NEEDS INIT";
 
-            case PROCESS_STATE_REMOVED:
+            case ProcessState::Removed:
 
                 return "REMOVED";
 
-            case PROCESS_STATE_RUNNING:
+            case ProcessState::Running:
 
                 return "RUNNING";
 

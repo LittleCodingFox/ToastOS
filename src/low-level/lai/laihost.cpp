@@ -36,7 +36,7 @@ extern "C" {
     {
         (void)level;
 
-        DEBUG_OUT("lai: %s", message);
+        DEBUG_OUT("[lai] %s", message);
     }
 
     __attribute__((noreturn)) void laihost_panic(const char *message)
@@ -47,7 +47,7 @@ extern "C" {
 
     void *laihost_scan(const char *signature, size_t index)
     {
-        DEBUG_OUT("lai: scan for %.*s (index: %i)", 4, signature, index);
+        DEBUG_OUT("[lai] scan for %.*s (index: %i)", 4, signature, index);
 
         return ACPI::FindTable(xsdt, signature, index);
     }

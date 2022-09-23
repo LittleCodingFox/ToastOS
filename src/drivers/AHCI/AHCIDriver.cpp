@@ -403,7 +403,7 @@ namespace Drivers
                 } 
             }
 
-            DEBUG_OUT("ahci: Identified model %s with size %llu%s", model, diskSize, size);
+            DEBUG_OUT("[pci] ahci: Identified model %s with size %llu%s", model, diskSize, size);
 
             return true;
         }
@@ -657,13 +657,13 @@ namespace Drivers
 
         void PrepareDevice(PCIDevice *device)
         {
-            DEBUG_OUT("Initializing AHCI device", 0);
+            DEBUG_OUT("[pci] Initializing AHCI device", 0);
 
             auto bar = device->FetchBar(5);
 
             if(!bar)
             {
-                DEBUG_OUT("Failed to initialize AHCI driver: Missing bar 5", 0);
+                DEBUG_OUT("[pci] Failed to initialize AHCI driver: Missing bar 5", 0);
 
                 return;
             }

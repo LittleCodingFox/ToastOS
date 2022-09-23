@@ -33,25 +33,25 @@ void InitializeMADT()
         switch(header->id)
         {
             case 0:
-                DEBUG_OUT("madt: Found local APIC #%lu", MADTLAPICs->size());
+                DEBUG_OUT("[madt] Found local APIC #%lu", MADTLAPICs->size());
                 MADTLAPICs->push_back((MADTLAPIC *)header);
 
                 break;
                 
             case 1:
-                DEBUG_OUT("madt: Found IO APIC #%lu", MADTIOAPICs->size());
+                DEBUG_OUT("[madt] Found IO APIC #%lu", MADTIOAPICs->size());
                 MADTIOAPICs->push_back((MADTIOAPIC *)header);
 
                 break;
 
             case 2:
-                DEBUG_OUT("madt: Found ISO #%lu", MADTISOs->size());
+                DEBUG_OUT("[madt] Found ISO #%lu", MADTISOs->size());
                 MADTISOs->push_back((MADTISO *)header);
 
                 break;
 
             case 4:
-                DEBUG_OUT("madt: Found NMI #%lu", MADTNMIs->size());
+                DEBUG_OUT("[madt] Found NMI #%lu", MADTNMIs->size());
                 MADTNMIs->push_back((MADTNMI *)header);
 
                 break;

@@ -55,7 +55,7 @@ int64_t SyscallWaitPID(InterruptStack *stack)
 
             for(auto &child : children)
             {
-                if(child.info->state != PROCESS_STATE_DEAD)
+                if(child.info->state != ProcessState::Dead)
                 {
                     if((flags & WNOHANG) == WNOHANG)
                     {
@@ -101,7 +101,7 @@ int64_t SyscallWaitPID(InterruptStack *stack)
 
             for(auto &child : children)
             {
-                if(child.info->state != PROCESS_STATE_DEAD)
+                if(child.info->state != ProcessState::Dead)
                 {
                     if((flags & WNOHANG) == WNOHANG)
                     {
@@ -147,7 +147,7 @@ int64_t SyscallWaitPID(InterruptStack *stack)
 
             auto child = children[children.size() - 1];
 
-            if(child.info->state != PROCESS_STATE_DEAD)
+            if(child.info->state != ProcessState::Dead)
             {
                 if((flags & WNOHANG) == WNOHANG)
                 {
@@ -171,7 +171,7 @@ int64_t SyscallWaitPID(InterruptStack *stack)
         {
             auto process = processManager->GetProcess(pid);
 
-            if(process == NULL || process->isValid == false || process->info->state != PROCESS_STATE_DEAD)
+            if(process == NULL || process->isValid == false || process->info->state != ProcessState::Dead)
             {
                 if((flags & WNOHANG) == WNOHANG)
                 {
