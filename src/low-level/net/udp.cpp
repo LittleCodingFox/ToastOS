@@ -1,8 +1,9 @@
+#include <string.h>
 #include "net/udp.hpp"
 #include "arpa/inet.h"
 #include "net/dhcp.hpp"
 #include "net/dns.hpp"
-#include <string.h>
+#include "process/Process.hpp"
 
 void UDPReceivePacket(NetworkDevice *device, uint8_t *packet, IPV4Header *IPHeader)
 {
@@ -22,7 +23,22 @@ void UDPReceivePacket(NetworkDevice *device, uint8_t *packet, IPV4Header *IPHead
     
     uint8_t *UDPData = IPData + sizeof(UDPHeader);
 
-    //TODO: FD
+    auto process = processManager->CurrentProcess();
+
+    if(process != nullptr && process->isValid == true)
+    {
+        int fd;
+        ProcessFDSocket *socket;
+
+        if(process->info->UDPLookup(header.destinationPort, &fd, &socket))
+        {
+            int error;
+
+            socket->Write(UDPData, header.length - sizeof(UDPHeader), &error);
+
+            return;
+        }
+    }
 
     switch(header.destinationPort)
     {
@@ -37,7 +53,7 @@ void UDPReceivePacket(NetworkDevice *device, uint8_t *packet, IPV4Header *IPHead
     }
 }
 
-void UDPSendPacket(NetworkDevice *device, uint16_t sourcePort, uint8_t destinationMAC[6], sockaddr_in *destinationAddress,
+void UDPSendPacket(NetworkDevice *device, uint16_t sourcePort, sockaddr_in *destinationAddress,
     uint8_t *data, uint32_t length)
 {
     uint16_t UDPLength = sizeof(UDPHeader) + length;
@@ -91,7 +107,11 @@ void UDPSendPacket(NetworkDevice *device, uint16_t sourcePort, uint8_t destinati
     memcpy(datagram, &header, sizeof(UDPHeader));
     memcpy(datagram + sizeof(UDPHeader), data, length);
 
-    DEBUG_OUT("[udp] sending packet to destination port %d", ntohs(destinationAddress->sin_port));
+    char ip[128];
+
+    inet_ntoa2(destinationAddress->sin_addr, ip, 128);
+
+    DEBUG_OUT("[udp] sending packet to destination port %d and IP %s", ntohs(destinationAddress->sin_port), ip);
 
     IPV4SendPacket(device, destinationAddress, IPV4_PROTO_UDP, IPV4_FLAG_DF, datagram, UDPLength);
 

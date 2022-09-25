@@ -19,7 +19,7 @@ struct PACKED UDPHeader
 
 void UDPReceivePacket(NetworkDevice *device, uint8_t *packet, IPV4Header *ipv4Header);
 
-void UDPSendPacket(NetworkDevice *device, uint16_t sourcePort, uint8_t destinationMAC[6],
+void UDPSendPacket(NetworkDevice *device, uint16_t sourcePort,
     sockaddr_in *destinationAddress,
     uint8_t *data,
     uint32_t length);

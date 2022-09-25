@@ -10,3 +10,4 @@ typedef long blksize_t;
 typedef long blkcnt_t;
 typedef long off_t;
 typedef int pid_t;
+typedef long ssize_t;

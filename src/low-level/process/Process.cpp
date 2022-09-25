@@ -156,22 +156,25 @@ void Process::DisposeFDs()
     }
 }
 
-int Process::UDPLookup(uint16_t port)
+bool Process::UDPLookup(uint16_t port, int *fd, ProcessFDSocket **socket)
 {
-    for(auto &fd : fds)
+    for(auto &item : fds)
     {
-        if(fd.isValid && fd.impl != nullptr && fd.type == ProcessFDType::Socket)
+        if(item.isValid && item.impl != nullptr && item.type == ProcessFDType::Socket)
         {
-            ProcessFDSocket *socket = (ProcessFDSocket *)fd.impl;
+            ProcessFDSocket *itemSocket = (ProcessFDSocket *)item.impl;
 
-            if(socket->type == SOCK_DGRAM &&
-                socket->protocol == IPPROTO_UDP &&
-                socket->port == port)
+            if(itemSocket->type == SOCK_DGRAM &&
+                itemSocket->protocol == IPPROTO_UDP &&
+                itemSocket->port == port)
             {
-                return fd.fd;
+                *fd = item.fd;
+                *socket = itemSocket;
+
+                return true;
             }
         }
     }
 
-    return -1;
+    return false;
 }

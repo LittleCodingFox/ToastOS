@@ -160,7 +160,7 @@ struct Process
     void CloseFD(int fd);
     void IncreaseFDRefs();
     void DisposeFDs();
-    int UDPLookup(uint16_t port);
+    bool UDPLookup(uint16_t port, int *fd, ProcessFDSocket **socket);
 };
 
 struct ProcessControlBlock

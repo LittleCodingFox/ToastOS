@@ -1,16 +1,25 @@
-#include "net/dns.hpp"
-#include <arpa/inet.h>
 #include <string.h>
+#include <sys/types.h>
+#include <stddef.h>
+#include "net/dns.hpp"
+#include "arpa/inet.h"
+#include "process/Process.hpp"
 
-//static uint16_t dnsID = 1;
+static uint16_t dnsID = 1;
 
 int DNSLookup(NetworkDevice *device, const char *domain, uint8_t ip[4])
 {
-    /*
+    auto process = processManager->CurrentProcess();
+
+    if(process == nullptr || process->isValid == false)
+    {
+        return DNS_ERR_NO_ANSWER;
+    }
+
     memset(ip, 0, 4);
 
     DNSHeader lookupHeader = {
-        .id = htons(dnsID),
+        .id = (uint16_t)htons(dnsID),
         .flags = htons(0x0100),
         .qdCount = htons(0x0001),
     };
@@ -57,7 +66,9 @@ int DNSLookup(NetworkDevice *device, const char *domain, uint8_t ip[4])
 
     delete [] data;
 
-    int sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    auto socket = new ProcessFDSocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP, PORT_DNS);
+
+    int sockfd = process->info->AddFD(ProcessFDType::Socket, socket);
 
     if(sockfd < 0)
     {
@@ -72,29 +83,26 @@ int DNSLookup(NetworkDevice *device, const char *domain, uint8_t ip[4])
         .sin_addr = { .s_addr = inet_addr2(device->DNSIP()) },
     };
 
-    socklen_t serverAddressLength = sizeof(sockaddr_in);
+    DEBUG_OUT("[dns] sending packet: id=0x%05x, flags=0x%04x", ntohs(lookupHeader.id), ntohs(lookupHeader.flags));
 
-    DEBUG_OUT("dns: sending packet: id=0x%05x, flags=0x%04x", ntohs(lookupHeader.id), ntohs(lookupHeader.flags));
-
-    if(sendto(sockfd, packet, length, 0, (sockaddr *)&serverAddress, serverAddressLength))
-    {
-        return DNS_ERR_SEND;
-    }
+    UDPSendPacket(device, PORT_DNS, &serverAddress, packet, length);
 
     delete [] packet;
 
     dnsID++;
 
-    DEBUG_OUT("waiting for a response now (sockfd=%d)", sockfd);
+    DEBUG_OUT("[dns] waiting for a response now (sockfd=%d)", sockfd);
 
     uint8_t buffer[128];
-    ssize_t receivedBytes = recvfrom(sockfd, buffer, sizeof(buffer), 0, (sockaddr *)&serverAddress, &serverAddressLength);
+    int error = 0;
 
-    close(sockfd);
+    ssize_t receivedBytes = socket->Read(buffer, sizeof(buffer), &error);
+
+    process->info->CloseFD(sockfd);
 
     if(receivedBytes < (ssize_t)sizeof(DNSHeader))
     {
-        DEBUG_OUT("didn't receive enough data: %d", receivedBytes);
+        DEBUG_OUT("[dns] didn't receive enough data: %d", receivedBytes);
 
         return DNS_ERR_RECV;
     }
@@ -140,18 +148,17 @@ int DNSLookup(NetworkDevice *device, const char *domain, uint8_t ip[4])
         }
         else
         {
-            DEBUG_OUT("dns: wrong dns class", 0);
+            DEBUG_OUT("[dns] wrong dns class", 0);
 
             return DNS_ERR_CLASS;
         }
     }
     else
     {
-        DEBUG_OUT("dns: no answer", 0);
+        DEBUG_OUT("[dns] no answer", 0);
 
         return DNS_ERR_NO_ANSWER;
     }
 
-    */
     return 0;
 }

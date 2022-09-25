@@ -8,7 +8,6 @@ void DHCPDiscover(NetworkDevice *device);
 void DHCPHandleOffer(NetworkDevice *device);
 void DHCPReadOption(uint8_t *options, uint8_t code, uint8_t *buffer, uint16_t length);
 
-static uint8_t broadcastMAC[6] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, };
 static uint8_t broadcastIP[4] = { 255, 255, 255, 255 };
 static uint32_t xid = 1;
 
@@ -81,7 +80,7 @@ void DHCPDiscover(NetworkDevice *device)
     uint8_t *packet = new uint8_t[length];
     memcpy(packet, &header, length);
 
-    UDPSendPacket(device, PORT_DHCP_CLIENT, broadcastMAC, &address, packet, length);
+    UDPSendPacket(device, PORT_DHCP_CLIENT, &address, packet, length);
 
     delete [] packet;
 }
@@ -181,7 +180,7 @@ void DHCPHandleOffer(NetworkDevice *device)
         uint8_t *packet = new uint8_t[length];
         memcpy(packet, &request, length);
 
-        UDPSendPacket(device, PORT_DHCP_CLIENT, broadcastMAC, &address, packet, length);
+        UDPSendPacket(device, PORT_DHCP_CLIENT, &address, packet, length);
 
         delete [] packet;
     }
