@@ -25,7 +25,7 @@ int64_t SyscallStat(InterruptStack *stack)
 
     if(currentProcess == NULL || currentProcess->isValid == false)
     {
-        return -1;
+        return -ENOENT;
     }
 
     int error = 0;
@@ -36,7 +36,7 @@ int64_t SyscallStat(InterruptStack *stack)
     {
         //DEBUG_OUT(error == 0 ? "Stat is unknown" : "Stat Error: %i", error);
 
-        return -1;
+        return -ENOENT;
     }
 
     *stat = vfs->Stat(handle, &error);

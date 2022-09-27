@@ -69,6 +69,7 @@ int64_t SyscallUname(InterruptStack *stack);
 int64_t SyscallMakeDir(InterruptStack *stack);
 int64_t SyscallRename(InterruptStack *stack);
 int64_t SyscallRemoveDir(InterruptStack *stack);
+int64_t SyscallFStatAt(InterruptStack *stack);
 
 SyscallPointer syscallHandlers[] =
 {
@@ -136,6 +137,7 @@ SyscallPointer syscallHandlers[] =
     (SyscallPointer)SyscallMakeDir,
     (SyscallPointer)SyscallRemoveDir,
     (SyscallPointer)SyscallRename,
+    (SyscallPointer)SyscallFStatAt,
 };
 
 void SyscallHandler(InterruptStack *stack)
