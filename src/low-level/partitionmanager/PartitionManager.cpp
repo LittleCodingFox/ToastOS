@@ -1,5 +1,6 @@
 #include "PartitionManager.hpp"
 #include "filesystems/VFS.hpp"
+#include "filesystems/ext2/ext2.hpp"
 #include "elf/elf.hpp"
 #include "debug.hpp"
 #include <stdio.h>
@@ -54,7 +55,11 @@ void PartitionManager::Initialize()
 
             DEBUG_OUT("[PartitionManager] \t%s with size: %s, type: %s)", partition.GetID().ToString(), partition.SizeString(), partition.GetType().ToString());
 
-/*
+            if(Ext2FileSystem::IsValid(&partition))
+            {
+                disk.fileSystem = new Ext2FileSystem(&partition);
+            }
+
             if(disk.fileSystem != NULL)
             {
                 DEBUG_OUT("Found volume %s", disk.fileSystem->VolumeName());
@@ -64,7 +69,6 @@ void PartitionManager::Initialize()
 
                 //disk.fileSystem->DebugListDirectories();
             }
-*/
         }
     }
 }

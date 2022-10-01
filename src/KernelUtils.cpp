@@ -329,7 +329,9 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     stivale2_module *symbols = Stivale2GetModule(modules, "symbols.map");
     stivale2_module *font = Stivale2GetModule(modules, "font.psf");
+#if USE_TARFS
     stivale2_module *initrd = Stivale2GetModule(modules, "initrd");
+#endif
 
     LoadGDT(&bootstrapGDT, &bootstrapTSS, bootstrapTssStack, bootstrapist1Stack, bootstrapist2Stack, sizeof(bootstrapTssStack), &bootstrapGDTR);
 
@@ -421,6 +423,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     cmos.Initialize();
 
+#if USE_TARFS
     if(initrd != NULL)
     {
         auto tarfs = new TarFS((uint8_t *)initrd->begin);
@@ -429,6 +432,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
         //tarfs->DebugListDirectories();
     }
+#endif
 
     InitializeVirtualFiles();
 
