@@ -22,11 +22,11 @@ echo p
 echo w) | 
 fdisk -u -C500 -S63 -H16 $BINDIR/$OS_NAME.img
 
-git clone https://github.com/limine-bootloader/limine.git --branch=v2.0-branch-binary --depth=1
+git clone https://github.com/limine-bootloader/limine.git --branch=v3.0-branch-binary --depth=1
 
 make -C limine
 
-./limine/limine-install $BINDIR/$OS_NAME.img
+./limine/limine-deploy $BINDIR/$OS_NAME.img
 
 sudo mkdir -p /mnt/osdev
 

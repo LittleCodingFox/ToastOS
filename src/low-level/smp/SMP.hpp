@@ -2,7 +2,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <stivale2.h>
+#include <limine.h>
 #include "tss/tss.hpp"
 #include "gdt/gdt.hpp"
 #include "schedulers/RoundRobinScheduler.hpp"
@@ -36,7 +36,7 @@ struct CPUInfo
 uint32_t CPUCount();
 CPUInfo *CurrentCPUInfo();
 CPUInfo *LowestLoadCPU();
-void InitializeSMP(stivale2_struct_tag_smp *smp);
+void InitializeSMP(volatile limine_smp_request *smp);
 
 void *KernelGSBase();
 void *GSBase();

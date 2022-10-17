@@ -80,7 +80,7 @@ void *GSBase()
 
 int initializedCPUs = 0;
 
-void BootstrapSMP(stivale2_smp_info *smp)
+void BootstrapSMP(limine_smp_info *smp)
 {
     Registers::WriteCR3((uint64_t)globalPageTableManager->p4);
 
@@ -188,25 +188,25 @@ void BootstrapSMP(stivale2_smp_info *smp)
     processManager->Wait();
 }
 
-void InitializeSMP(stivale2_struct_tag_smp *smp)
+void InitializeSMP(volatile limine_smp_request *smp)
 {
-    cpuCount = smp->cpu_count;
+    cpuCount = smp->response->cpu_count;
 
     DEBUG_OUT("smp: Initializing %i CPUs", cpuCount);
 
     cpuInfos = new CPUInfo[cpuCount];
 
-    for(uint64_t i = 0; i < smp->cpu_count; i++)
+    for(uint64_t i = 0; i < smp->response->cpu_count; i++)
     {
-        struct stivale2_smp_info *smpInfo = &smp->smp_info[i];
+        struct limine_smp_info *smpInfo = smp->response->cpus[i];
 
         cpuInfos[i].APICID = smpInfo->lapic_id;
 
-        if(smpInfo->lapic_id == smp->bsp_lapic_id)
+        if(smpInfo->lapic_id == smp->response->bsp_lapic_id)
         {
             cpuInfos[i].stack = stack;
             cpuInfos[i].bsp = true;
-            cpuInfos[i].APICID = smp->bsp_lapic_id;
+            cpuInfos[i].APICID = smp->response->bsp_lapic_id;
 
             initializedCPUs++;
 
@@ -225,9 +225,7 @@ void InitializeSMP(stivale2_struct_tag_smp *smp)
                 PAGING_FLAG_WRITABLE);
         }
 
-        smpInfo->target_stack = (uint64_t)cpuInfos[i].stack + SMP_STACK_SIZE;
-
-        smpInfo->goto_address = (uint64_t)BootstrapSMP;
+        smpInfo->goto_address = (limine_goto_address)BootstrapSMP;
     }
 
     while(initializedCPUs != cpuCount)

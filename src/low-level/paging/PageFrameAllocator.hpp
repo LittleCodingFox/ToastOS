@@ -1,5 +1,5 @@
 #pragma once
-#include <stivale2.h>
+#include <limine.h>
 #include <stdint.h>
 #include "Bitmap.hpp"
 
@@ -8,7 +8,7 @@ class PageFrameAllocator
 public:
     Bitmap PageBitmap;
 
-    void ReadMemoryMap(stivale2_struct_tag_memmap *memmap);
+    void ReadMemoryMap(volatile limine_memmap_request* memmap, volatile limine_hhdm_request *hhd);
     void FreePage(void* address);
     void FreePages(void* address, uint64_t pageCount);
     void LockPage(void* address);
@@ -20,7 +20,7 @@ public:
     uint64_t GetReservedRAM();
 
 private:
-    void InitBitmap(size_t bitmapSize, void* bufferAddress);
+    void InitBitmap(size_t bitmapSize, void* bufferAddress, volatile limine_hhdm_request *hhdm);
     void ReservePage(void* address);
     void ReservePages(void* address, uint64_t pageCount);
     void UnreservePage(void* address);
