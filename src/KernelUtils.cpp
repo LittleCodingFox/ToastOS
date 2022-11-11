@@ -271,7 +271,7 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
         DEBUG_OUT("[pci] Found xHCI controller with vendor %04x and device %04x", device->Vendor(), device->Device());
     });
 
-    Drivers::Networking::RTL8139Query();
+    //Drivers::Networking::RTL8139Query();
 
     globalPartitionManager->Initialize();
 }
@@ -462,7 +462,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     interrupts.EnableInterrupts();
 
-    InitializeNetworking();
+    //InitializeNetworking();
 }
 
 void _putchar(char character)
