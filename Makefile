@@ -22,6 +22,8 @@ LIBCBINDIR			= bin/libc
 LIBCOBJDIR			= obj/libc
 LIBKOBJDIR			= obj/libk
 
+OVMF				= /usr/share/qemu/OVMF.fd
+
 rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
 
 SRC					= $(call rwildcard,$(SRCDIR),*.cpp)
@@ -212,7 +214,7 @@ debug-gdb-linux: debug-linux
 
 run-qemu-linux:
 	qemu-system-x86_64 -drive file=$(BINDIR)/$(OS_NAME).img,format=raw,index=0,media=disk \
-	-bios /usr/share/qemu/OVMF.fd -display gtk $(QEMU_FLAGS) $(QEMU_EXTRA_FLAGS) -vga std -smp $(SMP) \
+	-bios $(OVMF) -display gtk $(QEMU_FLAGS) $(QEMU_EXTRA_FLAGS) -vga std -smp $(SMP) \
 	-m 4G -cpu qemu64 -machine type=q35 -serial file:./debug.log -netdev user,id=u1 -device rtl8139,netdev=u1 \
 	-d int --no-reboot 2>qemu.log
 
