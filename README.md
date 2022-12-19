@@ -29,8 +29,12 @@ x86_64 OS created from scratch (very incomplete)
 
 ## Linux
 
-In a debian-based linux environment, the following command should install everything:
+### Debian
 `sudo apt install build-essential gcc gettext make perl libssl-dev ninja-build clang flex bison libgmp3-dev libmpc-dev libmpfr-dev texinfo python3-pip qemu-system-x86 help2man autopoint gperf nasm llvm mercurial groff && pip3 install xbstrap && pip3 install mako && pip3 install meson`
+
+### Fedora
+
+`sudo dnf install g++ binutils patch gcc gettext make perl openssl-devel ninja-build clang flex bison gmp-devel libmpc-devel mpfr-devel texinfo python3-pip qemu-system-x86 help2man gperf nasm llvm mercurial groff gettext-devel && pip3 install xbstrap && pip3 install mako && pip3 install meson`
 
 # Building the toolchain
 
