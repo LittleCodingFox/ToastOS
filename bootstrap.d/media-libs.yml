@@ -19,6 +19,8 @@ packages:
       - mlibc
       - mesa
       - libiconv
+      - toastinput
+      - toastgraphics
     revision: 6
     configure:
       - args:
