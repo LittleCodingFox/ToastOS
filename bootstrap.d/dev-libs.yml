@@ -22,7 +22,7 @@ packages:
     configure:
       - args:
         - '@THIS_SOURCE_DIR@/configure'
-        - '--host=x86_64-toast'
+        - '--host=@OPTION:arch-triple@'
         - '--prefix=/usr'
         - '--enable-cxx'
         - '--disable-static'
@@ -55,7 +55,7 @@ packages:
     configure:
       - args:
         - '@THIS_SOURCE_DIR@/configure'
-        - '--host=x86_64-toast'
+        - '--host=@OPTION:arch-triple@'
         - '--prefix=/usr'
         - '--disable-static'
         - '--docdir=/usr/share/doc/mpc-1.1.0'
@@ -92,7 +92,7 @@ packages:
     configure:
       - args:
         - '@THIS_SOURCE_DIR@/configure'
-        - '--host=x86_64-toast'
+        - '--host=@OPTION:arch-triple@'
         - '--prefix=/usr'
         - '--enable-static=no'
         - '--enable-shared=yes'
@@ -166,7 +166,7 @@ packages:
     configure:
       - args:
         - '@THIS_SOURCE_DIR@/configure'
-        - '--host=x86_64-toast'
+        - '--host=@OPTION:arch-triple@'
         - '--prefix=/usr'
         - '--with-sysroot=@SYSROOT_DIR@' # Set libtool's lt_sysroot.
         - '--disable-nls'
@@ -202,7 +202,7 @@ packages:
     configure:
       - args:
         - '@THIS_SOURCE_DIR@/configure'
-        - '--host=x86_64-toast'
+        - '--host=@OPTION:arch-triple@'
         - '--prefix=/usr'
         - '--without-emacs'
         - '--without-lispdir'
@@ -228,3 +228,44 @@ packages:
         environ:
           DESTDIR: '@THIS_COLLECT_DIR@'
         quiet: true
+
+  - name: pcre
+    source:
+      subdir: ports
+      # Use a git mirror as pcre retired their svn repositories
+      git: 'https://github.com/vinix-os/pcre'
+      tag: '1767'
+      # Seems to be 8.45?
+      version: '8.45'
+      tools_required:
+        - host-autoconf-v2.69
+        - host-automake-v1.15
+        - host-libtool
+        - host-pkg-config
+        - host-autoconf-archive
+      regenerate:
+        - args: ['./autogen.sh']
+    tools_required:
+      - host-gcc
+      - host-autoconf-v2.69
+      - host-automake-v1.15
+    pkgs_required:
+      - mlibc
+    revision: 4
+    configure:
+      - args:
+        - '@THIS_SOURCE_DIR@/configure'
+        - '--host=@OPTION:arch-triple@'
+        - '--prefix=/usr'
+        - '--with-sysroot=@SYSROOT_DIR@' # Set libtool's lt_sysroot.
+        - '--enable-unicode-properties'
+        - '--enable-pcre8'
+        - '--enable-pcre16'
+        - '--enable-pcre32'
+        - '--disable-static'
+        environ:
+          PKG_CONFIG_SYSROOT_DIR: '@BUILD_ROOT@/system-root'
+          PKG_CONFIG_LIBDIR: '@BUILD_ROOT@/system-root/usr/lib/pkgconfig:@BUILD_ROOT@/system-root/usr/share/pkgconfig'
+    build:
+      - args: ['make', '-j@PARALLELISM@']
+      - args: ['make', 'DESTDIR=@THIS_COLLECT_DIR@', 'install']

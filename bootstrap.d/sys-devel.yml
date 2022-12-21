@@ -96,7 +96,7 @@ packages:
     configure:
       - args:
         - '@THIS_SOURCE_DIR@/configure'
-        - '--host=x86_64-toast'
+        - '--host=@OPTION:arch-triple@'
         - '--prefix=/usr'
       - args: 'sed -i s/-Werror//g @THIS_BUILD_DIR@/src/Makefile'
       # This sed disables the building of the documentation
@@ -127,13 +127,13 @@ packages:
       - host-pkg-config
       - host-gcc
       - virtual: pkgconfig-for-target
-        triple: "x86_64-toast"
+        triple: "@OPTION:arch-triple@"
     pkgs_required:
       - mlibc
     configure:
       - args:
         - '@THIS_SOURCE_DIR@/configure'
-        - '--host=x86_64-toast'
+        - '--host=@OPTION:arch-triple@'
         - '--prefix=/usr'
         - '--disable-nls'
         - '--without-guile'

@@ -38,12 +38,12 @@ int64_t SyscallVMMap(InterruptStack *stack)
     DEBUG_OUT("Syscall: vmmap hint %p size %llu prot 0x%x flags 0x%x fd %i offset: %llu", bag->hint, bag->size, bag->prot, bag->flags, bag->fd, bag->offset);
 #endif
 
-    if(bag->size % 0x1000 != 0 || bag->size == 0)
+    if(bag->size == 0)
     {
         return -EINVAL;
     }
 
-    uint64_t pages = bag->size / 0x1000;
+    uint64_t pages = bag->size / 0x1000 + 1;
 
     PageTableManager userManager;
     userManager.p4 = (PageTable *)Registers::ReadCR3();

@@ -13,7 +13,7 @@ packages:
     configure:
       - args:
         - '@THIS_SOURCE_DIR@/configure'
-        - '--host=x86_64-toast'
+        - '--host=@OPTION:arch-triple@'
         - '--prefix=/usr'
         - '--without-ada'
         - '--enable-pc-files'
@@ -54,7 +54,7 @@ packages:
     configure:
       - args:
         - '@THIS_SOURCE_DIR@/configure'
-        - '--host=x86_64-toast'
+        - '--host=@OPTION:arch-triple@'
         - '--prefix=/usr'
         - '--disable-static'
         - '--enable-multibyte'
@@ -129,7 +129,7 @@ packages:
       - host-pkg-config
       - host-gcc
       - virtual: pkgconfig-for-target
-        triple: "x86_64-toast"
+        triple: "@OPTION:arch-triple@"
       - virtual: pkgconfig-for-host
         program_name: host-pkg-config
     pkgs_required:
@@ -137,7 +137,7 @@ packages:
       - llvm
       - zlib
     configure:
-      - args: ['cp', '@SOURCE_ROOT@/scripts/meson-x86_64-toast.cross-file', 'meson.cross-file']
+      - args: ['cp', '@SOURCE_ROOT@/scripts/meson-@OPTION:arch-triple@.cross-file', 'meson.cross-file']
       - args:
         - 'sed'
         - '-i'
@@ -193,7 +193,7 @@ packages:
     configure:
       - args:
         - '@THIS_SOURCE_DIR@/configure'
-        - '--host=x86_64-toast'
+        - '--host=@OPTION:arch-triple@'
         - '--prefix=/usr'
         - '--disable-static'
         - '--enable-osmesa'

@@ -23,7 +23,7 @@ packages:
     configure:
       - args:
         - '@THIS_SOURCE_DIR@/configure'
-        - '--host=x86_64-toast'
+        - '--host=@OPTION:arch-triple@'
         - '--prefix=/usr'
         - '--without-bash-malloc'
         - '--disable-nls'

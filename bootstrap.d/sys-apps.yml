@@ -41,7 +41,7 @@ packages:
     configure:
       - args:
         - '@THIS_SOURCE_DIR@/configure'
-        - '--host=x86_64-toast'
+        - '--host=@OPTION:arch-triple@'
         - '--prefix=/usr'
         - '--disable-bzlib'
         - '--disable-xzlib'
@@ -84,7 +84,7 @@ packages:
       # Now compile coreutils for the correct target.
       - args:
         - '@THIS_SOURCE_DIR@/configure'
-        - '--host=x86_64-toast'
+        - '--host=@OPTION:arch-triple@'
         - '--prefix=/usr'
         - '--enable-no-install-program=kill'
         - 'CFLAGS=-DSLOW_BUT_NO_HACKS -Wno-error'

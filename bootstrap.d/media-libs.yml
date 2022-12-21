@@ -26,7 +26,7 @@ packages:
       - args:
         - 'cmake'
         - '-GNinja'
-        - '-DCMAKE_TOOLCHAIN_FILE=@SOURCE_ROOT@/scripts/CMakeToolchain-x86_64-toast.txt'
+        - '-DCMAKE_TOOLCHAIN_FILE=@SOURCE_ROOT@/scripts/CMakeToolchain-@OPTION:arch-triple@.txt'
         - '-DCMAKE_INSTALL_PREFIX=/usr'
         - '-DALTIVEC=OFF'
         - '-DDISKAUDIO=OFF'

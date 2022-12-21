@@ -20,7 +20,7 @@ packages:
       - args: ['cp', '-r', '@THIS_SOURCE_DIR@/.', '@THIS_BUILD_DIR@']
       - args:
         - './configure'
-        - '--host=x86_64-toast'
+        - '--host=@OPTION:arch-triple@'
         - '--prefix=/usr'
         - '--disable-gtktest'
         - '--disable-icon-cache-update'
@@ -51,7 +51,7 @@ packages:
           vim_cv_memmove_handles_overlap: 'yes'
           vim_cv_bcopy_handles_overlap: 'yes'
           vim_cv_memcpy_handles_overlap: 'yes'
-          STRIP: 'x86_64-toast-strip'
+          STRIP: '@OPTION:arch-triple@-strip'
         workdir: '@THIS_BUILD_DIR@/src/'
     build:
       - args: ['make', '-j@PARALLELISM@']
