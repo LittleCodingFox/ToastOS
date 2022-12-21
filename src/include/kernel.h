@@ -4,7 +4,10 @@
 #define KPREFIX(n) k_##n
 
 #define USE_INPUT_SYSTEM    1
-#define USE_TARFS           0
+
+#ifndef USE_TARFS
+#   define USE_TARFS           0
+#endif
 
 #include "defines.h"
 

@@ -22,7 +22,11 @@ LIBCBINDIR			= bin/libc
 LIBCOBJDIR			= obj/libc
 LIBKOBJDIR			= obj/libk
 
+MAKEBOOTDIR			= makebootdir.sh
+MAKEISOLINUX		= makeisolinux.sh
+
 OVMF				= /usr/share/qemu/OVMF.fd
+TARFS				= 0
 
 rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
 
@@ -102,6 +106,12 @@ endif
 
 ifeq ($(KASAN), 1)
 	CFLAGS += -DUSE_KASAN=1
+endif
+
+ifeq ($(TARFS), 1)
+	CFLAGS += -DUSE_TARFS=1
+	MAKEBOOTDIR = makebootdir_tar.sh
+	MAKEISOLINUX = makeisolinux_tar.sh
 endif
 
 makedirs:
@@ -194,8 +204,8 @@ libc: makedirs $(LIBCCOBJECTS) $(LIBCASMOBJECTS) $(EXTCOBJECTS)
 	cp -Rf toolchain/tools/host-gcc/x86_64-toast/lib64/* $(DISTDIR)/usr/lib64/
 
 iso-linux:
-	sh makebootdir.sh
-	sh makeisolinux.sh
+	sh $(MAKEBOOTDIR)
+	sh $(MAKEISOLINUX)
 
 userland: libc
 	@for path in $(shell find userland/* -maxdepth 0 -type d); do \

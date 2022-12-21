@@ -55,10 +55,12 @@ void PartitionManager::Initialize()
 
             DEBUG_OUT("[PartitionManager] \t%s with size: %s, type: %s)", partition.GetID().ToString(), partition.SizeString(), partition.GetType().ToString());
 
+#if !USE_TARFS
             if(Ext2FileSystem::IsValid(&partition))
             {
                 disk.fileSystem = new Ext2FileSystem(&partition);
             }
+#endif
 
             if(disk.fileSystem != NULL)
             {
