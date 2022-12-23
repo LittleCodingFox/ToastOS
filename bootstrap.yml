@@ -1,15 +1,20 @@
 imports:
+  - file: bootstrap.d/apps-arch.yml
   - file: bootstrap.d/apps-editors.yml
   - file: bootstrap.d/apps-shells.yml
   - file: bootstrap.d/games-fps.yml
+  - file: bootstrap.d/dev-db.yml
   - file: bootstrap.d/dev-lang.yml
   - file: bootstrap.d/dev-libs.yml
   - file: bootstrap.d/dev-util.yml
+  - file: bootstrap.d/media-gfx.yml
   - file: bootstrap.d/media-fonts.yml
   - file: bootstrap.d/media-libs.yml
+  - file: bootstrap.d/sys-auth.yml
   - file: bootstrap.d/sys-apps.yml
   - file: bootstrap.d/sys-devel.yml
   - file: bootstrap.d/sys-libs.yml
+  - file: bootstrap.d/x11-apps.yml
   - file: bootstrap.d/x11-base.yml
   - file: bootstrap.d/x11-libs.yml
   - file: bootstrap.d/x11-misc.yml

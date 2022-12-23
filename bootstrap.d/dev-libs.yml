@@ -5,14 +5,6 @@ sources:
     tag: '2.72.3'
     version: '2.72.3'
 
-  - name: gobject-introspection
-    subdir: 'ports'
-    git: 'https://gitlab.gnome.org/GNOME/gobject-introspection.git'
-    # New meson versions break old builds, but the fix isn't in a stable release yet
-    branch: 'main'
-    commit: '7368d58a2d615e7cade85afd3f88df65256b699f'
-    version: '1.70.0.managarm1'
-
   - name: icu
     subdir: 'ports'
     git: 'https://github.com/unicode-org/icu.git'
@@ -46,30 +38,6 @@ tools:
         - '--libdir=lib'
         - '@THIS_SOURCE_DIR@'
     revision: 2
-    compile:
-      - args: ['ninja']
-    install:
-      - args: ['ninja', 'install']
-
-  - name: host-gobject-introspection
-    architecture: noarch
-    exports_aclocal: true
-    from_source: gobject-introspection
-    tools_required:
-      - host-python
-      - host-glib
-      - host-pkg-config
-      - virtual: pkgconfig-for-host
-        program_name: host-pkg-config
-    revision: 2
-    configure:
-      - args:
-        - 'meson'
-        - '--prefix=@PREFIX@'
-        - '--native-file'
-        - '@SOURCE_ROOT@/scripts/meson.native-file'
-        - '-Dbuild_introspection_data=false'
-        - '@THIS_SOURCE_DIR@'
     compile:
       - args: ['ninja']
     install:
@@ -1283,7 +1251,7 @@ packages:
       - args: ['sed', '-i', 's/3000/5000/', '@THIS_SOURCE_DIR@/doc/xsltproc.xml']
       - args:
         - '@THIS_SOURCE_DIR@/configure'
-        - '--host=x86_64-managarm'
+        - '--host=@OPTION:arch-triple@'
         - '--prefix=/usr'
         - '--disable-static'
         - '--without-crypto'

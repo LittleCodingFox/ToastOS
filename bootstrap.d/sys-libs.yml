@@ -117,63 +117,84 @@ packages:
       # Default to UTC for localtime, this should be fixed, but that is pending xbstrap support.
       - args: ['ln', '-sf', '/usr/share/zoneinfo/UTC', '@THIS_COLLECT_DIR@/etc/localtime']
 
-  - name: mesa
+  - name: mtdev
+    labels: [aarch64]
+    architecture: '@OPTION:arch@'
     source:
-      subdir: ports
-      git: 'https://gitlab.freedesktop.org/mesa/mesa.git'
-      branch: '21.3'
-      version: '21.3'
+      subdir: 'ports'
+      git: 'https://bitmath.org/git/mtdev.git'
+      disable_shallow_fetch: true
+      tag: 'v1.1.6'
+      version: '1.1.6'
       tools_required:
-        - host-pkg-config
+        - host-autoconf-v2.69
+        - host-automake-v1.15
+        - host-libtool
+      regenerate:
+        - args: ['./autogen.sh']
     tools_required:
-      - host-pkg-config
+      - host-autoconf-v2.69
+      - host-automake-v1.15
       - host-gcc
-      - virtual: pkgconfig-for-target
-        triple: "@OPTION:arch-triple@"
-      - virtual: pkgconfig-for-host
-        program_name: host-pkg-config
     pkgs_required:
       - mlibc
-      - llvm
-      - zlib
+    revision: 3
     configure:
-      - args: ['cp', '@SOURCE_ROOT@/scripts/meson-@OPTION:arch-triple@.cross-file', 'meson.cross-file']
       - args:
-        - 'sed'
-        - '-i'
-        - "/^# sed adds binaries here.$/a llvm-config = '@SOURCE_ROOT@/scripts/cross-llvm-config'"
-        - 'meson.cross-file'
-      - args:
-        - 'meson'
-        - '--native-file'
-        - '@SOURCE_ROOT@/scripts/meson.native-file'
-        - '--cross-file'
-        - 'meson.cross-file'
+        - '@THIS_SOURCE_DIR@/configure'
+        - '--host=@OPTION:arch-triple@'
         - '--prefix=/usr'
-        - '--libdir=lib'
-        - '-Dplatforms=[]'
-        - '-Dosmesa=true'
-        - '-Dgallium-drivers=swrast'
-        - '-Ddri-drivers=[]'
-        - '-Dvulkan-drivers=[]'
-        - '-Degl-native-platform=surfaceless'
-        - '-Dopengl=true'
-        - '-Dglx=disabled'
-        - '-Dllvm=enabled'
-        - '-Dbuildtype=release'
-        - '@THIS_SOURCE_DIR@'
+        - '--with-sysroot=@SYSROOT_DIR@' # Set libtool's lt_sysroot.
     build:
-      - args: ['ninja' ]
-      - args: ['ninja', 'install' ]
+      - args: ['make', '-j@PARALLELISM@']
+      - args: ['make', 'install']
         environ:
           DESTDIR: '@THIS_COLLECT_DIR@'
-  
-  - name: mesa-glu
+        quiet: true
+
+  - name: gdbm
+    labels: [aarch64]
+    architecture: '@OPTION:arch@'
     source:
       subdir: ports
-      git: 'https://gitlab.freedesktop.org/mesa/glu.git'
-      tag: 'glu-9.0.2'
-      version: '9.0.2'
+      git: 'https://git.savannah.gnu.org/git/gdbm.git'
+      tag: 'v1.23'
+      version: '1.23'
+      tools_required:
+        - host-autoconf-v2.69
+        - host-automake-v1.15
+        - host-libtool
+      regenerate:
+        - args: ['./bootstrap']
+    tools_required:
+      - host-autoconf-v2.69
+      - host-automake-v1.15
+      - host-gcc
+    pkgs_required:
+      - mlibc
+    configure:
+      - args:
+        - '@THIS_SOURCE_DIR@/configure'
+        - '--host=@OPTION:arch-triple@'
+        - '--prefix=/usr'
+        - '--disable-nls'
+        - '--disable-static'
+        - '--enable-libgdbm-compat'
+        - '--without-readline'
+    build:
+      - args: ['make', '-j@PARALLELISM@']
+      - args: ['make', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+
+  - name: libxcrypt
+    labels: [aarch64]
+    architecture: '@OPTION:arch@'
+    source:
+      subdir: 'ports'
+      git: 'https://github.com/besser82/libxcrypt.git'
+      tag: 'v4.4.28'
+      version: '4.4.28'
       tools_required:
         - host-autoconf-v2.69
         - host-automake-v1.15
@@ -181,24 +202,24 @@ packages:
         - host-pkg-config
       regenerate:
         - args: ['./autogen.sh']
-          environ:
-            NOCONFIGURE: '1'
     tools_required:
+      - host-autoconf-v2.69
+      - host-automake-v1.15
       - host-gcc
-      - host-pkg-config
     pkgs_required:
       - mlibc
-      - mesa
-      - llvm
     configure:
       - args:
         - '@THIS_SOURCE_DIR@/configure'
         - '--host=@OPTION:arch-triple@'
         - '--prefix=/usr'
+        - '--with-sysroot=@SYSROOT_DIR@' # Set libtool's lt_sysroot.
+        - '--enable-obsolete-api=yes'
+        - '--disable-xcrypt-compat-files'
         - '--disable-static'
-        - '--enable-osmesa'
     build:
       - args: ['make', '-j@PARALLELISM@']
       - args: ['make', 'install']
         environ:
           DESTDIR: '@THIS_COLLECT_DIR@'
+        quiet: true

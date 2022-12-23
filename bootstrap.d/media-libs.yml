@@ -1,4 +1,122 @@
 packages:
+  - name: fontconfig
+    labels: [aarch64]
+    architecture: '@OPTION:arch@'
+    source:
+      subdir: ports
+      git: 'https://gitlab.freedesktop.org/fontconfig/fontconfig'
+      tag: '2.14.0'
+      version: '2.14.0'
+      tools_required:
+        - host-autoconf-v2.69
+        - host-automake-v1.15
+        - host-libtool
+        - host-pkg-config
+      regenerate:
+        - args: ['./autogen.sh']
+          environ:
+            'NOCONFIGURE': 'yes'
+        # Make sure we regenerate this file
+        - args: ['rm', '-f', 'src/fcobjshash.h']
+    pkgs_required:
+      - mlibc
+      - freetype
+      - libxml
+      - libiconv
+    tools_required:
+      - host-autoconf-v2.69
+      - host-automake-v1.15
+      - host-gcc
+      - host-libtool
+      - host-pkg-config
+      - virtual: pkgconfig-for-target
+        triple: "@OPTION:arch-triple@"
+    configure:
+      - args:
+        - '@THIS_SOURCE_DIR@/configure'
+        - '--host=@OPTION:arch-triple@'
+        - '--prefix=/usr'
+        - '--sysconfdir=/etc'
+        - '--localstatedir=/var'
+        - '--disable-docs'
+        - '--with-sysroot=@SYSROOT_DIR@' # Set libtool's lt_sysroot.
+        - '--enable-libxml2'
+    build:
+      - args: ['make', '-j@PARALLELISM@']
+      - args: ['make', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+
+  - name: mesa
+    labels: [aarch64]
+    architecture: '@OPTION:arch@'
+    source:
+      subdir: 'ports'
+      git: 'https://gitlab.freedesktop.org/mesa/mesa.git'
+      tag: 'mesa-21.3.5'
+      version: '21.3.5'
+      tools_required:
+        - host-pkg-config
+    tools_required:
+      - host-pkg-config
+      - host-gcc
+      - wayland-scanner
+      - virtual: pkgconfig-for-target
+        triple: "@OPTION:arch-triple@"
+      - virtual: pkgconfig-for-host
+        program_name: host-pkg-config
+    pkgs_required:
+      - mlibc
+      - libdrm
+      - llvm
+      - wayland
+      - wayland-protocols
+      - zlib
+      - libxshmfence
+      - libxrandr
+      - libxdamage
+      - libxxf86vm
+      - libxfixes
+      - libx11
+      - libxext
+      - libxcb
+      - libglvnd
+    revision: 6
+    configure:
+      - args: ['cp', '@SOURCE_ROOT@/scripts/meson-@OPTION:arch-triple@.cross-file', 'meson.cross-file']
+      - args:
+        - 'sed'
+        - '-i'
+        - "/^# sed adds binaries here.$/a llvm-config = '@SOURCE_ROOT@/scripts/cross-llvm-config'"
+        - 'meson.cross-file'
+      - args:
+        - 'meson'
+        - '--native-file'
+        - '@SOURCE_ROOT@/scripts/meson.native-file'
+        - '--cross-file'
+        - 'meson.cross-file'
+        - '--prefix=/usr'
+        - '--libdir=lib'
+        # The debug build type enables some additional output from Mesa.
+        - '--buildtype=debugoptimized'
+        #- '--buildtype=debug'
+        - '-Dglx=dri'
+        - '-Dplatforms=wayland,x11'
+        # The Gallium swrast driver seems to be preferred over dri-swrast.
+        - '-Ddri-drivers='
+        - '-Dgallium-drivers=swrast'
+        - '-Dvulkan-drivers='
+        - '-Dglvnd=true'
+        # Force Mesa to build with LLVM.
+        - '-Dllvm=enabled'
+        - '@THIS_SOURCE_DIR@'
+    build:
+      - args: ['ninja']
+      - args: ['ninja', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+        quiet: true
+
   - name: sdl2
     metadata:
       summary: Simple Direct Media Layer version 2
@@ -104,3 +222,193 @@ packages:
         environ:
           DESTDIR: '@THIS_COLLECT_DIR@'
         quiet: true
+
+  - name: libepoxy
+    labels: [aarch64]
+    architecture: '@OPTION:arch@'
+    source:
+      subdir: 'ports'
+      git: 'https://github.com/anholt/libepoxy.git'
+      tag: '1.5.10'
+      version: '1.5.10'
+    tools_required:
+      - host-pkg-config
+      - host-gcc
+      - virtual: pkgconfig-for-target
+        triple: "@OPTION:arch-triple@"
+    pkgs_required:
+      - mlibc
+      - mesa
+      - xorg-proto
+      - libx11
+    configure:
+      - args:
+          - 'meson'
+          - '--cross-file'
+          - '@SOURCE_ROOT@/scripts/meson-@OPTION:arch-triple@.cross-file'
+          - '--prefix=/usr'
+          - '@THIS_SOURCE_DIR@'
+    build:
+      - args: ['ninja']
+      - args: ['ninja', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+        quiet: true
+
+  - name: libjpeg-turbo
+    labels: [aarch64]
+    architecture: '@OPTION:arch@'
+    source:
+      subdir: 'ports'
+      git: 'https://github.com/libjpeg-turbo/libjpeg-turbo.git'
+      tag: '2.1.4'
+      version: '2.1.4'
+    tools_required:
+      - host-pkg-config
+      - host-gcc
+      - host-cmake
+      - virtual: pkgconfig-for-target
+        triple: "@OPTION:arch-triple@"
+    pkgs_required:
+      - mlibc
+    configure:
+      - args:
+        - 'cmake'
+        - '-DCMAKE_TOOLCHAIN_FILE=@SOURCE_ROOT@/scripts/CMakeToolchain-@OPTION:arch-triple@.txt'
+        - '-DCMAKE_INSTALL_PREFIX=/usr'
+        - '-DCMAKE_BUILD_TYPE=RELEASE'
+        - '-DENABLE_STATIC=FALSE'
+        - '-DCMAKE_INSTALL_DOCDIR=/usr/share/doc/libjpeg-turbo-2.1.4'
+        - '-DCMAKE_INSTALL_DEFAULT_LIBDIR=lib'
+        - '-DWITH_JPEG8=ON'
+        - '-DCMAKE_SYSTEM_PROCESSOR=@OPTION:arch@'
+        - '@THIS_SOURCE_DIR@/'
+    build:
+      - args: ['make', '-j@PARALLELISM@']
+      - args: ['make', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+        quiet: true
+
+  - name: harfbuzz
+    labels: [aarch64]
+    architecture: '@OPTION:arch@'
+    source:
+      subdir: 'ports'
+      git: 'https://github.com/harfbuzz/harfbuzz.git'
+      tag: '3.1.2'
+      version: '3.1.2'
+    tools_required:
+      - host-gcc
+      - host-pkg-config
+      - virtual: pkgconfig-for-target
+        triple: "@OPTION:arch-triple@"
+    pkgs_required:
+      - mlibc
+      - graphite2
+      - glib
+      - zlib
+      - freetype
+      - cairo
+      - icu
+    revision: 3
+    configure:
+      - args:
+        - 'meson'
+        - '--native-file'
+        - '@SOURCE_ROOT@/scripts/meson.native-file'
+        - '--cross-file'
+        - '@SOURCE_ROOT@/scripts/meson-@OPTION:arch-triple@.cross-file'
+        - '--prefix=/usr'
+        - '--libdir=lib'
+        - '--buildtype=debugoptimized'
+        - '-Dgraphite2=enabled'
+        - '-Dglib=enabled'
+        - '-Dgobject=disabled'
+        - '-Dicu=enabled'
+        - '-Dfreetype=enabled'
+        - '-Dcairo=enabled'
+        - '-Dintrospection=disabled'
+        - '-Ddocs=disabled'
+        - '-Dtests=disabled' # Disabled due to a linking error
+        - '@THIS_SOURCE_DIR@'
+    build:
+      - args: ['ninja']
+      - args: ['ninja', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+
+  - name: glu
+    architecture: '@OPTION:arch@'
+    source:
+      subdir: 'ports'
+      git: 'https://gitlab.freedesktop.org/mesa/glu.git'
+      tag: 'glu-9.0.2'
+      version: '9.0.2'
+      tools_required:
+        - host-autoconf-v2.69
+        - host-automake-v1.15
+        - host-libtool
+        - host-pkg-config
+      regenerate:
+        - args: ['./autogen.sh']
+          environ:
+            NOCONFIGURE: '1'
+    tools_required:
+      - host-gcc
+    pkgs_required:
+      - mlibc
+      - gcc # Actually requires libstdc++.so in the system root, otherwise it links against the host libstdc++.so.6
+      - mesa
+    revision: 3
+    configure:
+      - args:
+        - '@THIS_SOURCE_DIR@/configure'
+        - '--host=@OPTION:arch-triple@'
+        - '--prefix=/usr'
+        - '--disable-static'
+    build:
+      - args: ['make', '-j@PARALLELISM@']
+      - args: ['make', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+
+  - name: libglvnd
+    labels: [aarch64]
+    architecture: '@OPTION:arch@'
+    source:
+      subdir: 'ports'
+      git: 'https://gitlab.freedesktop.org/glvnd/libglvnd.git'
+      tag: 'v1.4.0'
+      version: '1.4.0'
+    tools_required:
+      - host-gcc
+      - host-pkg-config
+      - virtual: pkgconfig-for-target
+        triple: "@OPTION:arch-triple@"
+    pkgs_required:
+      - mlibc
+      - libx11
+      - libxext
+    revision: 3
+    configure:
+      - args:
+        - 'meson'
+        - '--cross-file'
+        - '@SOURCE_ROOT@/scripts/meson-@OPTION:arch-triple@.cross-file'
+        - '--prefix=/usr'
+        - '--libdir=lib'
+        - '--buildtype=debugoptimized'
+        - '-Dasm=disabled'
+        - '-Dx11=enabled'
+        - '-Degl=true'
+        - '-Dglx=enabled'
+        - '-Dgles1=true'
+        - '-Dgles2=true'
+        - '-Dtls=true'
+        - '@THIS_SOURCE_DIR@'
+    build:
+      - args: ['ninja']
+      - args: ['ninja', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'

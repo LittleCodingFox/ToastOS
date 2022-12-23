@@ -76,7 +76,7 @@ packages:
     architecture: '@OPTION:arch@'
     from_source: xorg-font-util
     tools_required:
-      - system-gcc
+      - host-gcc
     pkgs_required:
       - mlibc
     revision: 3
