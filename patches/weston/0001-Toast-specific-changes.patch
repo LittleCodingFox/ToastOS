@@ -1,0 +1,151 @@
+From 24fb6f316a624dd427650243c370ce15d54addcb Mon Sep 17 00:00:00 2001
+From: no92 <no92.mail@gmail.com>
+Date: Mon, 10 Oct 2022 11:54:07 +0200
+Subject: [PATCH] Managarm-specific changes
+
+---
+ compositor/main.c              | 10 +---------
+ libweston/backend-drm/drm.c    | 10 +++++-----
+ libweston/backend-drm/fb.c     |  4 ++--
+ libweston/launcher-util.c      | 16 ++--------------
+ tools/zunitc/src/zunitc_impl.c |  1 +
+ 5 files changed, 11 insertions(+), 30 deletions(-)
+
+diff --git a/compositor/main.c b/compositor/main.c
+index 2eb0a03..558fe83 100644
+--- a/compositor/main.c
++++ b/compositor/main.c
+@@ -45,7 +45,7 @@
+ #include <libevdev/libevdev.h>
+ #include <linux/input.h>
+ #include <sys/time.h>
+-#include <linux/limits.h>
++#include <limits.h>
+ 
+ #include "weston.h"
+ #include <libweston/libweston.h>
+@@ -806,14 +806,6 @@ weston_compositor_log_capabilities(struct weston_compositor *compositor)
+ 	weston_log_continue(STAMP_SPACE "presentation clock: %s, id %d\n",
+ 			    clock_name(compositor->presentation_clock),
+ 			    compositor->presentation_clock);
+-
+-	if (clock_getres(compositor->presentation_clock, &res) == 0)
+-		weston_log_continue(STAMP_SPACE
+-				"presentation clock resolution: %d.%09ld s\n",
+-				(int)res.tv_sec, res.tv_nsec);
+-	else
+-		weston_log_continue(STAMP_SPACE
+-				"presentation clock resolution: N/A\n");
+ }
+ 
+ static bool
+diff --git a/libweston/backend-drm/drm.c b/libweston/backend-drm/drm.c
+index 962cc28..387cb34 100644
+--- a/libweston/backend-drm/drm.c
++++ b/libweston/backend-drm/drm.c
+@@ -562,7 +562,7 @@ drm_output_start_repaint_loop(struct weston_output *output_base)
+ 
+ 	/* Try to get current msc and timestamp via instant query */
+ 	vbl.request.type |= drm_waitvblank_pipe(output->crtc);
+-	ret = drmWaitVBlank(device->drm.fd, &vbl);
++	ret = -1; // drmWaitVBlank(device->drm.fd, &vbl);
+ 
+ 	/* Error ret or zero timestamp means failure to get valid timestamp */
+ 	if ((ret == 0) && (vbl.reply.tval_sec > 0 || vbl.reply.tval_usec > 0)) {
+@@ -633,11 +633,11 @@ drm_repaint_begin(struct weston_compositor *compositor)
+ 	device->repaint_data = pending_state;
+ 
+ 	if (weston_log_scope_is_enabled(b->debug)) {
+-		char *dbg = weston_compositor_print_scene_graph(compositor);
++		/*char *dbg = weston_compositor_print_scene_graph(compositor);
+ 		drm_debug(b, "[repaint] Beginning repaint; pending_state %p\n",
+ 			  device->repaint_data);
+ 		drm_debug(b, "%s", dbg);
+-		free(dbg);
++		free(dbg);*/
+ 	}
+ }
+ 
+@@ -3135,13 +3135,13 @@ drm_backend_create(struct weston_compositor *compositor,
+ 	if (parse_gbm_format(config->gbm_format, DRM_FORMAT_XRGB8888, &b->gbm_format) < 0)
+ 		goto err_compositor;
+ 
+-	/* Check if we run drm-backend using a compatible launcher */
++	/* Check if we run drm-backend using a compatible launcher
+ 	compositor->launcher = weston_launcher_connect(compositor, seat_id, true);
+ 	if (compositor->launcher == NULL) {
+ 		weston_log("fatal: your system should either provide the "
+ 			   "logind D-Bus API, or use seatd.\n");
+ 		goto err_compositor;
+-	}
++	} */
+ 
+ 	b->udev = udev_new();
+ 	if (b->udev == NULL) {
+diff --git a/libweston/backend-drm/fb.c b/libweston/backend-drm/fb.c
+index 05b4988..8a00212 100644
+--- a/libweston/backend-drm/fb.c
++++ b/libweston/backend-drm/fb.c
+@@ -303,13 +303,13 @@ drm_fb_get_from_dmabuf(struct linux_dmabuf_buffer *dmabuf,
+ 	if (is_opaque)
+ 		fb->format = pixel_format_get_opaque_substitute(fb->format);
+ 
+-	if (device->min_width > fb->width ||
++	/*if (device->min_width > fb->width ||
+ 	    fb->width > device->max_width ||
+ 	    device->min_height > fb->height ||
+ 	    fb->height > device->max_height) {
+ 		weston_log("bo geometry out of bounds\n");
+ 		goto err_free;
+-	}
++	}*/
+ 
+ 	fb->num_planes = dmabuf->attributes.n_planes;
+ 	for (i = 0; i < dmabuf->attributes.n_planes; i++) {
+diff --git a/libweston/launcher-util.c b/libweston/launcher-util.c
+index b277606..8ffc821 100644
+--- a/libweston/launcher-util.c
++++ b/libweston/launcher-util.c
+@@ -74,7 +74,8 @@ WL_EXPORT int
+ weston_launcher_open(struct weston_launcher *launcher,
+ 		     const char *path, int flags)
+ {
+-	return launcher->iface->open(launcher, path, flags);
++	return open(path, flags);
++	// return launcher->iface->open(launcher, path, flags);
+ }
+ 
+ WL_EXPORT void
+@@ -109,17 +110,4 @@ weston_setup_vt_switch_bindings(struct weston_compositor *compositor)
+ 	int ret;
+ 	uint32_t key;
+ 	struct weston_launcher *launcher = compositor->launcher;
+-
+-	ret = launcher->iface->get_vt(launcher);
+-	if (ret < 0 && ret != -ENOSYS)
+-		return;
+-
+-	if (compositor->vt_switching == false)
+-		return;
+-
+-	for (key = KEY_F1; key < KEY_F9; key++)
+-		weston_compositor_add_key_binding(compositor, key,
+-						  MODIFIER_CTRL | MODIFIER_ALT,
+-						  switch_vt_binding,
+-						  compositor);
+ }
+diff --git a/tools/zunitc/src/zunitc_impl.c b/tools/zunitc/src/zunitc_impl.c
+index 18f0301..f0a3bb6 100644
+--- a/tools/zunitc/src/zunitc_impl.c
++++ b/tools/zunitc/src/zunitc_impl.c
+@@ -27,6 +27,7 @@
+ 
+ #include <errno.h>
+ #include <fcntl.h>
++#include <signal.h>
+ #include <stdarg.h>
+ #include <stdbool.h>
+ #include <stdio.h>
+-- 
+2.37.3
+

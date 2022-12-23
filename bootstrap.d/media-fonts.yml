@@ -1,0 +1,95 @@
+sources:
+  - name: xorg-font-util
+    subdir: 'ports'
+    git: 'https://gitlab.freedesktop.org/xorg/font/util.git'
+    tag: 'font-util-1.3.2'
+    version: '1.3.2'
+    tools_required:
+      - host-autoconf-v2.69
+      - host-automake-v1.15
+      - host-libtool
+      - host-pkg-config
+      - host-xorg-macros
+    regenerate:
+      - args: ['./autogen.sh']
+        environ:
+          'NOCONFIGURE': 'yes'
+
+tools:
+  - name: host-xorg-font-util
+    labels: [aarch64]
+    architecture: noarch
+    exports_aclocal: true
+    from_source: xorg-font-util
+    revision: 2
+    configure:
+      - args:
+        - '@THIS_SOURCE_DIR@/configure'
+        - '--prefix=@PREFIX@'
+    compile:
+      - args: ['make', '-j@PARALLELISM@']
+    install:
+      - args: ['make', 'install']
+
+packages:
+  - name: dejavu
+    metadata:
+      summary: Dejavu fonts
+      description: This package provides the Dejavu fonts, commonly found on Linux systems.
+      spdx: 'no-spdx: BitstreamVera license'
+      website: 'https://dejavu-fonts.github.io/'
+      maintainer: "Dennis Bonke <dennis@managarm.org>"
+      categories: ['media-fonts']
+    labels: [aarch64]
+    architecture: noarch
+    source:
+      subdir: ports
+      url: 'https://sourceforge.net/projects/dejavu/files/dejavu/2.37/dejavu-fonts-ttf-2.37.tar.bz2'
+      format: 'tar.bz2'
+      checksum: blake2b:d8614907887f20967fc7c75cb33b636a0eb5c682a076ccc7aef09f4ac243507afc005ef90d0b2aeee6a4a6a1ff3d5ce4fac0d1722a382525b3883ef53cdec26a
+      extract_path: 'dejavu-fonts-ttf-2.37'
+      version: '2.37'
+    pkgs_required:
+      - freetype
+      - fontconfig
+    revision: 3
+    configure:
+      - args: ['cp', '-r', '@THIS_SOURCE_DIR@/ttf', '@THIS_SOURCE_DIR@/dejavu']
+      - args: ['cp', '-r', '@THIS_SOURCE_DIR@/', '@THIS_BUILD_DIR@']
+    build:
+      - args: ['mkdir', '-p', '@THIS_COLLECT_DIR@/usr/share/fonts/truetype/']
+      - args: ['cp', '-r', '@THIS_BUILD_DIR@/dejavu/dejavu', '@THIS_COLLECT_DIR@/usr/share/fonts/truetype/']
+    scripts:
+        post_install:
+          - args: 'echo "Running fc-cache; this may take a few seconds..."'
+          - args: ['fc-cache']
+
+  - name: xorg-font-util
+    metadata:
+      summary: X.Org font utilities
+      description: This package provides various X.Org font utilities.
+      spdx: 'MIT'
+      website: 'https://gitlab.freedesktop.org/xorg/font/util'
+      maintainer: "Dennis Bonke <dennis@managarm.org>"
+      categories: ['media-fonts']
+    labels: [aarch64]
+    architecture: '@OPTION:arch@'
+    from_source: xorg-font-util
+    tools_required:
+      - system-gcc
+    pkgs_required:
+      - mlibc
+    revision: 3
+    configure:
+      - args:
+        - '@THIS_SOURCE_DIR@/configure'
+        - '--host=@OPTION:arch-triple@'
+        - '--prefix=/usr'
+        - '--sysconfdir=/etc'
+        - '--localstatedir=/var'
+        - '--disable-static'
+    build:
+      - args: ['make', '-j@PARALLELISM@']
+      - args: ['make', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'

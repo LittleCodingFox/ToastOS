@@ -2,12 +2,18 @@ imports:
   - file: bootstrap.d/apps-editors.yml
   - file: bootstrap.d/apps-shells.yml
   - file: bootstrap.d/games-fps.yml
+  - file: bootstrap.d/dev-lang.yml
   - file: bootstrap.d/dev-libs.yml
   - file: bootstrap.d/dev-util.yml
+  - file: bootstrap.d/media-fonts.yml
   - file: bootstrap.d/media-libs.yml
   - file: bootstrap.d/sys-apps.yml
   - file: bootstrap.d/sys-devel.yml
   - file: bootstrap.d/sys-libs.yml
+  - file: bootstrap.d/x11-base.yml
+  - file: bootstrap.d/x11-libs.yml
+  - file: bootstrap.d/x11-misc.yml
+  - file: bootstrap.d/x11-themes.yml
 
 general:
   everything_by_default: true
@@ -57,6 +63,12 @@ sources:
     branch: 'feature/toastos'
     rolling_version: true
     version: '0.0pl@ROLLING_ID@'
+
+  - name: wayland
+    subdir: 'ports'
+    git: 'https://github.com/wayland-project/wayland.git'
+    tag: '1.21.0'
+    version: '1.21.0'
 
 tools:
   - name: host-autoconf-v2.64
@@ -299,6 +311,30 @@ tools:
     install:
       - args: ['ninja', 'install']
         quiet: true
+
+  - name: wayland-scanner
+    labels: [aarch64]
+    architecture: noarch
+    from_source: wayland
+    tools_required:
+      - virtual: pkgconfig-for-host
+        program_name: host-pkg-config
+    configure:
+      - args:
+        - 'meson'
+        - '--native-file'
+        - '@SOURCE_ROOT@/scripts/meson.native-file'
+        - '--prefix=@PREFIX@'
+        - '-Ddtd_validation=false'
+        - '-Ddocumentation=false'
+        - '-Dscanner=true'
+        - '-Dlibraries=false'
+        - '-Dtests=false'
+        - '@THIS_SOURCE_DIR@'
+    compile:
+      - args: ['ninja']
+    install:
+      - args: ['ninja', 'install']
 
 packages:
   - name: binutils
@@ -575,3 +611,81 @@ packages:
       - args: |
           cd "@THIS_SOURCE_DIR@/klibs/ToastInput"
           make DESTDIR="@THIS_COLLECT_DIR@"
+  
+  - name: wayland
+    labels: [aarch64]
+    architecture: '@OPTION:arch@'
+    from_source: wayland
+    tools_required:
+      - host-pkg-config
+      - host-gcc
+      - wayland-scanner
+      - host-libtool
+      - virtual: pkgconfig-for-target
+        triple: "@OPTION:arch-triple@"
+      - virtual: pkgconfig-for-host
+        program_name: host-pkg-config
+    pkgs_required:
+      - mlibc
+      - libexpat
+      - libffi
+    configure:
+      - args:
+        - 'meson'
+        - '--native-file'
+        - '@SOURCE_ROOT@/scripts/meson.native-file'
+        - '--cross-file'
+        - '@SOURCE_ROOT@/scripts/meson-@OPTION:arch-triple@.cross-file'
+        - '--prefix=/usr'
+        - '--buildtype=debugoptimized'
+        - '-Ddtd_validation=false'
+        - '-Ddocumentation=false'
+        - '-Dscanner=false'
+        - '@THIS_SOURCE_DIR@'
+        environ:
+          PKG_CONFIG_SYSROOT_DIR: '@BUILD_ROOT@/system-root'
+    build:
+      - args: ['ninja']
+      - args: ['ninja', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+
+  - name: eudev
+    labels: [aarch64]
+    architecture: '@OPTION:arch@'
+    source:
+      subdir: 'ports'
+      git: 'https://github.com/gentoo/eudev.git'
+      tag: 'v3.2.10'
+      version: '3.2.10'
+      tools_required:
+        - host-autoconf-v2.69
+        - host-automake-v1.11
+        - host-libtool
+        - host-pkg-config
+      regenerate:
+        - args: ['./autogen.sh']
+    tools_required:
+      - host-gcc
+    pkgs_required:
+      - mlibc
+    revision: 4
+    configure:
+      - args:
+        - '@THIS_SOURCE_DIR@/configure'
+        - '--host=@OPTION:arch-triple@'
+        - '--prefix=/usr'
+        - '--with-sysroot=@SYSROOT_DIR@' # Set libtool's lt_sysroot.
+        - '--disable-blkid'
+        - '--disable-selinux'
+        - '--disable-kmod'
+        - '--disable-mtd-probe'
+        - '--disable-rule-generator'
+        - '--enable-introspection=no'
+    build:
+      - args: ['make', '-j@PARALLELISM@']
+      - args: ['make', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+        quiet: true
+      - args: ['touch', '@THIS_COLLECT_DIR@/usr/etc/udev/rules.d/.keep']
