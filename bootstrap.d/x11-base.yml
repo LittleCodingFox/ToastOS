@@ -160,7 +160,6 @@ packages:
       website: 'https://wayland.freedesktop.org/xserver.html'
       maintainer: "no92 <no92.mail@gmail.com>"
       categories: ['x11-base']
-      replaces: ['xorg-server']
     source:
       subdir: ports
       git: 'https://gitlab.freedesktop.org/xorg/xserver.git'
