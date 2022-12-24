@@ -1,17 +1,21 @@
 #!/bin/sh
 
-export BINDIR=bin
-export OS_NAME=ToastOS
+BINDIR=bin
+OS_NAME=ToastOS
+IMAGE_SIZE_MB=4096
+LAST_SECTOR=$(((($IMAGE_SIZE_MB) - 1) * 1024 * 1024 / 512))
+
+echo "Last sector: " $LAST_SECTOR
 
 rm -Rf $BINDIR/*.img
 
-dd if=/dev/zero of=$BINDIR/$OS_NAME.img bs=1M count=1024
+dd if=/dev/zero of=$BINDIR/$OS_NAME.img bs=1M count=$IMAGE_SIZE_MB
 
 (echo g
 echo n
 echo 1
 echo 2048
-echo +1000M
+echo $LAST_SECTOR
 echo t
 echo 1
 echo p

@@ -1,11 +1,15 @@
 #!/bin/sh
 
-export BINDIR=bin
-export OS_NAME=ToastOS
+BINDIR=bin
+OS_NAME=ToastOS
+IMAGE_SIZE_MB=4096
+EFI_SIZE=100
+LAST_SECTOR=$(((($IMAGE_SIZE_MB) - ($EFI_SIZE + 1)) * 1024 * 1024 / 512))
+LOOP_OFFSET=$((($EFI_SIZE + 1) * 1024 * 1024))
 
 rm -Rf $BINDIR/*.img
 
-dd if=/dev/zero of=$BINDIR/$OS_NAME.img bs=1M count=1024
+dd if=/dev/zero of=$BINDIR/$OS_NAME.img bs=1M count=$IMAGE_SIZE_MB
 
 (echo g
 echo n
@@ -17,7 +21,7 @@ echo 1
 echo n
 echo 2
 echo 206848
-echo 2097118
+echo $LAST_SECTOR
 echo p
 echo w) | 
 fdisk -u -C500 -S63 -H16 $BINDIR/$OS_NAME.img
@@ -55,7 +59,7 @@ sudo umount $LOOP
 
 sudo losetup -d $LOOP
 
-sudo losetup -o105906176 $LOOP $BINDIR/$OS_NAME.img
+sudo losetup -o$LOOP_OFFSET $LOOP $BINDIR/$OS_NAME.img
 
 sudo mke2fs -b1024 $LOOP -L "Main Volume"
 
