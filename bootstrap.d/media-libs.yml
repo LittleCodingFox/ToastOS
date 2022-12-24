@@ -107,6 +107,9 @@ packages:
         - '-Dgallium-drivers=swrast'
         - '-Dvulkan-drivers='
         - '-Dglvnd=true'
+        - '-Dosmesa=true'
+        - '-Degl-native-platform=surfaceless'
+        - '-Dopengl=true'
         # Force Mesa to build with LLVM.
         - '-Dllvm=enabled'
         - '@THIS_SOURCE_DIR@'
@@ -118,11 +121,13 @@ packages:
         quiet: true
 
   - name: sdl2
+    architecture: '@OPTION:arch@'
     metadata:
       summary: Simple Direct Media Layer version 2
       description: The Simple DirectMedia Layer Version 2 (SDL2 for short) is a cross-platform library designed to make it easy to write multimedia software, such as games and emulators.
       spdx: 'Zlib'
       website: 'https://www.libsdl.org/'
+      maintainer: "Dennis Bonke <dennis@managarm.org>"
       categories: ['media-libs']
     source:
       subdir: 'ports'
@@ -133,12 +138,24 @@ packages:
       - host-gcc
       - host-cmake
       - host-pkg-config
+      - wayland-scanner
     pkgs_required:
       - mlibc
+      - libdrm
+      - eudev
       - mesa
+      - wayland
+      - wayland-protocols
       - libiconv
-      - toastinput
-      - toastgraphics
+      - libx11
+      - libxext
+      - libxcursor
+      - libxinerama
+      - libxi
+      - libxfixes
+      - libxrandr
+      - libxrender
+      - libxxf86vm
     revision: 6
     configure:
       - args:
@@ -166,8 +183,8 @@ packages:
         - '-DRPATH=OFF'
         - '-DCLOCK_GETTIME=OFF'
         - '-DINPUT_TSLIB=OFF'
-        - '-DVIDEO_X11=OFF'
-        - '-DVIDEO_WAYLAND=OFF'
+        - '-DVIDEO_X11=ON'
+        - '-DVIDEO_WAYLAND=ON'
         - '-DVIDEO_WAYLAND_QT_TOUCH=OFF'
         - '-DVIDEO_RPI=OFF'
         - '-DVIDEO_COCOA=OFF'
@@ -176,7 +193,7 @@ packages:
         - '-DRENDER_D3D=OFF'
         - '-DVIDEO_VIVANTE=OFF'
         - '-DVIDEO_VULKAN=OFF'
-        - '-DVIDEO_KMSDRM=OFF'
+        - '-DVIDEO_KMSDRM=ON'
         - '-DKMSDRM_SHARED=OFF'
         - '-DSDL_DLOPEN=ON'
         - '-DHIDAPI=OFF'

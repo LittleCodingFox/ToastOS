@@ -303,7 +303,7 @@ packages:
       # Remove the in tree copy of bzip2
       - args: ['rm', '-r', '@THIS_BUILD_DIR@/bzip2']
     build:
-      - args: ['make', 'CC=x86_64-managarm-gcc', 'LDFLAGS=-liconv', '-f', '@THIS_BUILD_DIR@/unix/Makefile', 'generic']
+      - args: ['make', 'CC=@OPTION:arch-triple@-gcc', 'LDFLAGS=-liconv', '-f', '@THIS_BUILD_DIR@/unix/Makefile', 'generic']
       - args: ['mkdir', '-p', '@THIS_COLLECT_DIR@/usr/bin']
       - args: ['mkdir', '-p', '@THIS_COLLECT_DIR@/usr/share/man/man1']
       - args: ['cp', '@THIS_BUILD_DIR@/unzip', '@THIS_COLLECT_DIR@/usr/bin/']
@@ -386,7 +386,7 @@ packages:
     configure:
       - args: ['cp', '-r', '@THIS_SOURCE_DIR@/.', '@THIS_BUILD_DIR@']
     build:
-      - args: ['make', 'CC=x86_64-managarm-gcc', '-f', '@THIS_BUILD_DIR@/unix/Makefile', 'generic']
+      - args: ['make', 'CC=@OPTION:arch-triple@-gcc', '-f', '@THIS_BUILD_DIR@/unix/Makefile', 'generic']
       - args: ['mkdir', '-p', '@THIS_COLLECT_DIR@/usr/bin']
       - args: ['mkdir', '-p', '@THIS_COLLECT_DIR@/usr/share/man/man1']
       - args: ['cp', '@THIS_BUILD_DIR@/zip', '@THIS_COLLECT_DIR@/usr/bin/']

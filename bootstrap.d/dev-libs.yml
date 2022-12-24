@@ -242,6 +242,7 @@ packages:
         - '--libdir=lib'
         - '--buildtype=debugoptimized'
         - '-Dxattr=false'
+        - '-Diconv=external'
         - '@THIS_SOURCE_DIR@'
         environ:
           PKG_CONFIG_SYSROOT_DIR: '@BUILD_ROOT@/system-root'
@@ -1067,9 +1068,9 @@ packages:
     pkgs_required:
       - mlibc
     configure:
-      # libgpg-error does not know about managarm, teach it
+      # libgpg-error does not know about toast, teach it
       - args: ['cp', '-v', '@THIS_SOURCE_DIR@/src/syscfg/lock-obj-pub.x86_64-unknown-linux-gnu.h',
-          '@THIS_SOURCE_DIR@/src/syscfg/lock-obj-pub.managarm.h']
+          '@THIS_SOURCE_DIR@/src/syscfg/lock-obj-pub.toast.h']
       - args:
         - '@THIS_SOURCE_DIR@/configure'
         - '--host=@OPTION:arch-triple@'
@@ -1181,7 +1182,7 @@ packages:
     configure:
       - args:
         - '@THIS_SOURCE_DIR@/configure'
-        - '--host=x86_64-managarm'
+        - '--host=@OPTION:arch-triple@'
         - '--prefix=/usr'
         - '--with-sysroot=@SYSROOT_DIR@' # Set libtool's lt_sysroot.
         - '--disable-static'
@@ -1353,7 +1354,7 @@ packages:
       - args: ['sed', '-s', 's#/nsinstall$#/native-nsinstall#', '-i', '@THIS_BUILD_DIR@/config/autoconf.mk']
       - args: ['rm', '-v', '@THIS_BUILD_DIR@/config/nsinstall.o']
       # Then build the real deal
-      - args: ['make', 'CC=x86_64-managarm-gcc', 'CXX=x86_64-managarm-g++', '-j@PARALLELISM@']
+      - args: ['make', 'CC=@OPTION:arch-triple@-gcc', 'CXX=@OPTION:arch-triple@-g++', '-j@PARALLELISM@']
       - args: ['make', 'install']
         environ:
           DESTDIR: '@THIS_COLLECT_DIR@'
@@ -1427,8 +1428,8 @@ packages:
           # Put the libs and binaries here.
           SOURCE_PREFIX: '@THIS_BUILD_DIR@/dist'
           # Specify the compiler.
-          CC: 'x86_64-managarm-gcc'
-          CXX: 'x86_64-managarm-g++'
+          CC: '@OPTION:arch-triple@-gcc'
+          CXX: '@OPTION:arch-triple@-g++'
       # Then build the main libraries and binaries.
       - args: |
             make V=1 -C @THIS_BUILD_DIR@/. NSINSTALL=@THIS_BUILD_DIR@/$(find -type f -name nsinstall) -j1
@@ -1449,8 +1450,8 @@ packages:
           NSDISTMODE: 'copy'
           NSS_DISABLE_GTESTS: '1'
           SOURCE_PREFIX: '@THIS_BUILD_DIR@/dist'
-          CC: 'x86_64-managarm-gcc'
-          CXX: 'x86_64-managarm-g++'
+          CC: '@OPTION:arch-triple@-gcc'
+          CXX: '@OPTION:arch-triple@-g++'
       # Create some directories to install into.
       - args: ['mkdir', '-p', '@THIS_COLLECT_DIR@/usr/lib/pkgconfig']
       - args: ['mkdir', '-p', '@THIS_COLLECT_DIR@/usr/bin']
