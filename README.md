@@ -30,7 +30,7 @@ x86_64 OS created from scratch (very incomplete)
 ## Linux
 
 ### Debian
-`sudo apt install build-essential gcc gettext make perl libssl-dev ninja-build clang flex bison libgmp3-dev libmpc-dev libmpfr-dev texinfo python3-pip qemu-system-x86 help2man autopoint gperf nasm llvm mercurial groff libexpat1-dev zlib1g-dev x11-apps libxml2-dev itstool && pip3 install xbstrap && pip3 install mako && pip3 install meson && pip3 install libxml2-python3`
+`sudo apt install build-essential gcc gettext make perl libssl-dev ninja-build clang flex bison libgmp3-dev libmpc-dev libmpfr-dev texinfo python3-pip qemu-system-x86 help2man autopoint gperf nasm llvm mercurial groff libexpat1-dev zlib1g-dev libglib2.0-dev x11-apps libxml2-dev itstool && pip3 install xbstrap && pip3 install mako && pip3 install meson && pip3 install libxml2-python3`
 
 ### Fedora
 
