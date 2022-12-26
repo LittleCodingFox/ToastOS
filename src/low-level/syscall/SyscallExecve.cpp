@@ -71,7 +71,7 @@ int64_t SyscallExecve(InterruptStack *stack)
 
     if(handle == INVALID_FILE_HANDLE)
     {
-        DEBUG_OUT("Execve: Failed to open %s!", path);
+        DEBUG_OUT("Execve: Failed to open %s! (error: %x)", path, error);
 
         if(interruptsEnabled)
         {
