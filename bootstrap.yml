@@ -409,8 +409,9 @@ packages:
         - '@SOURCE_ROOT@/cross_file.txt'
         - '--prefix=/usr'
         - '-Dheaders_only=true'
-        #- '-Ddisable_iconv_option=true'
+        - '-Ddisable_iconv_option=true'
         - '-Ddisable_intl_option=true'
+        - '-Ddisable_crypt_option=true'
         - '@THIS_SOURCE_DIR@'
     build:
       - args: ['ninja']
@@ -435,9 +436,9 @@ packages:
         - '--prefix=/usr'
         - '--libdir=lib'
         - '--buildtype=debugoptimized'
-        - '-Dmlibc_no_headers=true'
-        #- '-Ddisable_iconv_option=true'
+        - '-Ddisable_iconv_option=true'
         - '-Ddisable_intl_option=true'
+        - '-Ddisable_crypt_option=true'
         - '@THIS_SOURCE_DIR@'
     build:
       - args: ['ninja']
