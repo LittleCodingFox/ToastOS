@@ -7,6 +7,7 @@ imports:
   - file: bootstrap.d/media-libs.yml
   - file: bootstrap.d/sys-apps.yml
   - file: bootstrap.d/sys-devel.yml
+  - file: bootstrap.d/sys-kernel.yml
   - file: bootstrap.d/sys-libs.yml
 
 general:
@@ -50,6 +51,11 @@ sources:
         workdir: '@THIS_SOURCE_DIR@/gcc'
       - args: ['autoconf']
         workdir: '@THIS_SOURCE_DIR@/libstdc++-v3'
+
+  - name: libgcc-binaries
+    subdir: toolchain
+    git: 'https://github.com/LittleCodingFox/libgcc-binaries.git'
+    branch: 'trunk'
 
   - name: mlibc
     subdir: 'toolchain'
@@ -300,6 +306,12 @@ tools:
       - args: ['ninja', 'install']
         quiet: true
 
+  - name: libgcc-binaries
+    from_source: libgcc-binaries
+    install:
+      - args: ['mkdir', '-p', '@SYSROOT_DIR@/usr/libgcc-binaries']
+      - args: ['rsync', '-av', '--exclude=".*"', '@THIS_SOURCE_DIR@/.', '@SYSROOT_DIR@/usr/libgcc-binaries']
+
 packages:
   - name: binutils
     metadata:
@@ -402,9 +414,12 @@ packages:
     from_source: mlibc
     revision: 2
     implict_package: true
+    pkgs_required:
+      - linux-headers
     configure:
       - args:
         - 'meson'
+        - 'setup'
         - '--cross-file'
         - '@SOURCE_ROOT@/cross_file.txt'
         - '--prefix=/usr'
@@ -412,6 +427,7 @@ packages:
         - '-Ddisable_iconv_option=true'
         - '-Ddisable_intl_option=true'
         - '-Ddisable_crypt_option=true'
+        - '-Dlinux_kernel_headers=@SYSROOT_DIR@/usr/src/linux-headers'
         - '@THIS_SOURCE_DIR@'
     build:
       - args: ['ninja']
@@ -423,6 +439,7 @@ packages:
     from_source: mlibc
     revision: 2
     tools_required:
+      - tool: libgcc-binaries
       - tool: host-gcc
         stage_dependencies: [compiler]
     implict_package: true
@@ -436,10 +453,15 @@ packages:
         - '--prefix=/usr'
         - '--libdir=lib'
         - '--buildtype=debugoptimized'
+        - '-Dmlibc_no_headers=true'
         - '-Ddisable_iconv_option=true'
         - '-Ddisable_intl_option=true'
         - '-Ddisable_crypt_option=true'
+        - '-Dlinux_kernel_headers=@SYSROOT_DIR@/usr/src/linux-headers'
+        - '-Ddisable_libgcc_dependency=true'
         - '@THIS_SOURCE_DIR@'
+        environ:
+          LDFLAGS: '-Wl,@SYSROOT_DIR@/usr/libgcc-binaries/libgcc-x86_64.a'
     build:
       - args: ['ninja']
       - args: ['ninja', 'install']
