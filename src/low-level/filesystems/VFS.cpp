@@ -12,12 +12,12 @@ uint64_t VirtualFile::Length() const
 
 uint64_t VirtualFile::Read(void *buffer, uint64_t cursor, uint64_t size, int *error)
 {
-    return read != NULL ? read(buffer, cursor, size, error) : 0;
+    return read != NULL ? read(buffer, cursor, size, error, userdata) : 0;
 }
 
 uint64_t VirtualFile::Write(const void *buffer, uint64_t cursor, uint64_t size, int *error)
 {
-    return write != NULL ? write(buffer, cursor, size, error) : 0;
+    return write != NULL ? write(buffer, cursor, size, error, userdata) : 0;
 }
 
 VFS::VFS() : fileHandleCounter(0) {}
@@ -270,6 +270,12 @@ FILE_HANDLE VFS::OpenFile(const char *path, uint32_t flags, Process *currentProc
                 case FILE_HANDLE_SYMLINK:
 
                     stat.st_mode = S_IFLNK | S_IRWXU;
+
+                    break;
+
+                case FILE_HANDLE_SOCKET:
+
+                    stat.st_mode = S_IFSOCK | S_IRWXU;
 
                     break;
 

@@ -72,6 +72,18 @@ extern "C"
 #define SYSCALL_RMDIR               62
 #define SYSCALL_RENAME              63
 #define SYSCALL_FSTATAT             64
+#define SYSCALL_SOCKET              65
+#define SYSCALL_BIND                66
+#define SYSCALL_CONNECT             67
+#define SYSCALL_ACCEPT              68
+#define SYSCALL_LISTEN              69
+#define SYSCALL_RECVMSG             70
+#define SYSCALL_SENDMSG             71
+#define SYSCALL_SETSOCKOPT          72
+#define SYSCALL_GETSOCKOPT          73
+#define SYSCALL_SOCKETPAIR          74
+#define SYSCALL_SOCKNAME            75
+#define SYSCALL_PEERNAME            76
 
 static int64_t syscall(uint64_t id, ...)
 {

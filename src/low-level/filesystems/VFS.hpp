@@ -15,10 +15,11 @@ struct VirtualFile
 {
     frg::string<frg_allocator> path;
     FileHandleType type;
+    void *userdata;
 
     uint64_t (*length)();
-    uint64_t (*read)(void *buffer, uint64_t cursor, uint64_t size, int *error);
-    uint64_t (*write)(const void *buffer, uint64_t cursor, uint64_t size, int *error);
+    uint64_t (*read)(void *buffer, uint64_t cursor, uint64_t size, int *error, void *userdata);
+    uint64_t (*write)(const void *buffer, uint64_t cursor, uint64_t size, int *error, void *userdata);
 
     uint64_t Length() const;
     uint64_t Read(void *buffer, uint64_t cursor, uint64_t size, int *error);

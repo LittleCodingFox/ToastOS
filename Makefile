@@ -79,7 +79,8 @@ INCLUDEDIRS			= 	-Isrc \
 						-Iext-libs/liballoc/ \
 						-Ifrigg/include \
 						-Icxxshim/stage2/include \
-						-Ilai/include
+						-Ilai/include \
+						-Itoolchain/system-root/usr/include
 
 ASMFLAGS			= -g -F dwarf
 ASFLAGS 			= -nostdlib -fpic

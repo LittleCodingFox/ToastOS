@@ -34,7 +34,6 @@
 #include "madt/MADT.hpp"
 #include "lapic/LAPIC.hpp"
 #include "time/time.hpp"
-#include "net/net.hpp"
 
 PageTableManager pageTableManager;
 

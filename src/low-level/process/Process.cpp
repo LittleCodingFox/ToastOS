@@ -14,8 +14,6 @@
 #include "filesystems/VFS.hpp"
 #include "tss/tss.hpp"
 #include "Panic.hpp"
-#include "net/arp.hpp"
-#include "net/udp.hpp"
 
 int Process::AddFD(ProcessFDType type, IProcessFD *impl)
 {
@@ -154,27 +152,4 @@ void Process::DisposeFDs()
             }
         }
     }
-}
-
-bool Process::UDPLookup(uint16_t port, int *fd, ProcessFDSocket **socket)
-{
-    for(auto &item : fds)
-    {
-        if(item.isValid && item.impl != nullptr && item.type == ProcessFDType::Socket)
-        {
-            ProcessFDSocket *itemSocket = (ProcessFDSocket *)item.impl;
-
-            if(itemSocket->type == SOCK_DGRAM &&
-                itemSocket->protocol == IPPROTO_UDP &&
-                itemSocket->port == port)
-            {
-                *fd = item.fd;
-                *socket = itemSocket;
-
-                return true;
-            }
-        }
-    }
-
-    return false;
 }

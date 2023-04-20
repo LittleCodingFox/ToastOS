@@ -2,7 +2,7 @@
 
 static uint64_t next = 0;
 
-uint64_t random()
+long random()
 {
     next = next * 1103515245 + 12345;
 

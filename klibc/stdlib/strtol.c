@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
+int powi(int x, int y);
+
 long int strtol(const char* nptr, char** endptr, int base) {
     int sign = 1;
     char* s = (char*) nptr;

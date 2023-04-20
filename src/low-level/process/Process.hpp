@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <signal.h>
+#include "signalname.h"
 #include "elf/elf.hpp"
 #include "threading/lock.hpp"
 #include "interrupts/Interrupts.hpp"
@@ -160,7 +160,6 @@ struct Process
     void CloseFD(int fd);
     void IncreaseFDRefs();
     void DisposeFDs();
-    bool UDPLookup(uint16_t port, int *fd, ProcessFDSocket **socket);
 };
 
 struct ProcessControlBlock

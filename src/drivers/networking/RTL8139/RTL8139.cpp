@@ -4,8 +4,6 @@
 #include "mmio/MMIO.hpp"
 #include "interrupts/IDT.hpp"
 #include "paging/PageTableManager.hpp"
-#include "net/arp.hpp"
-#include "net/ethernet.hpp"
 
 #define RTL8139_VENDOR_ID 0x10ec
 #define RTL8139_DEVICE_ID 0x8139
@@ -167,12 +165,14 @@ namespace Drivers
 
         uint16_t RTL8139Driver::NetworkType()
         {
-            return ARP_HTYPE_ETHERNET;
+            //TODO
+            return 0; //ARP_HTYPE_ETHERNET;
         }
 
         void RTL8139Driver::ReceiveFrame(uint8_t *data, uint32_t length)
         {
-            EthernetReceiveFrame(this, data, length);
+            //TODO
+            //EthernetReceiveFrame(this, data, length);
         }
 
         uint8_t *RTL8139Driver::MAC()

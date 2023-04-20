@@ -3,7 +3,7 @@
 #include <ctype.h>
 #include <string.h>
 
-uint32_t strlen(const char* string) {
+size_t strlen(const char* string) {
     uint32_t result = 0;
 
     while (string[result])

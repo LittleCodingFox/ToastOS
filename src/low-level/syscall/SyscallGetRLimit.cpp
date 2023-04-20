@@ -4,7 +4,7 @@
 #include "errno.h"
 #include "signal.h"
 #include "user/UserAccess.hpp"
-#include "resource.h"
+#include "sys/resource.h"
 
 int64_t SyscallGetRLimit(InterruptStack *stack)
 {
