@@ -34,6 +34,19 @@ void VFS::RemoveVirtualFile(const string &path)
     //TODO
 }
 
+VirtualFile *VFS::FindVirtualFile(const string &path)
+{
+    for(auto &file : virtualFiles)
+    {
+        if(strcmp(file->path.data(), path) == 0)
+        {
+            return file;
+        }
+    }
+
+    return NULL;
+}
+
 VFS::FileHandle *VFS::GetFileHandle(FILE_HANDLE handle)
 {
     if(handle == INVALID_FILE_HANDLE || handle >= fileHandleCounter)

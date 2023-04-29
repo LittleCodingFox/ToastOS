@@ -1,6 +1,9 @@
 #include <string.h>
 #include <toast/graphics.h>
 #include <toast/input.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/un.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -13,6 +16,8 @@
 
 void DrawLogo(float delta);
 void DrawMain(float delta);
+
+int socketFD;
 
 int screenWidth = 0;
 int screenHeight = 0;
@@ -80,6 +85,41 @@ int main(int argc, char **argv)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
+    printf("Creating socket\n");
+
+    socketFD = socket(PF_UNIX, SOCK_DGRAM, 0);
+
+    if(socketFD < 0)
+    {
+        printf("Failed to create socket\n");
+
+        OSMesaMakeCurrent(NULL, NULL, GL_UNSIGNED_BYTE, 0, 0);
+
+        OSMesaDestroyContext(GLContext);
+
+        ToastSetGraphicsType(TOAST_GRAPHICS_TYPE_CONSOLE);
+
+        return 1;
+    }
+
+    struct sockaddr_un addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sun_family = AF_UNIX;
+    strcpy(addr.sun_path, "/tmp/dwm/socket");
+
+    if(bind(socketFD, (struct sockaddr *)&addr, sizeof(addr)) < 0)
+    {
+        printf("Failed to bind socket\n");
+
+        OSMesaMakeCurrent(NULL, NULL, GL_UNSIGNED_BYTE, 0, 0);
+
+        OSMesaDestroyContext(GLContext);
+
+        ToastSetGraphicsType(TOAST_GRAPHICS_TYPE_CONSOLE);
+
+        return 1;
+    }
+
     printf("Entering main loop!\n");
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -88,8 +128,30 @@ int main(int argc, char **argv)
 
     InputEvent inputEvent;
 
+    char buff[1024];
+
     for(;;)
     {
+        struct sockaddr_un from;
+        socklen_t fromLength = sizeof(from);
+        int length;
+
+        while((length = recvfrom(socketFD, buff, sizeof(buff), 0, (struct sockaddr *)&from, &fromLength)) > 0)
+        {
+            printf("received: %s\n", buff);
+
+            strcpy(buff, "OK");
+
+            int result = sendto(socketFD, buff, strlen(buff) + 1, 0, (struct sockaddr *)&from, fromLength);
+
+            if(result < 0)
+            {
+                printf("Error: sendto\n");
+
+                return 1;
+            }
+        }
+
         uint32_t current = GetTime();
 
         float delta = (current - t) / 1000.0f;

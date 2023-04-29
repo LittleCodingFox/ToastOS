@@ -10,7 +10,7 @@ int64_t SyscallSocket(InterruptStack *stack)
     int type = stack->rdx;
     int protocol = stack->rcx;
 
-#if KERNEL_DEBUG_SYSCALLS || 1
+#if KERNEL_DEBUG_SYSCALLS
     DEBUG_OUT("Syscall: socket domain %x type %x protocol %x", domain, type, protocol);
 #endif
 

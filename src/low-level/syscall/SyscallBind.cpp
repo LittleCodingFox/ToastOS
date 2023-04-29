@@ -25,23 +25,25 @@ int64_t SyscallBind(InterruptStack *stack)
 
     if(fd == NULL || fd->impl == NULL || fd->isValid == false)
     {
-        DEBUG_OUT("Invalid fd", 0);
         return -EBADF;
     }
 
     if(fd->type != ProcessFDType::Socket)
     {
-        DEBUG_OUT("Not socket", 0);
         return -ENOTSOCK;
     }
 
     if(addrlen != sizeof(sockaddr_un))
     {
-        DEBUG_OUT("Addrlen not valid", 0);
         return -EINVAL;
     }
 
     const sockaddr_un *sockdata = (const sockaddr_un *)addr_ptr;
+
+    if(sockdata == NULL || strlen(sockdata->sun_path) == 0)
+    {
+        return -EINVAL;
+    }
 
     int error;
 
@@ -51,8 +53,6 @@ int64_t SyscallBind(InterruptStack *stack)
     {
         vfs->CloseFile(handle);
 
-        DEBUG_OUT("file exists", 0);
-
         return -EINVAL;
     }
 
@@ -60,13 +60,18 @@ int64_t SyscallBind(InterruptStack *stack)
 
     memset(&file, 0, sizeof(VirtualFile));
 
-    file.path = sockdata->sun_path;
+    string path = sockdata->sun_path;
+
+    if(path[0] != '/')
+    {
+        path = process->info->cwd + "/" + path;
+    }
+
+    file.path = path;
     file.type = FILE_HANDLE_SOCKET;
     file.userdata = fd;
 
     vfs->AddVirtualFile(file);
-
-    DEBUG_OUT("Bind successful", 0);
 
     return 0;
 }
