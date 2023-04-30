@@ -12,6 +12,7 @@
 #include <GLES/gl.h>
 #include <GL/osmesa.h>
 
+#include "App.hpp"
 #include "Screen.hpp"
 
 void DrawLogo(float delta);
@@ -30,7 +31,7 @@ extern Screen logoScreen;
 
 extern Screen mainScreen;
 
-Screen *currentScreen = &logoScreen;
+Screen *currentScreen = &mainScreen;
 
 uint32_t GetTime()
 {
@@ -43,6 +44,36 @@ uint32_t GetTime()
 
 int main(int argc, char **argv)
 {
+    printf("Creating socket\n");
+
+    socketFD = socket(PF_UNIX, SOCK_DGRAM, 0);
+
+    if(socketFD < 0)
+    {
+        printf("Failed to create socket\n");
+
+        return 1;
+    }
+
+    struct sockaddr_un addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sun_family = AF_UNIX;
+    strcpy(addr.sun_path, "/tmp/dwm/socket");
+
+    if(bind(socketFD, (struct sockaddr *)&addr, sizeof(addr)) < 0)
+    {
+        printf("Failed to bind socket\n");
+
+        return 1;
+    }
+
+    EnumerateApps();
+
+    for(auto &app : *apps.get())
+    {
+        printf("Found App: %s (icon: %s, exe: %s)\n", app.name.data(), app.icon.data(), app.exe.data());
+    }
+
     printf("Setting graphics type to GUI\n");
 
     ToastSetGraphicsType(TOAST_GRAPHICS_TYPE_GUI);
@@ -85,41 +116,6 @@ int main(int argc, char **argv)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    printf("Creating socket\n");
-
-    socketFD = socket(PF_UNIX, SOCK_DGRAM, 0);
-
-    if(socketFD < 0)
-    {
-        printf("Failed to create socket\n");
-
-        OSMesaMakeCurrent(NULL, NULL, GL_UNSIGNED_BYTE, 0, 0);
-
-        OSMesaDestroyContext(GLContext);
-
-        ToastSetGraphicsType(TOAST_GRAPHICS_TYPE_CONSOLE);
-
-        return 1;
-    }
-
-    struct sockaddr_un addr;
-    memset(&addr, 0, sizeof(addr));
-    addr.sun_family = AF_UNIX;
-    strcpy(addr.sun_path, "/tmp/dwm/socket");
-
-    if(bind(socketFD, (struct sockaddr *)&addr, sizeof(addr)) < 0)
-    {
-        printf("Failed to bind socket\n");
-
-        OSMesaMakeCurrent(NULL, NULL, GL_UNSIGNED_BYTE, 0, 0);
-
-        OSMesaDestroyContext(GLContext);
-
-        ToastSetGraphicsType(TOAST_GRAPHICS_TYPE_CONSOLE);
-
-        return 1;
-    }
-
     printf("Entering main loop!\n");
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -132,26 +128,6 @@ int main(int argc, char **argv)
 
     for(;;)
     {
-        struct sockaddr_un from;
-        socklen_t fromLength = sizeof(from);
-        int length;
-
-        while((length = recvfrom(socketFD, buff, sizeof(buff), 0, (struct sockaddr *)&from, &fromLength)) > 0)
-        {
-            printf("received: %s\n", buff);
-
-            strcpy(buff, "OK");
-
-            int result = sendto(socketFD, buff, strlen(buff) + 1, 0, (struct sockaddr *)&from, fromLength);
-
-            if(result < 0)
-            {
-                printf("Error: sendto\n");
-
-                return 1;
-            }
-        }
-
         uint32_t current = GetTime();
 
         float delta = (current - t) / 1000.0f;

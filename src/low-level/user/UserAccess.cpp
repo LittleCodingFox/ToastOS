@@ -1,5 +1,7 @@
 #include "UserAccess.hpp"
 #include "paging/PageTableManager.hpp"
+#include "debug.hpp"
+#include "stacktrace/stacktrace.hpp"
 
 [[gnu::no_sanitize_address]] bool SanitizeUserPointer(const void *userPtr)
 {

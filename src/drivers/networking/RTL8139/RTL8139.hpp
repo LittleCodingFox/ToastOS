@@ -5,6 +5,7 @@
 #include "pci/PCI.hpp"
 #include "devicemanager/NetworkDevice.hpp"
 #include "interrupts/Interrupts.hpp"
+#include "debug.hpp"
 
 namespace Drivers
 {

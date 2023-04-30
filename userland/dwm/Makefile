@@ -14,7 +14,7 @@ CSRC			= $(call rwildcard,$(SRCDIR),*.cpp)
 
 COBJECTS		= $(CSRC:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
-INCLUDEDIRS		= -I../../toolchain/system-root/usr/include -I../include
+INCLUDEDIRS		= -I../../toolchain/system-root/usr/include -I../include -I../../frigg/include -I../../klibc
 
 CFLAGS			= $(INCLUDEDIRS) -fshort-wchar -Wall -O0 -g -fno-omit-frame-pointer \
 	-fno-exceptions -fno-stack-protector -mno-3dnow \
@@ -25,7 +25,7 @@ LDFLAGS			= -L../../toolchain/pkg-builds/mlibc/ \
 				  -L../../dist/usr/lib \
 				  -L../../toolchain/system-root/usr/lib \
 				  -L../../toolchain/tools/host-gcc/x86_64-toast/lib64 \
-				  -lToastGraphics -lToastInput -lGLESv1_CM -lOSMesa -lc -lstdc++ -lgcc_s -Map=linker.map
+				  -lToastGraphics -lToastInput -lGLESv1_CM -lOSMesa -lstdc++ -lc -lgcc_s -Map=linker.map
 
 default: $(PROGRAM_NAME)
 
@@ -34,7 +34,7 @@ makedirs:
 
 $(PROGRAM_NAME): makedirs $(COBJECTS)
 	mkdir -p $(BINDIR)
-	$(LD) $(COBJECTS) ../../toolchain/packages/mlibc/usr/lib/crt0.o $(LDFLAGS) -o $(BINDIR)/$(PROGRAM_NAME)
+	$(LD) $(COBJECTS) $(LDFLAGS) ../../toolchain/packages/mlibc/usr/lib/crt0.o -o $(BINDIR)/$(PROGRAM_NAME)
 	awk '$$1 ~ /0x[0-9a-f]{16}/ {print substr($$1, 3), $$2}' linker.map > symbols.map
 	rm linker.map
 

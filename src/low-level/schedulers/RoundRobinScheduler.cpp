@@ -5,6 +5,7 @@
 #include "registers/Registers.hpp"
 #include "Panic.hpp"
 #include "smp/SMP.hpp"
+#include "debug.hpp"
 
 ProcessControlBlock *RoundRobinScheduler::CurrentThread()
 {

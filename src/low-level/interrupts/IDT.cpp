@@ -2,6 +2,7 @@
 #include "Interrupts.hpp"
 #include "gdt/gdt.hpp"
 #include "Panic.hpp"
+#include "../threading/lock.hpp"
 #include <string.h>
 
 struct PACKED IDTR

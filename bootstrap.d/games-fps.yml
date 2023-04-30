@@ -18,4 +18,5 @@ packages:
         '@THIS_COLLECT_DIR@/apps/doom']
       - args: ['unzip', '@THIS_COLLECT_DIR@/apps/doom/Doom (v1.9) (Demo).zip', '-d', '@THIS_COLLECT_DIR@/apps/doom']
       - args: ['rm', '@THIS_COLLECT_DIR@/apps/doom/Doom (v1.9) (Demo).zip']
+      - args: ['wget', 'https://archive.org/download/doomicon/Doom%20%28classic%29.png', '-O', '@THIS_COLLECT_DIR@/apps/doom/icon.png']
       - args: ['make', '-C', '@THIS_SOURCE_DIR@', '-f', '@THIS_SOURCE_DIR@/Makefile.toast', 'DESTDIR=@THIS_COLLECT_DIR@', '-j@PARALLELISM@']

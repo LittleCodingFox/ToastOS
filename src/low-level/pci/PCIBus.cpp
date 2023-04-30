@@ -1,5 +1,6 @@
 #include "PCI.hpp"
 #include "ports/Ports.hpp"
+#include "debug.hpp"
 #include <frg/unique.hpp>
 
 box<vector<frg::unique_ptr<PCIDevice, frg_allocator>>> devices;

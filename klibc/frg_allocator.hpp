@@ -1,8 +1,6 @@
 #pragma once
 
 #include <stdlib.h>
-#include "../src/low-level/debug.hpp"
-#include "../src/low-level/stacktrace/stacktrace.hpp"
 
 struct frg_allocator
 {

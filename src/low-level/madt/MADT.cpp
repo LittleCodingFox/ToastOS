@@ -1,6 +1,7 @@
 #include "MADT.hpp"
 #include "acpi/ACPI.hpp"
 #include "Panic.hpp"
+#include "debug.hpp"
 
 box<vector<MADTLAPIC *>> MADTLAPICs;
 box<vector<MADTIOAPIC *>> MADTIOAPICs;
