@@ -33,13 +33,19 @@ protected:
 
     vector<SocketMessage *> messages;
     SocketPeer peer;
+    vector<SocketPeer *> pendingPeers;
 public:
     uint32_t domain;
     uint32_t type;
     uint32_t protocol;
     uint16_t port;
 
-    ISocket() : domain(0), type(0), protocol(0), port(0) {}
+    ISocket();
+    virtual ~ISocket();
+
+    ISocket *PendingPeer();
+    void AddPendingPeer(ISocket *peer);
+    void SetPeer(ISocket *peer);
 
     virtual bool HasMessage();
     virtual vector<uint8_t> GetMessage(bool peek);

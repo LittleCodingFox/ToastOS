@@ -2,8 +2,14 @@
 #include "process/Process.hpp"
 #include "debug.hpp"
 #include "errno.h"
-#include "abi-bits/socket.h"
-#include "sys/un.h"
+#include "net/UnixSocket.hpp"
+#include "net/SocketManager.hpp"
+
+struct UnixConnectUserdata
+{
+    string path;
+    UnixSocket *socket;
+};
 
 int64_t SyscallConnect(InterruptStack *stack)
 {
@@ -62,16 +68,38 @@ int64_t SyscallConnect(InterruptStack *stack)
             return -EHOSTUNREACH;
         }
 
-        /*
-        auto otherSocket = (ProcessFDSocket *)file->userdata;
+        UnixConnectUserdata userdata;
 
-        otherSocket->AddPendingPeer(fd);
+        userdata.path = file->path;
+        userdata.socket = NULL;
+
+        socketManager->IterateSockets(PF_UNIX, [](ISocket *socket, void *userdata) {
+
+            auto u = (UnixConnectUserdata *)userdata;
+            auto unixSocket = (UnixSocket *)socket;
+
+            if(unixSocket->path == u->path)
+            {
+                u->socket = unixSocket;
+            }
+        }, &userdata);
+
+        if(userdata.socket == NULL)
+        {
+            return -ECONNREFUSED;
+        }
+
+        userdata.socket->AddPendingPeer(socket->socket);
 
         while(socket->Connected() == false && socket->ConnectionRefused() == false)
         {
             ProcessYield();
         }
-        */
+
+        if(socket->ConnectionRefused())
+        {
+            return -ECONNREFUSED;
+        }
 
         return 0;
     }

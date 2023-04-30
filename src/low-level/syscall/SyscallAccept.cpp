@@ -2,8 +2,8 @@
 #include "process/Process.hpp"
 #include "debug.hpp"
 #include "errno.h"
-#include "abi-bits/socket.h"
-#include "sys/un.h"
+#include "net/Socket.hpp"
+#include "net/UnixSocket.hpp"
 
 int64_t SyscallAccept(InterruptStack *stack)
 {
@@ -39,20 +39,32 @@ int64_t SyscallAccept(InterruptStack *stack)
 
     auto socket = (ProcessFDSocket *)fd->impl;
 
-    (void)socket;
-
-    /*
     for(;;)
     {
-        auto peer = socket->PendingPeer();
+        auto peer = socket->socket->PendingPeer();
 
         if(peer != NULL)
         {
-            peer = socket->AddPeer(peer->fd);
+            ISocket *newSocket = NULL;
 
-            ((ProcessFDSocket *)peer->fd->impl)->AddPeer(fd);
+            switch(socket->socket->domain)
+            {
+                case AF_UNIX:
+                
+                    newSocket = new UnixSocket(peer->type, peer->protocol);
 
-            return process->info->AddFD(ProcessFDType::Socket, peer->fd);
+                    break;
+            }
+
+            if(newSocket == NULL)
+            {
+                return -EINVAL;
+            }
+
+            newSocket->SetPeer(peer);
+            peer->SetPeer(newSocket);
+
+            return process->info->AddFD(ProcessFDType::Socket, new ProcessFDSocket(newSocket));
         }
 
         if(socket->IsNonBlocking())
@@ -62,7 +74,6 @@ int64_t SyscallAccept(InterruptStack *stack)
 
         ProcessYield();
     }
-    */
 
    return 0;
 }

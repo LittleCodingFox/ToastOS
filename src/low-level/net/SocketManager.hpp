@@ -20,8 +20,8 @@ public:
     void AddSocket(ISocket *socket);
     void RemoveSocket(ISocket *socket);
 
-    void IterateSockets(void (*callback)(ISocket *socket));
-    void IterateSockets(uint32_t domain, void (*callback)(ISocket *socket));
+    void IterateSockets(void (*callback)(ISocket *socket, void *userdata), void *userdata);
+    void IterateSockets(uint32_t domain, void (*callback)(ISocket *socket, void *userdata), void *userdata);
 };
 
 extern box<SocketManager> socketManager;

@@ -34,6 +34,7 @@
 #include "madt/MADT.hpp"
 #include "lapic/LAPIC.hpp"
 #include "time/time.hpp"
+#include "net/SocketManager.hpp"
 
 PageTableManager pageTableManager;
 
@@ -409,6 +410,8 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
     console = vtconsole(consoleWidth, consoleHeight, PaintHandler, CursorHandler);
 
     globalInputSystem.initialize();
+
+    socketManager.initialize();
 
     vfs.initialize();
 

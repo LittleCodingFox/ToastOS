@@ -1,4 +1,63 @@
 #include "Socket.hpp"
+#include "SocketManager.hpp"
+
+ISocket::ISocket()
+{
+    socketManager->AddSocket(this);
+}
+
+ISocket::~ISocket()
+{
+    socketManager->RemoveSocket(this);
+}
+
+ISocket *ISocket::PendingPeer()
+{
+    ScopedLock lock(socketLock);
+
+    for(auto &peer : pendingPeers)
+    {
+        if(peer->isValid)
+        {
+            peer->isValid = false;
+
+            return peer->peer;
+        }
+    }
+
+    return NULL;
+}
+
+void ISocket::AddPendingPeer(ISocket *in)
+{
+    ScopedLock lock(socketLock);
+
+    for(auto &peer : pendingPeers)
+    {
+        if(peer->isValid == false)
+        {
+            peer->isValid = true;
+            peer->peer = in;
+
+            return;
+        }
+    }
+
+    auto peer = new SocketPeer();
+
+    peer->isValid = true;
+    peer->peer = in;
+
+    pendingPeers.push_back(peer);
+}
+
+void ISocket::SetPeer(ISocket *in)
+{
+    ScopedLock lock(socketLock);
+
+    peer.isValid = true;
+    peer.peer = in;
+}
 
 bool ISocket::HasMessage()
 {

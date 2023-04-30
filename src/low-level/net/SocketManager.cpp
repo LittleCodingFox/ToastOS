@@ -38,7 +38,7 @@ void SocketManager::RemoveSocket(ISocket *socket)
     }
 }
 
-void SocketManager::IterateSockets(void (*callback)(ISocket *socket))
+void SocketManager::IterateSockets(void (*callback)(ISocket *socket, void *userdata), void *userdata)
 {
     ScopedLock lock(socketLock);
 
@@ -46,12 +46,12 @@ void SocketManager::IterateSockets(void (*callback)(ISocket *socket))
     {
         if(info->isValid)
         {
-            callback(info->socket);
+            callback(info->socket, userdata);
         }
     }
 }
 
-void SocketManager::IterateSockets(uint32_t domain, void (*callback)(ISocket *socket))
+void SocketManager::IterateSockets(uint32_t domain, void (*callback)(ISocket *socket, void *userdata), void *userdata)
 {
     ScopedLock lock(socketLock);
 
@@ -59,7 +59,7 @@ void SocketManager::IterateSockets(uint32_t domain, void (*callback)(ISocket *so
     {
         if(info->isValid && info->socket->domain == domain)
         {
-            callback(info->socket);
+            callback(info->socket, userdata);
         }
     }
 }
