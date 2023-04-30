@@ -35,14 +35,40 @@ int64_t SyscallRecvMsg(InterruptStack *stack)
     }
 
     auto socket = (ProcessFDSocket *)fd->impl;
+    size_t length = 0;
+
+    vector<uint8_t> message;
 
     if((flags & MSG_PEEK) == MSG_PEEK)
     {
-        return socket->PeekMessage()
+        if(socket->HasMessage())
+        {
+            message = socket->GetMessage(true);
+        }
     }
-
-    if(socket->IsNonBlocking() && socket->HasMessage)
+    else
     {
+        if(socket->IsNonBlocking() && socket->HasMessage() == false)
+        {
+            return -EWOULDBLOCK;
+        }
 
+        while(socket->HasMessage() == false && socket->Connected())
+        {
+            ProcessYield();
+        }
+
+        message = socket->GetMessage(false);
     }
+
+    length = message.size() < hdr->msg_iov->iov_len ? message.size() : hdr->msg_iov->iov_len;
+
+    if(length > 0)
+    {
+        memcpy(hdr->msg_iov->iov_base, message.data(), length);
+
+        return length;
+    }
+
+    return 0;
 }

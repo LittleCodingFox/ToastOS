@@ -2,7 +2,8 @@
 #include "process/Process.hpp"
 #include "debug.hpp"
 #include "errno.h"
-#include "abi-bits/socket.h"
+#include "net/Socket.hpp"
+#include "net/UnixSocket.hpp"
 
 int64_t SyscallSocket(InterruptStack *stack)
 {
@@ -21,12 +22,14 @@ int64_t SyscallSocket(InterruptStack *stack)
         return 0;
     }
 
-    if(domain != PF_UNIX || type != SOCK_DGRAM)
+    if(domain != PF_UNIX || type != SOCK_DGRAM || protocol != 0)
     {
         return -EINVAL;
     }
 
-    auto fd = process->info->AddFD(ProcessFDType::Socket, new ProcessFDSocket(domain, type, protocol, 0));
+    auto socket = new UnixSocket(type, protocol);
+
+    auto fd = process->info->AddFD(ProcessFDType::Socket, new ProcessFDSocket(socket));
 
     return fd;
 }

@@ -39,6 +39,9 @@ int64_t SyscallAccept(InterruptStack *stack)
 
     auto socket = (ProcessFDSocket *)fd->impl;
 
+    (void)socket;
+
+    /*
     for(;;)
     {
         auto peer = socket->PendingPeer();
@@ -59,4 +62,7 @@ int64_t SyscallAccept(InterruptStack *stack)
 
         ProcessYield();
     }
+    */
+
+   return 0;
 }

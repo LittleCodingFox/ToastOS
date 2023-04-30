@@ -38,7 +38,7 @@ VirtualFile *VFS::FindVirtualFile(const string &path)
 {
     for(auto &file : virtualFiles)
     {
-        if(strcmp(file->path.data(), path) == 0)
+        if(file->path == path)
         {
             return file;
         }

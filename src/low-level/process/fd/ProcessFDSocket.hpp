@@ -2,57 +2,16 @@
 #include "filesystems/VFS.hpp"
 #include "fcntl.h"
 #include "errno.h"
+#include "net/Socket.hpp"
 
 class ProcessFDSocket : public IProcessFD
 {
-private:
-    struct Peer
-    {
-        bool isValid;
-        ProcessFD *fd;
-
-        bool Closed();
-
-        Peer() : isValid(false), fd(NULL) {}
-    };
-
-    struct Message
-    {
-        vector<uint8_t> buffer;
-        bool isValid;
-        Peer *peer;
-
-        Message() : isValid(false), peer(NULL) {}
-    };
-
-    vector<Peer *> peers;
-    vector<Message *> messages;
-    vector<Peer *> pendingPeers;
-
-    bool closed;
-    bool connectionRefused;
-    bool nonBlocking;
-
-    AtomicLock socketLock;
 public:
-    uint32_t domain;
-    uint32_t type;
-    uint32_t protocol;
-    uint16_t port;
+    ISocket *socket;
 
-    ProcessFDSocket();
-
-    ProcessFDSocket(uint32_t domain, uint32_t type, uint32_t protocol, uint16_t port = 0);
+    ProcessFDSocket(ISocket *socket);
 
     bool IsNonBlocking();
-
-    void AddPendingPeer(ProcessFD *fd);
-
-    Peer *PendingPeer();
-
-    Peer *AddPeer(ProcessFD *fd);
-
-    Peer *FindPeer(ProcessFDSocket *socket);
 
     bool Connected();
 
@@ -60,13 +19,11 @@ public:
 
     void RefuseConnection();
 
-    void EnqueueMessage(const void *buffer, uint64_t length, Peer *peer);
+    void EnqueueMessage(const void *buffer, size_t length);
 
-    bool HasMessage(Peer *peer);
+    bool HasMessage();
 
-    vector<uint8_t> GetMessage(Peer *peer);
-
-    vector<uint8_t> PeekMessage(Peer *peer);
+    vector<uint8_t> GetMessage(bool peek);
 
     virtual void Close() override;
 

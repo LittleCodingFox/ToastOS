@@ -33,45 +33,12 @@ int64_t SyscallBind(InterruptStack *stack)
         return -ENOTSOCK;
     }
 
-    if(addrlen != sizeof(sockaddr_un))
+    auto socket = (ProcessFDSocket *)fd->impl;
+
+    if(socket != NULL && socket->socket != NULL)
     {
-        return -EINVAL;
+        return socket->socket->Bind(addr_ptr, addrlen, process->info);
     }
-
-    const sockaddr_un *sockdata = (const sockaddr_un *)addr_ptr;
-
-    if(sockdata == NULL || strlen(sockdata->sun_path) == 0)
-    {
-        return -EINVAL;
-    }
-
-    int error;
-
-    auto handle = vfs->OpenFile(sockdata->sun_path, O_RDONLY, process->info, &error);
-
-    if(handle != INVALID_FILE_HANDLE)
-    {
-        vfs->CloseFile(handle);
-
-        return -EINVAL;
-    }
-
-    VirtualFile file;
-
-    memset(&file, 0, sizeof(VirtualFile));
-
-    string path = sockdata->sun_path;
-
-    if(path[0] != '/')
-    {
-        path = process->info->cwd + "/" + path;
-    }
-
-    file.path = path;
-    file.type = FILE_HANDLE_SOCKET;
-    file.userdata = fd;
-
-    vfs->AddVirtualFile(file);
 
     return 0;
 }

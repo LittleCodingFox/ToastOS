@@ -3,383 +3,134 @@
 #include "filesystems/VFS.hpp"
 #include "errno.h"
 
-extern "C" void ProcessYield();
-
-bool ProcessFDSocket::Peer::Closed()
-{
-    return isValid == false ||
-        fd == NULL ||
-        fd->type != ProcessFDType::Socket ||
-        fd->isValid == false ||
-        ((ProcessFDSocket *)fd->impl)->closed;
-}
-
-ProcessFDSocket::ProcessFDSocket() : closed(false), connectionRefused(false), nonBlocking(false), domain(0), type(0), protocol(0), port(0) {}
-
-ProcessFDSocket::ProcessFDSocket(uint32_t domain, uint32_t type, uint32_t protocol, uint16_t port) :
-    closed(false), connectionRefused(false), nonBlocking(false), domain(domain), type(type), protocol(protocol), port(port) {}
+ProcessFDSocket::ProcessFDSocket(ISocket *socket) : socket(socket) {}
 
 bool ProcessFDSocket::IsNonBlocking()
 {
-    ScopedLock lock(socketLock);
-
-    return nonBlocking;
-}
-
-ProcessFDSocket::Peer *ProcessFDSocket::AddPeer(ProcessFD *fd)
-{
-    ScopedLock lock(socketLock);
-
-    for(auto &pending : pendingPeers)
+    if(socket == NULL)
     {
-        if(pending->isValid && pending->fd == fd)
-        {
-            pending->isValid = false;
-
-            break;
-        }
+        return true;
     }
 
-    auto peer = new Peer();
-
-    peer->isValid = true;
-    peer->fd = fd;
-
-    peers.push_back(peer);
-
-    return peer;
-}
-
-void ProcessFDSocket::AddPendingPeer(ProcessFD *fd)
-{
-    if(fd == NULL || fd->isValid == false || fd->type != ProcessFDType::Socket)
-    {
-        return;
-    }
-
-    ScopedLock lock(socketLock);
-
-    for(auto &peer : peers)
-    {
-        if(peer->isValid && peer->fd == fd)
-        {
-            return;
-        }
-    }
-
-    for(auto &pending : pendingPeers)
-    {
-        if(pending->isValid && pending->fd == fd)
-        {
-            return;
-        }
-    }
-
-    for(auto &pending : pendingPeers)
-    {
-        if(pending->isValid == false)
-        {
-            pending->isValid = true;
-            pending->fd = fd;
-
-            return;
-        }
-    }
-
-    auto peer = new Peer();
-
-    peer->isValid = true;
-    peer->fd = fd;
-
-    pendingPeers.push_back(peer);
-}
-
-ProcessFDSocket::Peer *ProcessFDSocket::PendingPeer()
-{
-    ScopedLock lock(socketLock);
-
-    for(auto &pending : pendingPeers)
-    {
-        if(pending != NULL && pending->isValid && pending->fd->isValid)
-        {
-            return pending;
-        }
-    }
-
-    return NULL;
+    return socket->IsNonBlocking();
 }
 
 void ProcessFDSocket::RefuseConnection()
 {
-    ScopedLock lock(socketLock);
-
-    connectionRefused = true;
-}
-
-bool ProcessFDSocket::ConnectionRefused()
-{
-    ScopedLock lock(socketLock);
-
-    return connectionRefused;
-}
-
-bool ProcessFDSocket::Connected()
-{
-    ScopedLock lock(socketLock);
-
-    for(auto &peer : peers)
-    {
-        if(peer->isValid && peer->Closed() == false)
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-ProcessFDSocket::Peer *ProcessFDSocket::FindPeer(ProcessFDSocket *socket)
-{
-    ScopedLock lock(socketLock);
-
-    for(auto &peer : peers)
-    {
-        if(peer->isValid && peer->fd->isValid && peer->fd->impl == socket)
-        {
-            return peer;
-        }
-    }
-
-    return NULL;
-}
-
-bool ProcessFDSocket::HasMessage(Peer *peer)
-{
-    ScopedLock lock(socketLock);
-
-    if(peer == NULL || peer->isValid == false || peer->Closed())
-    {
-        return false;
-    }
-
-    for(auto &message : messages)
-    {
-        if(message->isValid && message->peer == peer)
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-void ProcessFDSocket::EnqueueMessage(const void *buffer, uint64_t length, Peer *peer)
-{
-    ScopedLock lock(socketLock);
-
-    if(peer == NULL || peer->isValid == false || peer->Closed())
+    if(socket == NULL)
     {
         return;
     }
 
-    for(auto &message : messages)
-    {
-        if(message->isValid == false)
-        {
-            message->isValid = true;
-            message->peer = peer;
-
-            message->buffer.resize(length);
-
-            memcpy(message->buffer.data(), buffer, length);
-
-            return;
-        }
-    }
-
-    auto message = new Message();
-
-    message->isValid = true;
-    message->peer = peer;
-    message->buffer.resize(length);
-
-    memcpy(message->buffer.data(), buffer, length);
-
-    messages.push_back(message);
+    socket->RefuseConnection();
 }
 
-vector<uint8_t> ProcessFDSocket::GetMessage(Peer *peer)
+bool ProcessFDSocket::ConnectionRefused()
 {
-    ScopedLock lock(socketLock);
+    if(socket == NULL)
+    {
+        return true;
+    }
 
-    if(peer == NULL || peer->isValid == false || peer->Closed())
+    return socket->ConnectionRefused();
+}
+
+bool ProcessFDSocket::Connected()
+{
+    if(socket == NULL)
+    {
+        return false;
+    }
+
+    return socket->IsConnected();
+}
+
+bool ProcessFDSocket::HasMessage()
+{
+    if(socket == NULL)
+    {
+        return false;
+    }
+
+    return socket->HasMessage();
+}
+
+void ProcessFDSocket::EnqueueMessage(const void *buffer, size_t length)
+{
+    if(socket == NULL)
+    {
+        return;
+    }
+
+    socket->EnqueueMessage(buffer, length);
+}
+
+vector<uint8_t> ProcessFDSocket::GetMessage(bool peek)
+{
+    if(socket == NULL)
     {
         return vector<uint8_t>();
     }
 
-    for(auto &message : messages)
-    {
-        if(message->isValid && message->peer == peer)
-        {
-            message->isValid = false;
-
-            auto outVector = message->buffer;
-
-            message->buffer.clear();
-
-            return outVector;
-        }
-    }
-
-    return vector<uint8_t>();
-}
-
-vector<uint8_t> ProcessFDSocket::PeekMessage(Peer *peer)
-{
-    ScopedLock lock(socketLock);
-
-    if(peer == NULL || peer->isValid == false || peer->Closed())
-    {
-        return vector<uint8_t>();
-    }
-
-    for(auto &message : messages)
-    {
-        if(message->isValid && message->peer == peer)
-        {
-            return message->buffer;
-        }
-    }
-
-    return vector<uint8_t>();
+    return socket->GetMessage(peek);
 }
 
 void ProcessFDSocket::Close()
 {
-    ScopedLock lock(socketLock);
-
-    closed = true;
-
-    for(auto &peer : peers)
+    if(socket == NULL)
     {
-        if(peer->isValid && peer->fd->isValid && peer->fd->type == ProcessFDType::Socket)
-        {
-            ((ProcessFDSocket *)peer->fd->impl)->closed = true;
-        }
+        return;
     }
 
-    for(auto &message : messages)
-    {
-        delete message;
-    }
+    socket->Close();
 
-    messages.clear();
+    socket = NULL;
 }
 
 uint64_t ProcessFDSocket::Read(void *buffer, uint64_t length, int *error)
 {
-    socketLock.Lock();
-
-    if(peers.size() != 1)
+    if(socket == NULL)
     {
-        socketLock.Unlock();
-
-        *error = ENOTCONN;
-
         return 0;
     }
 
-    auto peer = peers[0];
-
-    if(peer == NULL || peer->isValid == false || closed || peer->Closed())
+    if(socket->IsNonBlocking() && socket->HasMessage() == false)
     {
-        socketLock.Unlock();
-
-        *error = ENOTCONN;
-
-        return 0;
-    }
-
-    if(nonBlocking && HasMessage(peer) == false)
-    {
-        socketLock.Unlock();
-
         *error = EWOULDBLOCK;
 
         return 0;
     }
 
-    socketLock.Unlock();
-
-    for(;;)
+    while(socket != NULL && socket->HasMessage() == false && socket->Closed() == false)
     {
-        socketLock.Lock();
+        ProcessYield();
 
-        if(peer->Closed())
+        if(socket != NULL && socket->HasMessage())
         {
-            socketLock.Unlock();
+            auto message = socket->GetMessage(false);
 
-            return 0;
+            length = message.size() < length ? message.size() : length;
+
+            if(length > 0)
+            {
+                memcpy(buffer, message.data(), length);
+            }
+
+            return length;
         }
-
-        if(HasMessage(peer) == false)
-        {
-            socketLock.Unlock();
-
-            ProcessYield();
-
-            continue;
-        }
-
-        break;            
     }
 
-    socketLock.Unlock();
-
-    auto message = GetMessage(peer);
-
-    if(message.size() < length)
-    {
-        length = message.size();
-    }
-
-    memcpy(buffer, message.data(), length);
-
-    return length;
+    return 0;
 }
 
 uint64_t ProcessFDSocket::Write(const void *buffer, uint64_t length, int *error)
 {
-    ScopedLock lock(socketLock);
-
-    if(peers.size() != 1)
+    if(socket == NULL)
     {
-        *error = ENOTCONN;
-
         return 0;
     }
 
-    auto peer = peers[0];
-
-    if(peer == NULL || peer->isValid == false || closed || peer->Closed())
-    {
-        *error = ENOTCONN;
-
-        return 0;
-    }
-
-    auto otherSocket = (ProcessFDSocket *)peer->fd->impl;
-
-    auto otherPeer = otherSocket->FindPeer(this);
-
-    if(otherPeer == NULL || otherPeer->Closed())
-    {
-        *error = ENOTCONN;
-
-        return 0;
-    }
-
-    otherSocket->EnqueueMessage(buffer, length, otherPeer);
+    socket->EnqueueMessage(buffer, length);
 
     return length;
 }

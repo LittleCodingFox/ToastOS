@@ -36,7 +36,12 @@ int64_t SyscallConnect(InterruptStack *stack)
 
     auto socket = (ProcessFDSocket *)fd->impl;
 
-    if(socket->domain == PF_UNIX)
+    if(socket->socket == NULL)
+    {
+        return -EBADF;
+    }
+
+    if(socket->socket->domain == PF_UNIX)
     {
         if(addressLength != sizeof(sockaddr_un))
         {
@@ -57,6 +62,7 @@ int64_t SyscallConnect(InterruptStack *stack)
             return -EHOSTUNREACH;
         }
 
+        /*
         auto otherSocket = (ProcessFDSocket *)file->userdata;
 
         otherSocket->AddPendingPeer(fd);
@@ -65,6 +71,7 @@ int64_t SyscallConnect(InterruptStack *stack)
         {
             ProcessYield();
         }
+        */
 
         return 0;
     }
