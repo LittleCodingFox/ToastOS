@@ -94,6 +94,7 @@ LDFLAGS				= -T $(SRCDIR)/link.ld -static -Bsymbolic -nostdlib -Map=linker.map -
 QEMU_FLAGS			= 
 QEMU_EXTRA_FLAGS 	= 
 CFLAGS_KASAN		= -fsanitize=kernel-address -mllvm -asan-mapping-offset=0xdfffe00000000000 -mllvm -asan-globals=false
+USERLAND			= $(filter-out userland/obj, $(filter-out userland/include, $(shell find userland/* -maxdepth 0 -type d)))
 
 SMP					?= 2
 
@@ -209,8 +210,9 @@ iso-linux:
 	sh $(MAKEISOLINUX)
 
 userland: libc
-	@for path in $(shell find userland/* -maxdepth 0 -type d); do \
-		$(MAKE) -C $$path; \
+	for path in $(USERLAND); do \
+		echo $$path; \
+		$(MAKE) -C $$path || exit 1; \
 	done
 
 linux: kernel userland iso-linux
@@ -266,4 +268,7 @@ clean:
 	rm -Rf obj
 	rm -Rf userland/obj
 
-.PHONY: all clean run-linux makedirs debug-linux userland frigg bootstrap clean-bootstreap
+clean-userland:
+	rm -Rf userland/obj
+
+.PHONY: all clean run-linux makedirs debug-linux userland clean-userland frigg bootstrap clean-bootstreap

@@ -26,6 +26,7 @@ int screenHeight = 0;
 int mouseX = 0;
 int mouseY = 0;
 int mouseButtons = 0;
+bool mouseVisible = true;
 
 extern Screen logoScreen;
 

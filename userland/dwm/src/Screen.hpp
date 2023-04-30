@@ -7,6 +7,7 @@ extern int screenHeight;
 extern int mouseX;
 extern int mouseY;
 extern int mouseButtons;
+extern bool mouseVisible;
 
 namespace ScreenType
 {
