@@ -63,25 +63,23 @@ int main(int argc, char **argv)
             return 1;
         }
 
-        strcpy(buff, "COK");
-
-        send(fd, buff, strlen(buff) + 1, 0);
-
-        int length;
-
-        while((length = recv(fd, buff, sizeof(buff), 0) > 0))
+        for(;;)
         {
-            printf("Client received: %s\n", buff);
+            printf("Input Client Message: ");
 
-            strcpy(buff, "COK");
+            scanf("%s", buff);
 
-            int result = send(fd, buff, strlen(buff) + 1, 0);
+            send(fd, buff, strlen(buff) + 1, 0);
 
-            if(result < 0)
+            int length = recv(fd, buff, sizeof(buff), 0);
+
+            if(length > 0)
             {
-                printf("Client Error: send\n");
-
-                return 1;
+                printf("Client received: %s\n", buff);
+            }
+            else
+            {
+                printf("Client Error\n");
             }
         }
 
