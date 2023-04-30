@@ -2,22 +2,28 @@
 #include "filesystems/VFS.hpp"
 #include "fcntl.h"
 #include "errno.h"
+#include "net/Socket.hpp"
 
 class ProcessFDSocket : public IProcessFD
 {
-private:
-    vector<uint8_t> buffer;
-    uint32_t bufferIndex;
-    AtomicLock socketLock;
 public:
-    uint32_t domain;
-    uint32_t type;
-    uint32_t protocol;
-    uint16_t port;
+    ISocket *socket;
 
-    ProcessFDSocket();
+    ProcessFDSocket(ISocket *socket);
 
-    ProcessFDSocket(uint32_t domain, uint32_t type, uint32_t protocol, uint16_t port = 0);
+    bool IsNonBlocking();
+
+    bool Connected();
+
+    bool ConnectionRefused();
+
+    void RefuseConnection();
+
+    void EnqueueMessage(const void *buffer, size_t length);
+
+    bool HasMessage();
+
+    vector<uint8_t> GetMessage(bool peek);
 
     virtual void Close() override;
 

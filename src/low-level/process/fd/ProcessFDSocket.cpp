@@ -3,67 +3,134 @@
 #include "filesystems/VFS.hpp"
 #include "errno.h"
 
-extern "C" void ProcessYield();
+ProcessFDSocket::ProcessFDSocket(ISocket *socket) : socket(socket) {}
 
-ProcessFDSocket::ProcessFDSocket() : bufferIndex(0), domain(0), type(0), protocol(0), port(0) {}
+bool ProcessFDSocket::IsNonBlocking()
+{
+    if(socket == NULL)
+    {
+        return true;
+    }
 
-ProcessFDSocket::ProcessFDSocket(uint32_t domain, uint32_t type, uint32_t protocol, uint16_t port) :
-    bufferIndex(0), domain(domain), type(type), protocol(protocol), port(port) {}
+    return socket->IsNonBlocking();
+}
 
-void ProcessFDSocket::Close() {}
+void ProcessFDSocket::RefuseConnection()
+{
+    if(socket == NULL)
+    {
+        return;
+    }
+
+    socket->RefuseConnection();
+}
+
+bool ProcessFDSocket::ConnectionRefused()
+{
+    if(socket == NULL)
+    {
+        return true;
+    }
+
+    return socket->ConnectionRefused();
+}
+
+bool ProcessFDSocket::Connected()
+{
+    if(socket == NULL)
+    {
+        return false;
+    }
+
+    return socket->IsConnected();
+}
+
+bool ProcessFDSocket::HasMessage()
+{
+    if(socket == NULL)
+    {
+        return false;
+    }
+
+    return socket->HasMessage();
+}
+
+void ProcessFDSocket::EnqueueMessage(const void *buffer, size_t length)
+{
+    if(socket == NULL)
+    {
+        return;
+    }
+
+    socket->EnqueueMessage(buffer, length);
+}
+
+vector<uint8_t> ProcessFDSocket::GetMessage(bool peek)
+{
+    if(socket == NULL)
+    {
+        return vector<uint8_t>();
+    }
+
+    return socket->GetMessage(peek);
+}
+
+void ProcessFDSocket::Close()
+{
+    if(socket == NULL)
+    {
+        return;
+    }
+
+    socket->Close();
+
+    socket = NULL;
+}
 
 uint64_t ProcessFDSocket::Read(void *buffer, uint64_t length, int *error)
 {
-    for(;;)
+    if(socket == NULL)
     {
-        socketLock.Lock();
+        return 0;
+    }
 
-        if(bufferIndex >= this->buffer.size())
+    if(socket->IsNonBlocking() && socket->HasMessage() == false)
+    {
+        *error = EWOULDBLOCK;
+
+        return 0;
+    }
+
+    while(socket != NULL && socket->HasMessage() == false && socket->Closed() == false)
+    {
+        ProcessYield();
+
+        if(socket != NULL && socket->HasMessage())
         {
-            socketLock.Unlock();
+            auto message = socket->GetMessage(false);
 
-            ProcessYield();
+            length = message.size() < length ? message.size() : length;
 
-            continue;
+            if(length > 0)
+            {
+                memcpy(buffer, message.data(), length);
+            }
+
+            return length;
         }
-
-        socketLock.Unlock();
-
-        break;            
     }
 
-    socketLock.Lock();
-
-    if(length > this->buffer.size())
-    {
-        length = this->buffer.size();
-    }
-
-    memcpy(buffer, this->buffer.data() + bufferIndex, length);
-
-    if(length < this->buffer.size())
-    {
-        bufferIndex += length;
-    }
-    else
-    {
-        bufferIndex = 0;
-        this->buffer.resize(0);
-    }
-
-    socketLock.Unlock();
-
-    return length;
+    return 0;
 }
 
 uint64_t ProcessFDSocket::Write(const void *buffer, uint64_t length, int *error)
 {
-    ScopedLock lock(socketLock);
+    if(socket == NULL)
+    {
+        return 0;
+    }
 
-    uint64_t current = this->buffer.size();
-
-    this->buffer.resize(current + length);
-    memcpy(this->buffer.data() + current, buffer, length);
+    socket->EnqueueMessage(buffer, length);
 
     return length;
 }

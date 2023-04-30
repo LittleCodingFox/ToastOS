@@ -72,6 +72,11 @@ int64_t SyscallRemoveDir(InterruptStack *stack);
 int64_t SyscallFStatAt(InterruptStack *stack);
 int64_t SyscallSocket(InterruptStack *stack);
 int64_t SyscallBind(InterruptStack *stack);
+int64_t SyscallConnect(InterruptStack *stack);
+int64_t SyscallAccept(InterruptStack *stack);
+int64_t SyscallListen(InterruptStack *stack);
+int64_t SyscallRecvMsg(InterruptStack *stack);
+int64_t SyscallSendMsg(InterruptStack *stack);
 
 SyscallPointer syscallHandlers[] =
 {
@@ -142,6 +147,11 @@ SyscallPointer syscallHandlers[] =
     (SyscallPointer)SyscallFStatAt,
     (SyscallPointer)SyscallSocket,
     (SyscallPointer)SyscallBind,
+    (SyscallPointer)SyscallConnect,
+    (SyscallPointer)SyscallAccept,
+    (SyscallPointer)SyscallListen,
+    (SyscallPointer)SyscallRecvMsg,
+    (SyscallPointer)SyscallSendMsg,
 };
 
 void SyscallHandler(InterruptStack *stack)

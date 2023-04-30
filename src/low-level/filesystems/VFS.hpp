@@ -13,7 +13,7 @@ typedef uint64_t FILE_HANDLE;
 
 struct VirtualFile
 {
-    frg::string<frg_allocator> path;
+    string path;
     FileHandleType type;
     void *userdata;
 
@@ -74,7 +74,8 @@ public:
     void RemoveMountPoint(const char *path);
 
     void AddVirtualFile(const VirtualFile &file);
-    void RemoveVirtualFile(const frg::string<frg_allocator> &path);
+    void RemoveVirtualFile(const string &path);
+    VirtualFile *FindVirtualFile(const string &path, Process *currentProcess);
 
     FILE_HANDLE OpenFile(const char *path, uint32_t flags, Process *currentProcess, int *error);
     void CloseFile(FILE_HANDLE handle);

@@ -2,16 +2,16 @@
 #include "process/Process.hpp"
 #include "debug.hpp"
 #include "errno.h"
-#include "sys/un.h"
+#include "net/UnixSocket.hpp"
+#include "net/SocketManager.hpp"
 
-int64_t SyscallBind(InterruptStack *stack)
+int64_t SyscallListen(InterruptStack *stack)
 {
     int sockfd = stack->rsi;
-    const struct sockaddr *addr_ptr = (const struct sockaddr *)stack->rdx;
-    socklen_t addrlen = (socklen_t)stack->rcx;
+    int backlog = stack->rdx;
 
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: bind sockfd %d addr_ptr %p addrlen %i", sockfd, addr_ptr, addrlen);
+    DEBUG_OUT("Syscall: listen sockfd %d backlog %i", sockfd, backlog);
 #endif
 
     auto process = processManager->CurrentProcess();
@@ -35,10 +35,12 @@ int64_t SyscallBind(InterruptStack *stack)
 
     auto socket = (ProcessFDSocket *)fd->impl;
 
-    if(socket != NULL && socket->socket != NULL)
+    if(socket->socket == NULL)
     {
-        return socket->socket->Bind(addr_ptr, addrlen, process->info);
+        return -EBADF;
     }
+
+    socket->socket->listenLimit = backlog;
 
     return 0;
 }
