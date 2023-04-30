@@ -26,11 +26,13 @@ int64_t SyscallRecvMsg(InterruptStack *stack)
 
     if(fd == NULL || fd->impl == NULL || fd->isValid == false)
     {
+        DEBUG_OUT("BADF", 0);
         return -EBADF;
     }
 
     if(fd->type != ProcessFDType::Socket)
     {
+        DEBUG_OUT("NOTSOCK", 0);
         return -ENOTSOCK;
     }
 
@@ -41,6 +43,8 @@ int64_t SyscallRecvMsg(InterruptStack *stack)
 
     if((flags & MSG_PEEK) == MSG_PEEK)
     {
+        DEBUG_OUT("PEEK", 0);
+
         if(socket->HasMessage())
         {
             message = socket->GetMessage(true);
@@ -50,6 +54,7 @@ int64_t SyscallRecvMsg(InterruptStack *stack)
     {
         if(socket->IsNonBlocking() && socket->HasMessage() == false)
         {
+            DEBUG_OUT("EWOULDBLOCK", 0);
             return -EWOULDBLOCK;
         }
 
@@ -58,8 +63,13 @@ int64_t SyscallRecvMsg(InterruptStack *stack)
             ProcessYield();
         }
 
-        message = socket->GetMessage(false);
+        if(socket->Connected())
+        {
+            message = socket->GetMessage(false);
+        }
     }
+
+    DEBUG_OUT("Message size: %i; socket connected: %s", message.size(), socket->Connected() ? "YES" : "NO");
 
     length = message.size() < hdr->msg_iov->iov_len ? message.size() : hdr->msg_iov->iov_len;
 

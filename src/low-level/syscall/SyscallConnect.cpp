@@ -56,7 +56,7 @@ int64_t SyscallConnect(InterruptStack *stack)
 
         auto unixSocket = (const struct sockaddr_un *)address;
 
-        auto file = vfs->FindVirtualFile(unixSocket->sun_path);
+        auto file = vfs->FindVirtualFile(unixSocket->sun_path, process->info);
 
         if(file == NULL)
         {
@@ -82,14 +82,18 @@ int64_t SyscallConnect(InterruptStack *stack)
             {
                 u->socket = unixSocket;
             }
-        }, &userdata);
+        },
+        &userdata);
 
         if(userdata.socket == NULL)
         {
             return -ECONNREFUSED;
         }
 
-        userdata.socket->AddPendingPeer(socket->socket);
+        if(userdata.socket->AddPendingPeer(socket->socket) == false)
+        {
+            return -ECONNREFUSED;
+        }
 
         while(socket->Connected() == false && socket->ConnectionRefused() == false)
         {

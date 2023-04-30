@@ -73,7 +73,7 @@ int32_t UnixSocket::Bind(const struct sockaddr *addr, socklen_t length, Process 
 
     if(path[0] != '/')
     {
-        path = process->cwd + "/" + path;
+        path = process->cwd + path;
     }
 
     file.path = path;

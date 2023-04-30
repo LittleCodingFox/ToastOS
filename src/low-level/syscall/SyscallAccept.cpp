@@ -49,7 +49,7 @@ int64_t SyscallAccept(InterruptStack *stack)
 
             switch(socket->socket->domain)
             {
-                case AF_UNIX:
+                case PF_UNIX:
                 
                     newSocket = new UnixSocket(peer->type, peer->protocol);
 

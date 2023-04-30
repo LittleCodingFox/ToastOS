@@ -34,11 +34,13 @@ void VFS::RemoveVirtualFile(const string &path)
     //TODO
 }
 
-VirtualFile *VFS::FindVirtualFile(const string &path)
+VirtualFile *VFS::FindVirtualFile(const string &path, Process *currentProcess)
 {
+    auto localPath = currentProcess->cwd + path;
+
     for(auto &file : virtualFiles)
     {
-        if(file->path == path)
+        if(file->path == path || file->path == localPath)
         {
             return file;
         }

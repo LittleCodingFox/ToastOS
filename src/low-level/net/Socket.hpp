@@ -39,13 +39,15 @@ public:
     uint32_t type;
     uint32_t protocol;
     uint16_t port;
+    uint32_t listenLimit;
 
     ISocket();
     virtual ~ISocket();
 
     ISocket *PendingPeer();
-    void AddPendingPeer(ISocket *peer);
+    bool AddPendingPeer(ISocket *peer);
     void SetPeer(ISocket *peer);
+    ISocket *GetPeer();
 
     virtual bool HasMessage();
     virtual vector<uint8_t> GetMessage(bool peek);

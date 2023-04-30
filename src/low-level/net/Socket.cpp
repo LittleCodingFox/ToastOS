@@ -1,7 +1,7 @@
 #include "Socket.hpp"
 #include "SocketManager.hpp"
 
-ISocket::ISocket()
+ISocket::ISocket() : domain(0), type(0), protocol(0), port(0), listenLimit(0)
 {
     socketManager->AddSocket(this);
 }
@@ -9,6 +9,13 @@ ISocket::ISocket()
 ISocket::~ISocket()
 {
     socketManager->RemoveSocket(this);
+}
+
+ISocket *ISocket::GetPeer()
+{
+    ScopedLock lock(socketLock);
+
+    return peer.isValid ? peer.peer : NULL;
 }
 
 ISocket *ISocket::PendingPeer()
@@ -28,9 +35,24 @@ ISocket *ISocket::PendingPeer()
     return NULL;
 }
 
-void ISocket::AddPendingPeer(ISocket *in)
+bool ISocket::AddPendingPeer(ISocket *in)
 {
     ScopedLock lock(socketLock);
+
+    uint32_t size = 0;
+
+    for(auto &peer : pendingPeers)
+    {
+        if(peer->isValid)
+        {
+            size++;
+        }
+    }
+
+    if(size + 1 > listenLimit)
+    {
+        return false;
+    }
 
     for(auto &peer : pendingPeers)
     {
@@ -39,7 +61,7 @@ void ISocket::AddPendingPeer(ISocket *in)
             peer->isValid = true;
             peer->peer = in;
 
-            return;
+            return true;
         }
     }
 
@@ -49,6 +71,8 @@ void ISocket::AddPendingPeer(ISocket *in)
     peer->peer = in;
 
     pendingPeers.push_back(peer);
+
+    return true;
 }
 
 void ISocket::SetPeer(ISocket *in)
