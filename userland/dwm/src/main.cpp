@@ -164,7 +164,7 @@ int main(int argc, char **argv)
 
         glFinish();
 
-        if(ToastInputPollEvent(&inputEvent))
+        while(ToastInputPollEvent(&inputEvent))
         {
             switch(inputEvent.type)
             {
