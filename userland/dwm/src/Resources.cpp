@@ -24,7 +24,7 @@ bool LoadImage(const string &path, GLuint *textureID, int *width, int *height)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexImage2D(GL_TEXTURE_2D, 0, channelCount == 3 ? GL_RGB8 : GL_RGBA8, *width, *height, 0, channelCount == 3 ? GL_RGB : GL_RGBA, GL_UNSIGNED_BYTE, data);
 
-        SetImageFiltering(*textureID, ImageFilter::Linear);
+        SetImageFiltering(*textureID, ImageFilter::Nearest);
 
         stbi_image_free(data);
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "kernel.h"
+#include "threading/lock.hpp"
 
 class DiskCache
 {
@@ -17,6 +18,7 @@ private:
 
     frg::hash<uint64_t> hash;
     hashmap<uint64_t, CacheInfo> cache;
+    AtomicLock lock;
 public:
     struct OwnerInfo
     {

@@ -2,9 +2,11 @@
 
 void *DiskCache::Get(uint64_t sector)
 {
+    ScopedLock l(lock);
+
     auto item = cache.get(sector);
 
-    if(item == NULL)
+    if(item == NULL || item->owner == NULL)
     {
         return NULL;
     }
@@ -16,6 +18,8 @@ void DiskCache::Set(uint64_t sector, void *buffer, OwnerInfo *owner)
 {
     Remove(sector);
 
+    ScopedLock l(lock);
+    
     CacheInfo info;
     info.buffer = buffer;
     info.owner = owner;
@@ -27,10 +31,19 @@ void DiskCache::Set(uint64_t sector, void *buffer, OwnerInfo *owner)
 
 void DiskCache::Remove(uint64_t sector)
 {
+    ScopedLock l(lock);
+    
     auto item = cache.get(sector);
 
     if(item == NULL)
     {
+        return;
+    }
+
+    if(item->owner == NULL)
+    {
+        cache.remove(sector);
+
         return;
     }
 
@@ -40,6 +53,8 @@ void DiskCache::Remove(uint64_t sector)
     {
         delete [] item->owner->buffer;
         delete item->owner;
+
+        item->owner = NULL;
     }
 
     cache.remove(sector);

@@ -40,6 +40,7 @@ packages:
           rm -vf                     @THIS_COLLECT_DIR@/usr/lib/libcursesw.so
           echo "INPUT(-lncursesw)" > @THIS_COLLECT_DIR@/usr/lib/libcursesw.so
           ln -sfv libncurses.so      @THIS_COLLECT_DIR@/usr/lib/libcurses.so
+
   - name: readline
     source:
       subdir: ports
@@ -197,6 +198,7 @@ packages:
         - '--prefix=/usr'
         - '--disable-static'
         - '--enable-osmesa'
+        - '-Dbuildtype=release'
     build:
       - args: ['make', '-j@PARALLELISM@']
       - args: ['make', 'install']

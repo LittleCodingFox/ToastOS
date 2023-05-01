@@ -28,6 +28,10 @@ int mouseY = 0;
 int mouseButtons = 0;
 bool mouseVisible = true;
 
+int frames = 0;
+int fps = 0;
+float frameTimer = 0;
+
 extern Screen logoScreen;
 
 extern Screen mainScreen;
@@ -106,6 +110,10 @@ int main(int argc, char **argv)
 
 	OSMesaPixelStore(OSMESA_Y_UP, 0);
 
+    glShadeModel(GL_FLAT);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_DITHER);
+
     printf("Set viewport\n");
 
     glViewport(0, 0, screenWidth, screenHeight);
@@ -135,7 +143,19 @@ int main(int argc, char **argv)
 
         t = current;
 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        frameTimer += delta;
+        frames++;
+
+        if(frameTimer > 1)
+        {
+            frameTimer = 0;
+            fps = frames;
+            frames = 0;
+
+            printf("FPS: %i\n", fps);
+        }
+
+        glClear(GL_COLOR_BUFFER_BIT);
 
         if(currentScreen != NULL && currentScreen->draw != NULL)
         {
