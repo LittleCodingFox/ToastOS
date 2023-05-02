@@ -13,7 +13,7 @@ int64_t SyscallTCBSet(InterruptStack *stack)
     }
 
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: tcbset base %p", base);
+    DEBUG_OUT("Syscall: tcbset base %p", (void *)base);
 #endif
 
     auto thread = processManager->CurrentThread();
@@ -25,7 +25,7 @@ int64_t SyscallTCBSet(InterruptStack *stack)
 
     thread->fsBase = base;
 
-    DEBUG_OUT("Setting thread %i fsbase to %p", thread->tid, base);
+    DEBUG_OUT("Setting thread %i fsbase to %p", thread->tid, (void *)base);
 
     processManager->LoadFSBase(base);
 

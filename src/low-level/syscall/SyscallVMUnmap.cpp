@@ -16,7 +16,7 @@ int64_t SyscallVMUnmap(InterruptStack *stack)
     (void)size;
 
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: vmunmap pointer %p size %llu", ptr, size);
+    DEBUG_OUT("Syscall: vmunmap pointer %p size %lu", ptr, size);
 #endif
 
     if(!SanitizeUserPointer(ptr))

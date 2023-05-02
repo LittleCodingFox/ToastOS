@@ -17,7 +17,7 @@ int64_t SyscallUname(InterruptStack *stack)
     struct utsname *buf = (struct utsname *)stack->rsi;
 
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: uname buf %p", buf);
+    DEBUG_OUT("Syscall: uname buf %p", (void *)buf);
 #endif
 
     (void)buf;

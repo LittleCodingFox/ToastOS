@@ -311,7 +311,7 @@ bool LoadLayout(const string &name, int *error)
 
 extern "C" void InitializeKeyboard()
 {
-    DEBUG_OUT("Initializing keyboard", 0);
+    DEBUG_OUT("%s", "Initializing keyboard");
 
 #if USE_INPUT_SYSTEM
     int error = 0;
@@ -341,7 +341,7 @@ extern "C" void InitializeKeyboard()
         {
             delete [] buffer;
 
-            DEBUG_OUT("Failed to load keyboard layout", 0);
+            DEBUG_OUT("%s", "Failed to load keyboard layout");
 
             return;
         }
@@ -349,7 +349,7 @@ extern "C" void InitializeKeyboard()
         {
             delete [] buffer;
 
-            DEBUG_OUT("Successfully loaded layout!", 0);
+            DEBUG_OUT("%s", "Successfully loaded layout!");
         }
     }
 

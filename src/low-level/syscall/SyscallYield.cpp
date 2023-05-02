@@ -5,7 +5,7 @@
 int64_t SyscallYield(InterruptStack *stack)
 {
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: yield", 0);
+    DEBUG_OUT("%s", "Syscall: yield");
 #endif
 
     ProcessYield();

@@ -173,7 +173,7 @@ void SyscallHandler(InterruptStack *stack)
 
 int64_t KNotImplemented(InterruptStack *stack)
 {
-    DEBUG_OUT("Syscall: KNotImplemented", 0);
+    DEBUG_OUT("%s", "Syscall: KNotImplemented");
 
     return -1;
 }

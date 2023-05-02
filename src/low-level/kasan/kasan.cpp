@@ -1,6 +1,7 @@
 #include "kernel.h"
 #include "Panic.hpp"
 #include "paging/PageTableManager.hpp"
+#include "debug.hpp"
 
 #if USE_KASAN
 namespace {
@@ -43,7 +44,7 @@ extern "C" [[gnu::no_sanitize_address]] void UnpoisonKasanShadow(void *pointer, 
 
     if(debugKasan)
     {
-        DEBUG_OUT("kasan: unpoisoning at %p (%p), size: %llu", pointer, shadow, size);
+        DEBUG_OUT("kasan: unpoisoning at %p (%p), size: %lu", pointer, shadow, size);
     }
 
     for(size_t i = 0; i < (size >> kasanShift); i++)
@@ -89,7 +90,7 @@ extern "C" [[gnu::no_sanitize_address]] void PoisonKasanShadow(void *pointer, si
 
     if(debugKasan)
     {
-        DEBUG_OUT("kasan: poisoning at %p (%p), size: %llu", pointer, shadow, size);
+        DEBUG_OUT("kasan: poisoning at %p (%p), size: %lu", pointer, shadow, size);
     }
 
     for(size_t i = 0; i < (size >> kasanShift); i++)
@@ -133,7 +134,7 @@ extern "C" [[gnu::no_sanitize_address]] void PoisonKasanShadow(void *pointer, si
 
     if(debugKasan)
     {
-        DEBUG_OUT("kasan: Cleaning at %p, size: %llu", pointer, size);
+        DEBUG_OUT("kasan: Cleaning at %p, size: %lu", pointer, size);
     }
 
     auto shadow = KasanShadowOfPointer(pointer);
@@ -167,7 +168,7 @@ extern "C" [[gnu::no_sanitize_address]] void PoisonKasanShadow(void *pointer, si
     {
         if(shadow[i] != 0)
         {
-            Panic("kasan: invalid kasan clean at %p (%p) (size: %llu)", pointer, shadow, size);
+            Panic("kasan: invalid kasan clean at %p (%p) (size: %lu)", pointer, shadow, size);
 
             return;
         }
@@ -207,7 +208,7 @@ namespace {
     [[gnu::no_sanitize_address]]
     void Report(bool write, uintptr_t address, size_t size, void *ip)
     {
-        Panic("kasan failure at IP %p, size %llu-byte, %s address %p",
+        Panic("kasan failure at IP %p, size %lu-byte, %s address %p",
             ip, size, (write ? "write to" : "read from"), address);
     }
 }

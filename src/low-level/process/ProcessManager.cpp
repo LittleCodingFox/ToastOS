@@ -64,7 +64,7 @@ void KernelTask()
 #define HANDLEFORK(task) \
     task->state = ProcessState::Running; \
     \
-    DEBUG_OUT("Initializing fork %p for process %i: rsp: %p; rip: %p; cr3: %p", task, task->process->ID, task->rsp, task->rip, task->cr3); \
+    DEBUG_OUT("Initializing fork %p for process %i: rsp: %p; rip: %p; cr3: %p", (void *)task, task->process->ID, (void *)task->rsp, (void *)task->rip, (void *)task->cr3); \
     \
     lock.Unlock(); \
     \
@@ -251,7 +251,8 @@ void ProcessManager::SwitchProcess(InterruptStack *stack)
         next->state = ProcessState::Running;
 
 #if DEBUG_PROCESSES
-        DEBUG_OUT("Initializing task %p for process %i (tid: %i): rsp: %p; rip: %p; cr3: %p", next, next->process->ID, next->tid, next->rsp, next->rip, next->cr3);
+        DEBUG_OUT("Initializing task %p for process %i (tid: %i): rsp: %p; rip: %p; cr3: %p", (void *)next, next->process->ID, next->tid,
+            (void *)next->rsp, (void *)next->rip, (void *)next->cr3);
 #endif
 
         scheduler->Advance();
@@ -264,10 +265,11 @@ void ProcessManager::SwitchProcess(InterruptStack *stack)
     }
 
 #if DEBUG_PROCESSES_EXTRA
-    DEBUG_OUT("Switching tasks:\n\tID: %i\n\ttid: %i\n\tstate: %s\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%x\n\tss: 0x%x\n"
-        "next:\n\tID: %i\n\ttid: %i\n\tstate: %s\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%x\n\tss: 0x%x",
-        current->process->ID, current->tid, current->State().data(), current->rsp, current->rip, current->cr3, current->cs, current->ss,
-        next->process->ID, next->tid, next->State().data(), next->rsp, next->rip, next->cr3, next->cs, next->ss);
+    DEBUG_OUT("Switching tasks:\n\tID: %i\n\ttid: %i\n\tstate: %s\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%lx\n\tss: 0x%lx\n"
+        "next:\n\tID: %i\n\ttid: %i\n\tstate: %s\n\trsp: %p\n\trip: %p\n\tcr3: %p\n\tcs: 0x%lx\n\tss: 0x%lx",
+        current->process->ID, current->tid, current->State().data(), (void *)current->rsp, (void *)current->rip, (void *)current->cr3,
+        current->cs, current->ss, next->process->ID, next->tid, next->State().data(), (void *)next->rsp, (void *)next->rip, (void *)next->cr3,
+        next->cs, next->ss);
 #endif
 
     scheduler->Advance();
@@ -280,7 +282,7 @@ void ProcessManager::SwitchProcess(InterruptStack *stack)
 void ProcessManager::SwapTasks(ProcessControlBlock *next)
 {
 #if DEBUG_PROCESSES_EXTRA
-    DEBUG_OUT("Swapping to task with pid: %i tid: %i RIP %p RSP %p and CR3 %p", next->process->ID, next->tid, next->rip, next->rsp, next->cr3);
+    DEBUG_OUT("Swapping to task with pid: %i tid: %i RIP %p RSP %p and CR3 %p", next->process->ID, next->tid, (void *)next->rip, (void *)next->rsp, (void *)next->cr3);
 #endif
 
     LoadFSBase(next->fsBase);
@@ -467,7 +469,7 @@ ProcessControlBlock *ProcessManager::CreateFromEntryPoint(uint64_t entryPoint, c
     processes.push_back(pair);
 
 #if DEBUG_PROCESSES
-    DEBUG_OUT("Initializing entry point process at RIP %p; RSP: %p; CR3: %p", newProcess->rip, newProcess->rsp, newProcess->cr3);
+    DEBUG_OUT("Initializing entry point process at RIP %p; RSP: %p; CR3: %p", (void *)newProcess->rip, (void *)newProcess->rsp, (void *)newProcess->cr3);
 #endif
 
     lock.Unlock();
@@ -604,7 +606,7 @@ ProcessControlBlock *ProcessManager::LoadImage(const void *image, const char *na
                 uint64_t fileSize = vfs->FileLength(ldHandle);
 
 #if DEBUG_PROCESSES
-                DEBUG_OUT("Loading LD with size %llu", fileSize);
+                DEBUG_OUT("Loading LD with size %lu", fileSize);
 #endif
 
                 uint8_t *ldImage = new uint8_t[fileSize];
@@ -747,7 +749,7 @@ ProcessControlBlock *ProcessManager::LoadImage(const void *image, const char *na
 
 #if DEBUG_PROCESSES
     DEBUG_OUT("Initializing process %i (IDOverride: %i) at RIP %p auxval entry: %p RSP: %p; CR3: %p",
-        newProcess->ID, IDOverride, rip, auxval.entry, newProcess->rsp, newProcess->cr3);
+        newProcess->ID, (int)IDOverride, (void *)rip, (void *)auxval.entry, (void *)newProcess->rsp, (void *)newProcess->cr3);
 #endif
 
     auto pcb = scheduler->AddThread(newProcess, newProcess->rip, newProcess->rsp, newProcess->ID, true);
@@ -836,7 +838,8 @@ void ProcessManager::Exit(int exitCode, bool forceRemove)
     }
 
 #if DEBUG_PROCESSES
-    DEBUG_OUT("Swapping to thread %i (pid: %i, rip: %p, rsp: %p, cr3: %p)", pcb->tid, pcb->process->ID, pcb->process->rip, pcb->process->rsp, pcb->process->cr3);
+    DEBUG_OUT("Swapping to thread %i (pid: %i, rip: %p, rsp: %p, cr3: %p)", pcb->tid, pcb->process->ID,
+        (void *)pcb->process->rip, (void *)pcb->process->rsp, (void *)pcb->process->cr3);
 #endif
 
     lock.Unlock();
@@ -1110,7 +1113,7 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
     if(newVirt == NULL)
     {
 #if DEBUG_PROCESSES
-        DEBUG_OUT("fork: newVirt is NULL!", 0);
+        DEBUG_OUT("%s", "fork: newVirt is NULL!");
 #endif
     }
     else
@@ -1124,8 +1127,8 @@ int32_t ProcessManager::Fork(InterruptStack *interruptStack, pid_t *child)
     pcb->rax = 0;
 
 #if DEBUG_PROCESSES
-    DEBUG_OUT("Forking process %i (%i) cr3: %p, cs: %llx, ss: %llx, permission: %llx", current->process->ID, newProcess->ID, newProcess->cr3,
-        pcb->cs, pcb->ss, newProcess->permissionLevel);
+    DEBUG_OUT("Forking process %i (%i) cr3: %p, cs: %lx, ss: %lx, permission: %lx", current->process->ID, newProcess->ID,
+        (void *)newProcess->cr3, pcb->cs, pcb->ss, newProcess->permissionLevel);
 #endif
 
     return 0;
@@ -1396,7 +1399,7 @@ void ProcessManager::ExitThread()
             pcb->process->DisposeFDs();
 
 #if DEBUG_PROCESSES_EXTRA
-            DEBUG_OUT("Main Thread terminated, terminating process", 0);
+            DEBUG_OUT("%s", "Main Thread terminated, terminating process");
 #endif
 
             scheduler->ExitProcess(pcb->process);
@@ -1492,7 +1495,8 @@ void ProcessManager::ExitThread()
     }
 
 #if DEBUG_PROCESSES_EXTRA
-    DEBUG_OUT("Swapping to thread %i (pid: %i, rip: %p, rsp: %p, cr3: %p)", pcb->tid, pcb->process->ID, pcb->process->rip, pcb->process->rsp, pcb->process->cr3);
+    DEBUG_OUT("Swapping to thread %i (pid: %i, rip: %p, rsp: %p, cr3: %p)", pcb->tid, pcb->process->ID,
+        (void *)pcb->process->rip, (void *)pcb->process->rsp, (void *)pcb->process->cr3);
 #endif
 
     lock.Unlock();
@@ -1505,7 +1509,7 @@ void ProcessManager::FutexWait(int *pointer, int expected, InterruptStack *stack
     if(*pointer != expected)
     {
 #if DEBUG_PROCESSES_EXTRA
-        DEBUG_OUT("Futex: wait: not blocking", 0);
+        DEBUG_OUT("%s", "Futex: wait: not blocking");
 #endif
 
         DumpFutexStats();
@@ -1527,7 +1531,7 @@ void ProcessManager::FutexWait(int *pointer, int expected, InterruptStack *stack
     auto currentThread = CurrentThread();
 
 #if DEBUG_PROCESSES_EXTRA
-    DEBUG_OUT("Futex: Preparing to block current thread %p", currentThread);
+    DEBUG_OUT("Futex: Preparing to block current thread %p", (void *)currentThread);
 #endif
 
     lock.Lock();
@@ -1550,7 +1554,7 @@ void ProcessManager::FutexWait(int *pointer, int expected, InterruptStack *stack
         ADDTHREAD(futexes->threads);
 
 #if DEBUG_PROCESSES_EXTRA
-        DEBUG_OUT("Futex: Added first thread to futexes", 0);
+        DEBUG_OUT("%s", "Futex: Added first thread to futexes");
 #endif
     }
     else
@@ -1572,7 +1576,7 @@ void ProcessManager::FutexWait(int *pointer, int expected, InterruptStack *stack
         if(found)
         {
 #if DEBUG_PROCESSES_EXTRA
-            DEBUG_OUT("Futex: Found futex for pointer %p", pointer);
+            DEBUG_OUT("Futex: Found futex for pointer %p", (void *)pointer);
 #endif
 
             auto thread = futex->threads;
@@ -1589,7 +1593,7 @@ void ProcessManager::FutexWait(int *pointer, int expected, InterruptStack *stack
         else
         {
 #if DEBUG_PROCESSES_EXTRA
-            DEBUG_OUT("Futex: Adding futex for pointer %p", pointer);
+            DEBUG_OUT("Futex: Adding futex for pointer %p", (void *)pointer);
 #endif
 
             auto newFutex = new FutexPair();
@@ -1622,8 +1626,8 @@ void ProcessManager::FutexWait(int *pointer, int expected, InterruptStack *stack
 
 #if DEBUG_PROCESSES_EXTRA
     DEBUG_OUT("Current thread %p (pid: %i, tid: %i) has been blocked, swapping to thread %p (pid: %i, tid: %i)",
-        currentThread, currentThread->process->ID, currentThread->tid,
-        pcb, pcb->process->ID, pcb->tid);
+        (void *)currentThread, currentThread->process->ID, currentThread->tid,
+        (void *)pcb, pcb->process->ID, pcb->tid);
 #endif
 
     SwapTasks(pcb);
@@ -1636,7 +1640,7 @@ void ProcessManager::FutexWake(int *pointer)
     if(futexes == NULL)
     {
 #if DEBUG_PROCESSES_EXTRA
-        DEBUG_OUT("Futex. No futexes initialized", 0);
+        DEBUG_OUT("%s", "Futex. No futexes initialized");
 #endif
 
         return;
@@ -1652,7 +1656,7 @@ void ProcessManager::FutexWake(int *pointer)
     if(futex->pointer != pointer)
     {
 #if DEBUG_PROCESSES_EXTRA
-        DEBUG_OUT("Futex: wake from futex that doesn't exist", 0);
+        DEBUG_OUT("%s", "Futex: wake from futex that doesn't exist");
 #endif
 
         return;
@@ -1681,42 +1685,41 @@ void ProcessManager::FutexWake(int *pointer)
 void ProcessManager::DumpFutexStats()
 {
 #if DEBUG_PROCESSES_EXTRA
-    DEBUG_OUT("Futex: Dumping futex stats", 0);
+    DEBUG_OUT("%s", "Futex: Dumping futex stats");
 
     auto futex = futexes;
 
     if(futex == NULL)
     {
-        DEBUG_OUT("Futex: No futexes allocated", 0);
+        DEBUG_OUT("%s", "Futex: No futexes allocated");
 
         return;
     }
 
     do
     {
-        DEBUG_OUT("  Futex for %p:", futex->pointer);
+        DEBUG_OUT("  Futex for %p:", (void *)futex->pointer);
 
         auto thread = futex->threads;
 
         if(thread == NULL)
         {
-            DEBUG_OUT("    Invalid starting thread (corruption?)", 0);
+            DEBUG_OUT("%s", "    Invalid starting thread (corruption?)");
         }
         else
         {
             do
             {
-                DEBUG_OUT("    Thread %p (pid: %i, tid: %i)", thread->pcb, thread->pcb->process->ID, thread->pcb->tid);
+                DEBUG_OUT("    Thread %p (pid: %i, tid: %i)", (void *)thread->pcb, thread->pcb->process->ID, thread->pcb->tid);
 
                 thread = thread->next;
             } while(thread != NULL);
         }
 
         futex = futex->next;
-    } while(futex != NULL);
-
-    scheduler->DumpThreadList();
-#endif
+    }
+    while(futex != NULL);
+    #endif
 }
 
 void ProcessManager::AddProcessVMMap(void *virt, void *physical, uint64_t pages)

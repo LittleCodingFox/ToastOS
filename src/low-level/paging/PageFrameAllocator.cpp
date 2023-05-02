@@ -66,8 +66,8 @@ void PageFrameAllocator::ReadMemoryMap(stivale2_struct_tag_memmap* memmap)
     {
         stivale2_mmap_entry* desc = (stivale2_mmap_entry*)&memmap->memmap[i];
 
-        DEBUG_OUT("MMap Entry %i: type: %s, size %llu, addr: %p", i, MemoryMapTypeString(desc->type),
-            desc->length, desc->base);
+        DEBUG_OUT("MMap Entry %lu: type: %s, size %lu, addr: %p", i, MemoryMapTypeString(desc->type),
+            desc->length, (void *)desc->base);
 
         if (desc->type == STIVALE2_MMAP_USABLE)
         {
@@ -86,7 +86,7 @@ void PageFrameAllocator::ReadMemoryMap(stivale2_struct_tag_memmap* memmap)
 
     InitBitmap(bitmapSize, largestFreeMemSeg);
 
-    DEBUG_OUT("Memory Size: %llu", GetMemorySize(memmap));
+    DEBUG_OUT("Memory Size: %lu", GetMemorySize(memmap));
 
     for (uint64_t i = 0; i < memmap->entries; i++)
     {
@@ -94,7 +94,7 @@ void PageFrameAllocator::ReadMemoryMap(stivale2_struct_tag_memmap* memmap)
 
         if (desc->type == STIVALE2_MMAP_USABLE)
         {
-            DEBUG_OUT("Unlocking usable pages for %p-%p (%llu pages)", desc->base, desc->base + desc->length, desc->length / 0x1000);
+            DEBUG_OUT("Unlocking usable pages for %p-%p (%lu pages)", (void *)desc->base, (void *)(desc->base + desc->length), desc->length / 0x1000);
 
             for(uint64_t index = 0, startIndex = desc->base / 0x1000; index < desc->length / 0x1000; index++)
             {
@@ -116,7 +116,7 @@ void PageFrameAllocator::InitBitmap(size_t bitmapSize, void* bufferAddress)
     PageBitmap.size = bitmapSize;
     PageBitmap.buffer = (uint8_t*)bufferAddress;
 
-    DEBUG_OUT("Initing bitmap with size %d at address %p", bitmapSize, bufferAddress);
+    DEBUG_OUT("Initing bitmap with size %lu at address %p", bitmapSize, bufferAddress);
 
     memset(PageBitmap.buffer, 0, bitmapSize);
 

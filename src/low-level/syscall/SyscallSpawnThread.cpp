@@ -14,7 +14,7 @@ int64_t SyscallSpawnThread(InterruptStack *stack)
     }
 
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: spawn thread rip: %p rsp: %p", rip, rsp);
+    DEBUG_OUT("Syscall: spawn thread rip: %p rsp: %p", (void *)rip, (void *)rsp);
 #endif
 
     auto process = processManager->CurrentProcess();

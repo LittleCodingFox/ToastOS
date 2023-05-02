@@ -14,7 +14,7 @@ int64_t SyscallTCFlow(InterruptStack *stack)
     (void)action;
 
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: tcflow fd %i action %p", fd, action);
+    DEBUG_OUT("Syscall: tcflow fd %i action %x", fd, action);
 #endif
 
     auto process = processManager->CurrentProcess();

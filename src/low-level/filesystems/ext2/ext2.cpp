@@ -49,7 +49,7 @@ void Ext2FileSystem::Initialize(uint64_t sector, uint64_t sectorCount)
 {
     if(!partition->Read(&superblock, 2, 2))
     {
-        printf("[ext2] Failed to read superblock\n");
+        print("[ext2] Failed to read superblock\n");
 
         return;
     }
@@ -60,14 +60,14 @@ void Ext2FileSystem::Initialize(uint64_t sector, uint64_t sectorCount)
         (superblock.featureIncompat & EXT2_FEATURE_INCOMPAT_META_BG) ||
         (superblock.featureIncompat & EXT2_IF_ENCRYPT)))
     {
-        printf("[ext2] Unsupported partition\n");
+        print("[ext2] Unsupported partition\n");
 
         return;
     }
 
     if(superblock.state == EXT2_FS_UNRECOVERABLE_ERRORS)
     {
-        printf("[ext2] Partition has unrecoverable errors\n");
+        print("[ext2] Partition has unrecoverable errors\n");
 
         return;
     }
@@ -76,7 +76,7 @@ void Ext2FileSystem::Initialize(uint64_t sector, uint64_t sectorCount)
 
     if(!FindInode(&root, 2))
     {
-        printf("[ext2] Failed to find root node\n");
+        print("[ext2] Failed to find root node\n");
 
         return;
     }
@@ -726,21 +726,21 @@ void Ext2FileSystem::ListSubdirs(Ext2Inode *inode, const vector<uint32_t> &alloc
     {
         if(!ReadDirent(&dirent, allocMap, i))
         {
-            printf("[ext2] Failed to read dirent\n");
+            print("[ext2] Failed to read dirent\n");
 
             return;
         }
 
         for(uint32_t j = 0; j < indentation; j++)
         {
-            printf("\t");
+            print("\t");
         }
 
         char name[dirent.nameLength + 1];
 
         if(!ReadDirentName(&dirent, allocMap, name, i))
         {
-            printf("[ext2] Failed to read dirent name\n");
+            print("[ext2] Failed to read dirent name\n");
 
             return;
         }

@@ -20,7 +20,7 @@ int64_t SyscallFcntl(InterruptStack *stack)
     }
 
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: fcntl fd: %i; request: %i; arg: %llu; result: %p", fd, request, arg, result);
+    DEBUG_OUT("Syscall: fcntl fd: %i; request: %x; arg: %lu; result: %p", fd, request, arg, (void *)result);
 #endif
 
     auto process = processManager->CurrentProcess();

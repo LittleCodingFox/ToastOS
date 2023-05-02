@@ -22,7 +22,7 @@ int64_t SyscallRead(InterruptStack *stack)
     }
 
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: Read fd: %i buffer: %p count: %llu", fd, buffer, count);
+    DEBUG_OUT("Syscall: Read fd: %i buffer: %p count: %lu", fd, buffer, count);
 #endif
 
     auto current = processManager->CurrentProcess();

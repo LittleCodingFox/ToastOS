@@ -33,8 +33,9 @@ rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(su
 SRC					= $(call rwildcard,$(SRCDIR),*.cpp)
 CSRC				= $(call rwildcard,$(SRCDIR),*.c)
 EXTSRC				= $(call rwildcard, $(SRCDIR)/../ext-libs/vtconsole,*.cpp)
-EXTCSRC				= $(call rwildcard, $(SRCDIR)/../ext-libs/printf,*.c)
-EXTCSRC				+= $(call rwildcard, $(SRCDIR)/../ext-libs/liballoc,*.c)
+#EXTCSRC				= $(call rwildcard, $(SRCDIR)/../ext-libs/printf,*.c)
+EXTCSRC				= $(call rwildcard, $(SRCDIR)/../ext-libs/nanoprintf,*.c)
+EXTCSRC				+= $(call rwildcard, $(SRCDIR)/../ext-libs/dlmalloc,*.c)
 EXTCSRC				+= $(call rwildcard, $(SRCDIR)/../ext-libs/osdev-paging-x64,*.c)
 EXTCSRC				+= $(call rwildcard, $(SRCDIR)/../lai/core,*.c)
 EXTCSRC				+= $(call rwildcard, $(SRCDIR)/../lai/drivers,*.c)
@@ -76,7 +77,7 @@ INCLUDEDIRS			= 	-Isrc \
 						-Isrc/include \
 						-Isrc/low-level \
 						-Iext-libs \
-						-Iext-libs/liballoc/ \
+						-Iext-libs/dlmalloc/ \
 						-Ifrigg/include \
 						-Icxxshim/stage2/include \
 						-Ilai/include \

@@ -35,11 +35,13 @@ namespace Elf
         uint64_t pageCount = ((address + memSize) / 0x1000) - (address / 0x1000) + 1;
 
 #if DEBUG_PROCESSES
-        DEBUG_OUT("Load at address %p with %llu pages (%p-%p) (memsize: %llu; fileSize: %llu; offset: %p)",
-            address, pageCount,
-            (address / 0x1000) * 0x1000, ((address / 0x1000) + pageCount) * 0x1000,
+        DEBUG_OUT("Load at address %p with %lu pages (%p-%p) (memsize: %lu; fileSize: %lu; offset: %p)",
+            (void *)address,
+            pageCount,
+            (void *)((address / 0x1000) * 0x1000),
+            (void *)(((address / 0x1000) + pageCount) * 0x1000),
             memSize, fileSize,
-            offset);
+            (void *)offset);
 #endif
 
         auto cr3 = Registers::ReadCR3();
@@ -135,7 +137,7 @@ namespace Elf
                 auxval->phdr = base + currentHeader->virtualAddress;
 
 #if DEBUG_PROCESSES
-                DEBUG_OUT("PHDR: %p", auxval->phdr);
+                DEBUG_OUT("PHDR: %p", (void *)auxval->phdr);
 #endif
             }
             else if(currentHeader->type == ELF_PROGRAM_TYPE_INTERP)

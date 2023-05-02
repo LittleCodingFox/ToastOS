@@ -3,8 +3,8 @@
 #include <string.h>
 #include <stivale2.h>
 #include "fcntl.h"
-#include "liballoc/liballoc.h"
-#include "printf/printf.h"
+#include "dlmalloc/dlmalloc.h"
+#include "support/printf.h"
 #include "vtconsole/vtconsole.h"
 #include "KernelUtils.hpp"
 #include "elf/elf.hpp"

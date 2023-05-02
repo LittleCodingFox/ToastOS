@@ -24,7 +24,7 @@ uint64_t ReadDevTTY(void *buffer, uint64_t cursor, uint64_t length, int *error, 
 
 uint64_t WriteDevTTY(const void *buffer, uint64_t cursor, uint64_t length, int *error, void *userdata)
 {
-    printf("%.*s", length, buffer);
+    printf("%.*s", (int)length, (char *)buffer);
 
     return length;
 }

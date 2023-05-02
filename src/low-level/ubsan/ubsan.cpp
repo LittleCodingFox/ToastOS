@@ -27,13 +27,13 @@ extern "C" void __ubsan_handle_type_mismatch_v1(ubsan_mismatch_data_t *data, uin
     }
     else if(data->align != 0 && (ptr & ((1 << data->align) - 1)) != 0)
     {
-        DEBUG_OUT("[UBSAN] pointer %p not aligned to %d", ptr, 1 << data->align);
+        DEBUG_OUT("[UBSAN] pointer %p not aligned to %d", (void *)ptr, 1 << data->align);
         
         ubsanPanicAt(&data->location, "Pointer alignment failed");
     }
     else
     {
-        DEBUG_OUT("[UBSAN] Pointer %p is not large enough for %s", ptr, data->type->name);
+        DEBUG_OUT("[UBSAN] Pointer %p is not large enough for %s", (void *)ptr, data->type->name);
     }
 }
 
@@ -51,7 +51,7 @@ extern "C" void __ubsan_handle_mul_overflow(void *d, void *l, void *r)
 {
     ubsan_overflow_data_t *data = (ubsan_overflow_data_t *)d;
 
-    DEBUG_OUT("[UBSAN] overflow in %lld*%lld", (int64_t)l, (int64_t)r);
+    DEBUG_OUT("[UBSAN] overflow in %ld*%ld", (int64_t)l, (int64_t)r);
 
     ubsanPanicAt(&data->location, "mul overflow");
 }
@@ -79,7 +79,7 @@ extern "C" void __ubsan_handle_out_of_bounds(void* data, void* index)
 {
     ubsan_out_of_bounds_data_t* d = (ubsan_out_of_bounds_data_t*) data;
 
-    DEBUG_OUT("[UBSAN] out of bounds at index %lld", (uint64_t) index);
+    DEBUG_OUT("[UBSAN] out of bounds at index %ld", (uint64_t) index);
 
     ubsanPanicAt(&d->location, "out of bounds");
 }
@@ -88,7 +88,7 @@ extern "C" void __ubsan_handle_shift_out_of_bounds(void* data, void* lhs, void* 
 {
     ubsan_shift_out_of_bounds_data_t* d = (ubsan_shift_out_of_bounds_data_t*) data;
 
-    DEBUG_OUT("[UBSAN] %lld << %lld", (uint64_t) lhs, (uint64_t) rhs);
+    DEBUG_OUT("[UBSAN] %ld << %ld", (uint64_t) lhs, (uint64_t) rhs);
 
     ubsanPanicAt(&d->location, "shift out of bounds");
 }
@@ -125,11 +125,11 @@ extern "C" void __ubsan_handle_alignment_assumption(void *data, uintptr_t pointe
 
     if(offset)
     {
-        DEBUG_OUT("[UBSAN] assumption of %lu byte alignment (with offset %lu byte) for pointer of type %s failed", align, offset, alignmentData->type->name);
+        DEBUG_OUT("[UBSAN] assumption of %u byte alignment (with offset %u byte) for pointer of type %s failed", align, offset, alignmentData->type->name);
     }
     else
     {
-        DEBUG_OUT("[UBSAN] assumption of %lu byte alignment for pointer of type %s failed", align, alignmentData->type->name);
+        DEBUG_OUT("[UBSAN] assumption of %u byte alignment for pointer of type %s failed", align, alignmentData->type->name);
     }
 
     realPtr = pointer - offset;

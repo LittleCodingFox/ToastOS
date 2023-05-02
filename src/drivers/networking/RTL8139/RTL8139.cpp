@@ -78,7 +78,7 @@ namespace Drivers
             }
             else
             {
-                DEBUG_OUT("[net] RTL8139: Failed to reserve IRQ for RTL8139", "");
+                DEBUG_OUT("%s", "[net] RTL8139: Failed to reserve IRQ for RTL8139");
             }
 
             uint32_t mac1 = inport32(IOAddress + RTL8139_REGISTER_MAC1);
@@ -102,7 +102,7 @@ namespace Drivers
 
         void RTL8139Driver::Callback(InterruptStack *stack)
         {
-            DEBUG_OUT("[net] RTL8139: interrupt received", "");
+            DEBUG_OUT("%s", "[net] RTL8139: interrupt received");
 
             for(;;)
             {
@@ -119,12 +119,12 @@ namespace Drivers
 
                 if(status & RTL8139_ISR_TOK)
                 {
-                    DEBUG_OUT("[net] RTL8139: frame transmitted", 0);
+                    DEBUG_OUT("%s", "[net] RTL8139: frame transmitted");
                 }
 
                 if(status & RTL8139_ISR_ROK)
                 {
-                    DEBUG_OUT("[net] RTL8139: frame received", 0);
+                    DEBUG_OUT("%s", "[net] RTL8139: frame received");
 
                     uint8_t *buffer = RXBuffer;
                     uint32_t index = RXIndex;

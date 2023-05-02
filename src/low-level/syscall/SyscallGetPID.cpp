@@ -5,7 +5,7 @@
 int64_t SyscallGetPID(InterruptStack *stack)
 {
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: GetPID", 0);
+    DEBUG_OUT("%s", "Syscall: GetPID");
 #endif
 
     auto process = processManager->CurrentProcess();

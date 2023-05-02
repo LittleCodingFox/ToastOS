@@ -210,7 +210,7 @@ void InitializePCI()
                 continue;
             }
 
-            DEBUG_OUT("[pci]\tbar %d - %c%c %0161x %0161x", i, bar->type == PCIBarType::IO ? 'i' : 'm',
+            DEBUG_OUT("[pci]\tbar %d - %c%c %0161lx %0161lx", i, bar->type == PCIBarType::IO ? 'i' : 'm',
                 bar->prefetch ? 'p' : ' ', bar->address, bar->length);
         }
     }

@@ -164,7 +164,7 @@ void InitializeMemory(stivale2_struct_tag_memmap *memmap, stivale2_struct_tag_fr
         }
     }
 
-    DEBUG_OUT("Preparing framebuffer pages for address %p", framebuffer->framebuffer_addr);
+    DEBUG_OUT("Preparing framebuffer pages for address %p", (void *)framebuffer->framebuffer_addr);
 
     uint64_t fbBase = framebuffer->framebuffer_addr;
     uint64_t fbSize = (uint64_t)framebuffer->framebuffer_height * framebuffer->framebuffer_pitch;
@@ -201,11 +201,11 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
 {
     (void)rsdp;
 
-    DEBUG_OUT("[ACPI] Initializing ACPI", 0);
+    DEBUG_OUT("%s", "[ACPI] Initializing ACPI");
 
     if(rsdp == NULL)
     {
-        DEBUG_OUT("[ACPI] Missing RSDP!", 0);
+        DEBUG_OUT("%s", "[ACPI] Missing RSDP!");
 
         return;
     }
@@ -226,7 +226,7 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
 
     if(rsdpStruct->revision == 0)
     {
-        DEBUG_OUT("[ACPI] Unsupported ACPI revision", 0);
+        DEBUG_OUT("%s", "[ACPI] Unsupported ACPI revision");
 
         return;
     }
@@ -235,7 +235,7 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
 
     if(rsdpStructReal->XSDTAddress == 0)
     {
-        DEBUG_OUT("[ACPI] Failed to get XSDT!", 0);
+        DEBUG_OUT("%s", "[ACPI] Failed to get XSDT!");
 
         return;
     }
@@ -248,7 +248,7 @@ void InitializeACPI(stivale2_struct_tag_rsdp *rsdp)
 
     if(mcfg == NULL)
     {
-        DEBUG_OUT("[ACPI] Failed to get MCFG!", 0);
+        DEBUG_OUT("%s", "[ACPI] Failed to get MCFG!");
     }
 
     madt = (volatile MADT *)ACPI::FindTable(xsdt, "APIC");
@@ -337,12 +337,12 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     InitializeMemory(memmap, framebuffer);
 
-    DEBUG_OUT("[INTERRUPTS] Initializing Interrupts", 0);
+    DEBUG_OUT("%s", "[INTERRUPTS] Initializing Interrupts");
 
     interrupts.Init();
 
 #if USE_KASAN
-    DEBUG_OUT("Kasan: Unpoison framebuffer", 0);
+    DEBUG_OUT("%s", "Kasan: Unpoison framebuffer");
 #endif
 
     UnpoisonKasanShadow((void *)TranslateToHighHalfMemoryAddress((uint64_t)globalPageTableManager->p4), 0x1000);
@@ -367,7 +367,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
             }
 
 #if USE_KASAN
-            DEBUG_OUT("Kasan: Unpoison kernel/modules at %p (%p)", base, desc->base);
+            DEBUG_OUT("Kasan: Unpoison kernel/modules at %p (%p)", (void *)base, (void *)desc->base);
 #endif
 
             UnpoisonKasanShadow((void *)base, desc->length);
@@ -376,7 +376,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     if(symbols != NULL)
     {
-        DEBUG_OUT("Initializing kernel symbols from size %llu", symbols->end - symbols->begin);
+        DEBUG_OUT("Initializing kernel symbols from size %lu", symbols->end - symbols->begin);
 
         KernelInitStacktrace((char *)symbols->begin, symbols->end - symbols->begin);
     }
@@ -417,11 +417,11 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     globalPartitionManager.initialize();
 
-    DEBUG_OUT("[ACPI] Initializing acpi", 0);
+    DEBUG_OUT("%s", "[ACPI] Initializing acpi");
 
     InitializeACPI(rsdp);
 
-    DEBUG_OUT("[CMOS] Initializing cmos", 0);
+    DEBUG_OUT("%s", "[CMOS] Initializing cmos");
 
     cmos.Initialize();
 
@@ -450,7 +450,7 @@ void InitializeKernel(stivale2_struct *stivale2Struct)
 
     (void)MBSize;
 
-    DEBUG_OUT("Memory Stats: Free: %lluMB; Used: %lluMB; Reserved: %lluMB", globalAllocator.GetFreeRAM() / MBSize,
+    DEBUG_OUT("Memory Stats: Free: %luMB; Used: %luMB; Reserved: %luMB", globalAllocator.GetFreeRAM() / MBSize,
         globalAllocator.GetUsedRAM() / MBSize, globalAllocator.GetReservedRAM() / MBSize);
 
     if(smp != NULL)

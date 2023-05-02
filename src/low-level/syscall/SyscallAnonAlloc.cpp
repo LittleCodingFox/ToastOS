@@ -10,7 +10,7 @@ int64_t SyscallAnonAlloc(InterruptStack *stack)
     size_t size = (size_t)stack->rsi;
 
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: Anon-alloc size: %llu", size);
+    DEBUG_OUT("Syscall: Anon-alloc size: %lu", size);
 #endif
 
     uint64_t ptr = (uint64_t)new uint8_t[size];

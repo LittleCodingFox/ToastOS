@@ -1,7 +1,6 @@
 #include "syscall.hpp"
 #include "process/Process.hpp"
 #include "interrupts/Interrupts.hpp"
-#include "printf/printf.h"
 #include "debug.hpp"
 #include "errno.h"
 #include "user/UserAccess.hpp"

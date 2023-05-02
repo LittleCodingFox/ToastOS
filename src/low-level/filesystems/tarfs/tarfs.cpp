@@ -129,7 +129,7 @@ void TarFS::Initialize(uint64_t sector, uint64_t sectorCount)
         headers.push_back(header);
     }
 
-    DEBUG_OUT("[tarfs] Found %llu headers", headers.size());
+    DEBUG_OUT("[tarfs] Found %lu headers", headers.size());
 
     root = new Inode();
 
@@ -751,10 +751,10 @@ void TarFS::ListSubdirs(Inode *inode, uint32_t indentation)
 {
     for(uint32_t i = 0; i < indentation; i++)
     {
-        printf("\t");
+        print("\t");
     }
 
-    printf("%s (%llu - %i)\n", inode->name.data(), inode->isHeader ? OctToInt(inode->header->size) : inode->data.size(), inode->header->type);
+    printf("%s (%lu - %i)\n", inode->name.data(), inode->isHeader ? OctToInt(inode->header->size) : inode->data.size(), inode->header->type);
 
     for(auto &child : inode->children)
     {
@@ -764,14 +764,14 @@ void TarFS::ListSubdirs(Inode *inode, uint32_t indentation)
 
 void TarFS::DebugListDirectories()
 {
-    printf("Listing directories\n");
+    print("Listing directories\n");
 
     for(auto &inode : root->children)
     {
         ListSubdirs(inode, 0);
     }
 
-    printf("Listed directories\n");
+    print("Listed directories\n");
 }
 
 const char *TarFS::VolumeName()

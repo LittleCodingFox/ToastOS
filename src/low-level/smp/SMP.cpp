@@ -1,6 +1,6 @@
 #include "SMP.hpp"
 #include "debug.hpp"
-#include "printf/printf.h"
+#include "support/printf.h"
 #include "paging/PageFrameAllocator.hpp"
 #include "paging/PageTableManager.hpp"
 #include "registers/Registers.hpp"
@@ -8,7 +8,6 @@
 #include "interrupts/Interrupts.hpp"
 #include "sse/sse.hpp"
 #include "process/Process.hpp"
-#include "printf/printf.h"
 #include "lapic/LAPIC.hpp"
 #include "Panic.hpp"
 
@@ -34,7 +33,7 @@ CPUInfo *CurrentCPUInfo()
         }
     }
 
-    DEBUG_OUT("smp: Failed to get current CPU", "");
+    DEBUG_OUT("%s", "smp: Failed to get current CPU");
 
     return nullptr;
 }

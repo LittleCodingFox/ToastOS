@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "printf/printf.h"
+#include "support/printf.h"
 #include "Panic.hpp"
 
 //TODO: Make this value randomized

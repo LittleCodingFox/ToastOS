@@ -83,7 +83,7 @@ extern "C" void KernelDumpStacktrace()
     DEBUG_OUT("  %p (%p): %s", address, stackframe->rip, symbol);
     */
 
-    DEBUG_OUT("  %p", stackframe->rip);
+    DEBUG_OUT("  %p", (void *)stackframe->rip);
 
     //*end = '\n';
 
@@ -114,7 +114,7 @@ extern "C" void KernelDumpStacktraceNoLock()
     DEBUG_OUT_NOLOCK("  %p (%p): %s", address, stackframe->rip, symbol);
     */
 
-    DEBUG_OUT_NOLOCK("  %p", stackframe->rip);
+    DEBUG_OUT_NOLOCK("  %p", (void *)stackframe->rip);
 
     //*end = '\n';
 

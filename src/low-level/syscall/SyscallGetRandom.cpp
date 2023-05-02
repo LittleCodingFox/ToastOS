@@ -13,7 +13,7 @@ int64_t SyscallGetRandom(InterruptStack *stack)
     (void)flags;
 
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: GetRandom buffer: %p length: %lli flags: %i", buffer, length, flags);
+    DEBUG_OUT("Syscall: GetRandom buffer: %p length: %lu flags: %x", buffer, length, flags);
 #endif
 
     if(SanitizeUserPointer(buffer) == false)

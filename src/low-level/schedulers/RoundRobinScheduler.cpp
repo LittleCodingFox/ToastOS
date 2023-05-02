@@ -323,7 +323,7 @@ void RoundRobinScheduler::DumpThreadList()
 {
     ScopedLock lock(this->lock);
 
-    DEBUG_OUT("Dumping Thread List:", 0);
+    DEBUG_OUT("%s", "Dumping Thread List:");
     
     ProcessControlBlock *p = threads;
 

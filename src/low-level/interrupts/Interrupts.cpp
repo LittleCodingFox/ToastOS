@@ -4,7 +4,7 @@
 #include "Panic.hpp"
 #include "ports/Ports.hpp"
 #include "framebuffer/FramebufferRenderer.hpp"
-#include "printf/printf.h"
+#include "support/printf.h"
 #include "registers/Registers.hpp"
 #include "keyboard/Keyboard.hpp"
 #include "mouse/Mouse.hpp"

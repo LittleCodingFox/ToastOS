@@ -5,7 +5,7 @@
 int64_t SyscallGetTID(InterruptStack *stack)
 {
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: GetPID", 0);
+    DEBUG_OUT("%s", "Syscall: GetTID");
 #endif
 
     auto thread = processManager->CurrentThread();

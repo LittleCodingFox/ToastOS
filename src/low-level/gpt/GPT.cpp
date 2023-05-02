@@ -9,11 +9,11 @@ namespace GPT
 
     bool PartitionTable::Parse()
     {
-        void *headerBuffer = malloc(512);
+        uint8_t *headerBuffer = new uint8_t[512];
 
         if(!device->Read(headerBuffer, 1, 1))
         {
-            free(headerBuffer);
+            delete [] headerBuffer;
 
             return false;
         }
@@ -28,12 +28,12 @@ namespace GPT
             tableSectors++;
         }
 
-        void *tableBuffer = malloc(tableSectors * 512);
+        uint8_t *tableBuffer = new uint8_t[tableSectors * 512];
 
         if(!device->Read(tableBuffer, 2, tableSectors))
         {
-            free(tableBuffer);
-            free(headerBuffer);
+            delete [] tableBuffer;
+            delete [] headerBuffer;
 
             return false;
         }
@@ -50,8 +50,8 @@ namespace GPT
             partitions.push_back(new Partition(*this, entry->uniqueGuid, entry->typeGuid, entry->firstLBA, entry->lastLBA - entry->firstLBA + 1));
         }
 
-        free(headerBuffer);
-        free(tableBuffer);
+        delete [] tableBuffer;
+        delete [] headerBuffer;
 
         return true;
     }
@@ -91,7 +91,7 @@ namespace GPT
         return sectorCount;
     }
 
-    const char *Partition::SizeString() const
+    string Partition::SizeString() const
     {
         uint64_t size = sectorCount * 512;
 
@@ -115,9 +115,13 @@ namespace GPT
 
         char *buffer = (char *)malloc(512);
 
-        sprintf(buffer, "%llu %cB", size, sizes[sizeIndex]);
+        sprintf(buffer, "%lu %cB", size, sizes[sizeIndex]);
 
-        return buffer;
+        string outString = buffer;
+
+        delete [] buffer;
+
+        return outString;
     }
 
     bool Partition::Read(void *data, uint64_t sector, uint64_t count)

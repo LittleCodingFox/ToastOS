@@ -1,6 +1,6 @@
 #include "syscall.hpp"
 #include "interrupts/Interrupts.hpp"
-#include "printf/printf.h"
+#include "support/printf.h"
 #include "debug.hpp"
 #include "errno.h"
 #include "user/UserAccess.hpp"
@@ -19,10 +19,10 @@ size_t SyscallLog(InterruptStack *stack)
     }
 
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: log buffer: %p; count: %llu", buffer, count);
+    DEBUG_OUT("Syscall: log buffer: %p; count: %lu", buffer, count);
 #endif
 
-    DEBUG_OUT("%.*s", count, buffer);
+    DEBUG_OUT("%.*s", (int)count, (char *)buffer);
 
     return 0;
 }

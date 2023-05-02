@@ -5,7 +5,7 @@
 int64_t SyscallExitThread(InterruptStack *stack)
 {
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: thread exit", 0);
+    DEBUG_OUT("%s", "Syscall: thread exit");
 #endif
 
     auto process = processManager->CurrentProcess();

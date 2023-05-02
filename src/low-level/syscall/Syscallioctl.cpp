@@ -18,7 +18,7 @@ int64_t Syscallioctl(InterruptStack *stack)
     (void)request;
 
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: ioctl fd: %i; request: %i; arg: %llu; result: %p", fd, request, arg, result);
+    DEBUG_OUT("Syscall: ioctl fd: %i; request: %lu; arg: %p; result: %p", fd, request, arg, (void *)result);
 #endif
 
     if(!SanitizeUserPointer(result) || !SanitizeUserPointer(arg))

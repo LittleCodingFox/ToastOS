@@ -1,8 +1,8 @@
-#include <stdio.h>
 #include "Panic.hpp"
 #include "debug.hpp"
 #include "framebuffer/FramebufferRenderer.hpp"
 #include "stacktrace/stacktrace.hpp"
+#include "support/printf.h"
 
 extern "C" void Panic(const char* format, ...)
 {

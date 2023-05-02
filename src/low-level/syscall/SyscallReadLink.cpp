@@ -12,7 +12,7 @@ int64_t SyscallReadLink(InterruptStack *stack)
     size_t max_size = (size_t)stack->rcx;
 
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: readlink path: %s buffer: %p max_size: %llu", path, buffer, max_size);
+    DEBUG_OUT("Syscall: readlink path: %s buffer: %p max_size: %lu", path, buffer, max_size);
 #endif
 
     if(!SanitizeUserPointer(path) || !SanitizeUserPointer(buffer))

@@ -1,6 +1,5 @@
 #include "syscall.hpp"
 #include "interrupts/Interrupts.hpp"
-#include "printf/printf.h"
 #include "filesystems/VFS.hpp"
 #include "process/Process.hpp"
 #include "debug.hpp"
@@ -19,7 +18,7 @@ size_t SyscallWrite(InterruptStack *stack)
     }
 
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: write fd: %i buffer: %p count: %llu", fd, buffer, count);
+    DEBUG_OUT("Syscall: write fd: %i buffer: %p count: %lu", fd, buffer, count);
 #endif
 
     auto current = processManager->CurrentProcess();

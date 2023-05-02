@@ -1,10 +1,8 @@
 #include "vtconsole.h"
 #include <stdint.h>
 #include <stddef.h>
-#include "liballoc/liballoc.h"
+#include "dlmalloc/dlmalloc.h"
 
-#define malloc(x) kmalloc(x)
-#define free(x) kfree(x)
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define isdigit(c) ((c) >= '0' && (c) <= '9')

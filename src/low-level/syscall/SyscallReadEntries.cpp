@@ -20,7 +20,7 @@ int64_t SyscallReadEntries(InterruptStack *stack)
     }
 
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: readentries fd: %i buffer %p maxSize %llu error %p", fd, buffer, maxSize, error);
+    DEBUG_OUT("Syscall: readentries fd: %i buffer %p maxSize %lu error %p", fd, buffer, maxSize, (void *)error);
 #endif
 
     if(maxSize < sizeof(dirent))

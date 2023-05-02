@@ -3,7 +3,7 @@
 #include "filesystems/ext2/ext2.hpp"
 #include "elf/elf.hpp"
 #include "debug.hpp"
-#include <stdio.h>
+#include "support/printf.h"
 
 frg::manual_box<PartitionManager> globalPartitionManager;
 
@@ -11,7 +11,7 @@ void PartitionManager::Initialize()
 {
     frg::vector<GenericDevice *, frg_allocator> diskDevices = globalDeviceManager.GetDevices(DEVICE_TYPE_DISK);
 
-    DEBUG_OUT("[PartitionManager] Found %i disk devices", diskDevices.size());
+    DEBUG_OUT("[PartitionManager] Found %lu disk devices", diskDevices.size());
 
     for(uint32_t i = 0; i < diskDevices.size(); i++)
     {
@@ -53,7 +53,11 @@ void PartitionManager::Initialize()
 
             (void)partition;
 
-            DEBUG_OUT("[PartitionManager] \t%s with size: %s, type: %s)", partition.GetID().ToString(), partition.SizeString(), partition.GetType().ToString());
+            auto guid = partition.GetID().ToString();
+            auto size = partition.SizeString();
+            auto type = partition.GetType().ToString();
+
+            DEBUG_OUT("[PartitionManager] \t%s with size: %s, type: %s)", guid.data(), size.data(), type.data());
 
 #if !USE_TARFS
             if(Ext2FileSystem::IsValid(&partition))

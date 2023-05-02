@@ -15,7 +15,7 @@ public:
 
     virtual uint64_t Write(const void *buffer, uint64_t length, int *error) override
     {
-        printf("%.*s", length, buffer);
+        printf("%.*s", (int)length, (char *)buffer);
 
         return length;
     }

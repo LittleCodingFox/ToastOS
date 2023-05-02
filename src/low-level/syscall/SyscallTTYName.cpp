@@ -16,7 +16,7 @@ int64_t SyscallTTYName(InterruptStack *stack)
     (void)fd;
 
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: ttyname fd: %i; buf: %p; size: %llu", fd, buf, size);
+    DEBUG_OUT("Syscall: ttyname fd: %i; buf: %p; size: %lu", fd, (void *)buf, size);
 #endif
 
     if(!SanitizeUserPointer(buf))

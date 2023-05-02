@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include <string.h>
-#include "printf/printf.h"
+#include "support/printf.h"
 #include "kernel.h"
 #include "low-level/devicemanager/GenericIODevice.hpp"
 
@@ -24,13 +24,17 @@ namespace GPT
                 memcmp(e, other.e, 6) == 0;
         }
 
-        const char *ToString() const
+        string ToString() const
         {
             char *buffer = (char *)malloc((sizeof(uint32_t) + sizeof(uint16_t[2]) + sizeof(uint8_t[8])) * 2 + 5);
 
-            sprintf(buffer, "%x-%x-%x-%x-%x%x%x%x%x%x%x%x", a, b, c, d[0], d[1], e[0], e[1], e[2], e[3], e[4], e[5]);
+            sprintf(buffer, "%x-%x-%x-%x-%x%x%x%x%x%x%x", a, b, c, d[0], d[1], e[0], e[1], e[2], e[3], e[4], e[5]);
 
-            return buffer;
+            string outString = buffer;
+
+            delete [] buffer;
+
+            return outString;
         }
     };
 
@@ -101,7 +105,7 @@ namespace GPT
         Guid GetID() const;
         Guid GetType() const;
         uint64_t GetSectorCount() const;
-        const char *SizeString() const;
+        string SizeString() const;
 
         virtual bool Read(void *data, uint64_t cursor, uint64_t count) override;
         virtual bool Write(const void *data, uint64_t cursor, uint64_t count) override;

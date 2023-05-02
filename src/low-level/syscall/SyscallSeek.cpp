@@ -13,7 +13,7 @@ int64_t SyscallSeek(InterruptStack *stack)
     int whence = (int)stack->rcx;
 
 #if KERNEL_DEBUG_SYSCALLS
-    DEBUG_OUT("Syscall: seek fd: %i; offset: %llu; whence: %x", fd, offset, whence);
+    DEBUG_OUT("Syscall: seek fd: %i; offset: %lu; whence: %x", fd, offset, whence);
 #endif
 
     auto current = processManager->CurrentProcess();
