@@ -114,6 +114,11 @@ int main(int argc, char **argv)
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_DITHER);
 
+    glEnable(GL_TEXTURE_2D);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     printf("Set viewport\n");
 
     glViewport(0, 0, screenWidth, screenHeight);
@@ -154,8 +159,6 @@ int main(int argc, char **argv)
 
             printf("FPS: %i\n", fps);
         }
-
-        glClear(GL_COLOR_BUFFER_BIT);
 
         if(currentScreen != NULL && currentScreen->draw != NULL)
         {

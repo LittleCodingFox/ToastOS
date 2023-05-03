@@ -1,7 +1,7 @@
 export PATH := $(PATH):../../toolchain/tools/host-binutils/bin:../../toolchain/tools/host-gcc/bin
 
 CC				= x86_64-toast-g++
-AR				= x86_64-toast-ar
+LD				= x86_64-toast-ld
 
 PROGRAM_NAME	= ToastInput
 SRCDIR			= src
@@ -26,7 +26,7 @@ makedirs:
 	mkdir -p $(DESTDIR)/usr/lib
 
 $(PROGRAM_NAME): makedirs $(COBJECTS)
-	$(AR) rcs "$(DESTDIR)/usr/lib/lib$@.a" $(COBJECTS)
+	$(LD) -shared -o "$(DESTDIR)/usr/lib/lib$@.so" $(COBJECTS)
 	cp -Rf ../../userland/include/* $(DESTDIR)/usr/include/
 
 $(COBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c

@@ -18,7 +18,7 @@ struct CPUInfo
     int APICID;
     uint8_t *stack;
     bool bsp;
-    uint32_t LAPICFrequency;
+    uint64_t LAPICFrequency;
     
     GDT *gdt;
     

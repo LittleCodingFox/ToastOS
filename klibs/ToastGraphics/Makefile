@@ -1,7 +1,7 @@
 export PATH := $(PATH):../../toolchain/tools/host-binutils/bin:../../toolchain/tools/host-gcc/bin
 
 CC				= x86_64-toast-g++
-AR				= x86_64-toast-ar
+LD				= x86_64-toast-ld
 
 PROGRAM_NAME	= ToastGraphics
 SRCDIR			= src
@@ -15,8 +15,8 @@ COBJECTS		= $(CSRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
 INCLUDEDIRS		= -I../../toolchain/system-root/usr/include -I../../userland/include
 
-CFLAGS			= $(INCLUDEDIRS) -fshort-wchar -Wall -O2 -g -fno-omit-frame-pointer \
-	-fno-exceptions -fno-stack-protector -mno-3dnow -fPIC -mno-mmx -mno-avx
+CFLAGS			= $(INCLUDEDIRS) -fshort-wchar -Wall -O0 -g -fno-omit-frame-pointer \
+	-fno-rtti -fno-exceptions -fno-stack-protector -mno-3dnow -mno-mmx -mno-avx -fPIC
 
 default: $(PROGRAM_NAME)
 
@@ -26,7 +26,7 @@ makedirs:
 	mkdir -p $(DESTDIR)/usr/lib
 
 $(PROGRAM_NAME): makedirs $(COBJECTS)
-	$(AR) rcs "$(DESTDIR)/usr/lib/lib$@.a" $(COBJECTS)
+	$(LD) -shared -o "$(DESTDIR)/usr/lib/lib$@.so" $(COBJECTS)
 	cp -Rf ../../userland/include/* $(DESTDIR)/usr/include/
 
 $(COBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c

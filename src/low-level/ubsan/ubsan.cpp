@@ -19,6 +19,11 @@ void ubsanPanic(const char *error)
     Panic("UBSan Exception: %s", error);
 }
 
+extern "C" void __ubsan_handle_nonnull_return_v1(ubsan_nonnull_return_data_t *data, ubsan_source_location_t *location)
+{
+    ubsanPanicAt(&data->location, "nonnull returning null");
+}
+
 extern "C" void __ubsan_handle_type_mismatch_v1(ubsan_mismatch_data_t *data, uintptr_t ptr)
 {
     if(ptr == 0)

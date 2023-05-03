@@ -2563,6 +2563,8 @@ static void add_segment(mstate m, char* tbase, size_t tsize, flag_t mmapped) {
   mchunkptr p = tnext;
   int nfences = 0;
 
+  (void)nfences;
+
   /* reset top to new space */
   init_top(m, (mchunkptr)tbase, tsize - TOP_FOOT_SIZE);
 

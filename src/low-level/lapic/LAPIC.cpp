@@ -124,22 +124,22 @@ void LAPICTimerCalibrate()
 
     PITSetReloadValue(0xFFFF);
 
-    int initTick = PITGetCurrentCount();
+    uint64_t initTick = PITGetCurrentCount();
     int samples = 0xFFFFF;
 
     LAPICWrite(LAPIC_REG_TIMER_INITCNT, (uint32_t)samples);
 
     while(LAPICRead(LAPIC_REG_TIMER_CURCNT) != 0);
 
-    int finalTick = PITGetCurrentCount();
-    int totalTicks = initTick - finalTick;
+    uint64_t finalTick = PITGetCurrentCount();
+    uint64_t totalTicks = initTick - finalTick;
     CPUInfo *info = CurrentCPUInfo();
 
     if(info != nullptr)
     {
         info->LAPICFrequency = (samples / totalTicks) * PIT_DIVIDEND;
 
-        DEBUG_OUT("LAPIC frequency for %i: %u", info->APICID, info->LAPICFrequency);
+        DEBUG_OUT("LAPIC frequency for %i: %lu", info->APICID, info->LAPICFrequency);
     }
 
     LAPICTimerStop();

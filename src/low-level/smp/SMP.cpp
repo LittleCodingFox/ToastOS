@@ -157,7 +157,7 @@ void BootstrapSMP(stivale2_smp_info *smp)
 
     idt.Load();
 
-    LoadGDT(info->gdt, &info->tss, info->tssStack, info->ist1Stack, info->ist2Stack, sizeof(info->tssStack), &info->gdtr);
+    LoadGDT(info->gdt, &info->tss, info->tssStack, info->ist1Stack, info->ist2Stack, SMP_STACK_SIZE, &info->gdtr);
 
     SetKernelGSBase(&cpuInfos[smp->lapic_id]);
 

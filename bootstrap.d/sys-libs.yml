@@ -198,7 +198,6 @@ packages:
         - '--prefix=/usr'
         - '--disable-static'
         - '--enable-osmesa'
-        - '-Dbuildtype=release'
     build:
       - args: ['make', '-j@PARALLELISM@']
       - args: ['make', 'install']
