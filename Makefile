@@ -33,7 +33,6 @@ rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(su
 SRC					= $(call rwildcard,$(SRCDIR),*.cpp)
 CSRC				= $(call rwildcard,$(SRCDIR),*.c)
 EXTSRC				= $(call rwildcard, $(SRCDIR)/../ext-libs/vtconsole,*.cpp)
-#EXTCSRC				= $(call rwildcard, $(SRCDIR)/../ext-libs/printf,*.c)
 EXTCSRC				= $(call rwildcard, $(SRCDIR)/../ext-libs/nanoprintf,*.c)
 EXTCSRC				+= $(call rwildcard, $(SRCDIR)/../ext-libs/dlmalloc,*.c)
 EXTCSRC				+= $(call rwildcard, $(SRCDIR)/../ext-libs/osdev-paging-x64,*.c)
@@ -85,11 +84,12 @@ INCLUDEDIRS			= 	-Isrc \
 
 ASMFLAGS			= -g -F dwarf
 ASFLAGS 			= -nostdlib -fpic
-CFLAGS				= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -nostdlib -mno-red-zone -Wall -fpic -O3 -fno-omit-frame-pointer -g \
+CFLAGS				= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -nostdlib -mno-red-zone -Wall -fpic -fno-omit-frame-pointer \
 	-fno-stack-protector -fno-rtti -fno-exceptions -mno-3dnow -mno-mmx -mno-sse -mno-sse2 -mno-avx -fno-builtin \
 	-Werror -Wno-ambiguous-reversed-operator -Wno-c99-designator -Wno-deprecated-volatile -Wno-initializer-overrides \
-	-Wno-unused-private-field -Wno-ignored-attributes\
-	-DPRINTF_DISABLE_SUPPORT_FLOAT=1 -DPRINTF_DISABLE_SUPPORT_EXPONENTIAL=1 --target=x86_64-pc-none-elf -march=x86-64
+	-Wno-unused-private-field -Wno-ignored-attributes --target=x86_64-pc-none-elf -march=x86-64 \
+	-g -gdwarf-4
+
 CFLAGS_INTERNAL		= 
 LDFLAGS				= -T $(SRCDIR)/link.ld -static -Bsymbolic -nostdlib -Map=linker.map -zmax-page-size=0x1000
 QEMU_FLAGS			= 
@@ -108,7 +108,17 @@ ifeq ($(KVM), 1)
 endif
 
 ifeq ($(KASAN), 1)
-	CFLAGS += -DUSE_KASAN=1
+	CFLAGS += -DUSE_KAS0AN=1
+endif
+
+ifeq ($(DEBUG), 1)
+	CFLAGS += -O0
+else
+	CFLAGS += -O3
+endif
+
+ifeq ($(FAST), 1)
+	CFLAGS += -Ofast
 endif
 
 ifeq ($(TARFS), 1)

@@ -39,7 +39,7 @@ void PageTableManager::Duplicate(PageTable *newTable)
     PagingDuplicate(p4, newTable);
 }
 
-PAGING_EXPORT uint64_t PagingGetFreeFrame()
+uint64_t PagingGetFreeFrame()
 {
     return (uint64_t)globalAllocator.RequestPage();
 }
