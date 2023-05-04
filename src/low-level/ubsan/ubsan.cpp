@@ -127,6 +127,7 @@ extern "C" void __ubsan_handle_alignment_assumption(void *data, uintptr_t pointe
 {
     ubsan_alignment_assumption_data_t *alignmentData = (ubsan_alignment_assumption_data_t *)data;
     uintptr_t realPtr;
+    (void)realPtr;
 
     if(offset)
     {
