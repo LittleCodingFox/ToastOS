@@ -202,12 +202,12 @@ void interruptIntHandler(InterruptStack stack)
         "  stack_pointer       = %p\n"
         "  stack_segment       = %#llx\n"
         "\n"
-        "  rax = 0x%llx    rbx = 0x%llx    rcx = 0x%llx\n"
-        "  rdx = 0x%llx    rsi = 0x%llx    rdi = 0x%llx\n"
-        "  rbp = 0x%llx    r8  = 0x%llx    r9  = 0x%llx\n"
-        "  r10 = 0x%llx    r11 = 0x%llx    r12 = 0x%llx\n"
-        "  r13 = 0x%llx    r14 = 0x%llx    r15 = 0x%llx\n"
-        "  cr3 = 0x%llx\n",
+        "  rax = 0x%lx    rbx = 0x%lx    rcx = 0x%lx\n"
+        "  rdx = 0x%lx    rsi = 0x%lx    rdi = 0x%lx\n"
+        "  rbp = 0x%lx    r8  = 0x%lx    r9  = 0x%lx\n"
+        "  r10 = 0x%lx    r11 = 0x%lx    r12 = 0x%lx\n"
+        "  r13 = 0x%lx    r14 = 0x%lx    r15 = 0x%lx\n"
+        "  cr3 = 0x%lx\n",
         stack.id,
         exception_messages[stack.id],
         stack.errorCode,
@@ -373,12 +373,12 @@ void PageFaultHandler(InterruptStack* stack)
             "  stack_pointer       = %p\n"
             "  stack_segment       = %#x\n"
             "\n"
-            "  rax = 0x%llx    rbx = 0x%llx    rcx = 0x%llx\n"
-            "  rdx = 0x%llx    rsi = 0x%llx    rdi = 0x%llx\n"
-            "  rbp = 0x%llx    r8  = 0x%llx    r9  = 0x%llx\n"
-            "  r10 = 0x%llx    r11 = 0x%llx    r12 = 0x%llx\n"
-            "  r13 = 0x%llx    r14 = 0x%llx    r15 = 0x%llx\n"
-            "  cr3 = 0x%llx\n",
+            "  rax = 0x%lx    rbx = 0x%lx    rcx = 0x%lx\n"
+            "  rdx = 0x%lx    rsi = 0x%lx    rdi = 0x%lx\n"
+            "  rbp = 0x%lx    r8  = 0x%lx    r9  = 0x%lx\n"
+            "  r10 = 0x%lx    r11 = 0x%lx    r12 = 0x%lx\n"
+            "  r13 = 0x%lx    r14 = 0x%lx    r15 = 0x%lx\n"
+            "  cr3 = 0x%lx\n",
             cr2,
             error_code,
             is_present != 0 ? 'Y' : 'N',

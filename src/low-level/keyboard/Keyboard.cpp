@@ -230,17 +230,21 @@ bool LoadLayout(const string &name, int *error)
 
             if(position != (size_t)-1)
             {
-                auto left = lineView.sub_string(0, position);
+                auto left = string(lineView.sub_string(0, position));
                 auto right = lineView.sub_string(position + 1, lineView.size() - position - 1);
 
-                auto mod = left.find_first(':');
+                auto leftView = frg::string_view(left);
+
+                auto mod = leftView.find_first(':');
                 string modifier;
 
                 if(mod != (size_t)-1)
                 {
-                    modifier = string(left.sub_string(mod + 1, left.size() - mod - 1));
+                    modifier = string(leftView.sub_string(mod + 1, left.size() - mod - 1));
 
-                    left = string(left.sub_string(0, mod));
+                    left = string(leftView.sub_string(0, mod));
+
+                    leftView = frg::string_view(left);
                 }
 
                 auto scancode = strtol(left.data(), NULL, 16);
