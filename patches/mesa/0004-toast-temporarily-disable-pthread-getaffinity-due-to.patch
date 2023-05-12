@@ -1,0 +1,26 @@
+From a5f5e382d3253f1247be9df026faa6d47d526943 Mon Sep 17 00:00:00 2001
+From: Nuno Silva <little.coding.fox@gmail.com>
+Date: Fri, 12 May 2023 18:45:16 +0100
+Subject: [PATCH] toast: temporarily disable pthread getaffinity due to issues
+ with mlibc
+
+---
+ src/util/u_thread.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/util/u_thread.h b/src/util/u_thread.h
+index b6feaa84cbd..df7dedd9fe2 100644
+--- a/src/util/u_thread.h
++++ b/src/util/u_thread.h
+@@ -168,7 +168,7 @@ util_set_thread_affinity(thrd_t thread,
+                          uint32_t *old_mask,
+                          unsigned num_mask_bits)
+ {
+-#if defined(HAVE_PTHREAD_SETAFFINITY)
++#if defined(HAVE_PTHREAD_SETAFFINITY) && !defined(__toast__) //Temporary fix
+    cpu_set_t cpuset;
+ 
+    if (old_mask) {
+-- 
+2.30.2
+

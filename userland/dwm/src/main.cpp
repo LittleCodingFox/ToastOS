@@ -110,6 +110,11 @@ int main(int argc, char **argv)
 
 	OSMesaPixelStore(OSMESA_Y_UP, 0);
 
+    printf("OpenGL Info:\nVendor: %s\nRenderer: %s\n Version: %s",
+        glGetString(GL_VENDOR),
+        glGetString(GL_RENDERER),
+        glGetString(GL_VERSION));
+
     glShadeModel(GL_FLAT);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_DITHER);

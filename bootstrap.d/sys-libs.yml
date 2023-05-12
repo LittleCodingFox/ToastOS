@@ -122,8 +122,8 @@ packages:
     source:
       subdir: ports
       git: 'https://gitlab.freedesktop.org/mesa/mesa.git'
-      branch: '21.3'
-      version: '21.3'
+      branch: 'amber'
+      commit: '14d7da24640dadfb55769cfc93e13ab653996fed'
       tools_required:
         - host-pkg-config
     tools_required:
@@ -154,7 +154,7 @@ packages:
         - '--libdir=lib'
         - '-Dplatforms=[]'
         - '-Dosmesa=true'
-        - '-Dgallium-drivers=swrast'
+        - '-Dgallium-drivers=swrast,swr'
         - '-Ddri-drivers=[]'
         - '-Dvulkan-drivers=[]'
         - '-Degl-native-platform=surfaceless'

@@ -33,7 +33,8 @@ rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(su
 SRC					= $(call rwildcard,$(SRCDIR),*.cpp)
 CSRC				= $(call rwildcard,$(SRCDIR),*.c)
 EXTSRC				= $(call rwildcard, $(SRCDIR)/../ext-libs/vtconsole,*.cpp)
-EXTCSRC				= $(call rwildcard, $(SRCDIR)/../ext-libs/nanoprintf,*.c)
+EXTCSRC				= $(call rwildcard, $(SRCDIR)/../ext-libs/printf,*.c)
+#EXTCSRC				= $(call rwildcard, $(SRCDIR)/../ext-libs/nanoprintf,*.c)
 EXTCSRC				+= $(call rwildcard, $(SRCDIR)/../ext-libs/dlmalloc,*.c)
 EXTCSRC				+= $(call rwildcard, $(SRCDIR)/../ext-libs/osdev-paging-x64,*.c)
 EXTCSRC				+= $(call rwildcard, $(SRCDIR)/../lai/core,*.c)
@@ -88,7 +89,7 @@ CFLAGS				= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -nostdlib -mno-red-zone 
 	-fno-stack-protector -fno-rtti -fno-exceptions -mno-3dnow -mno-mmx -mno-sse -mno-sse2 -mno-avx -fno-builtin \
 	-Werror -Wno-ambiguous-reversed-operator -Wno-c99-designator -Wno-deprecated-volatile -Wno-initializer-overrides \
 	-Wno-unused-private-field -Wno-ignored-attributes --target=x86_64-pc-none-elf -march=x86-64 \
-	-g -gdwarf-4
+	-g -gdwarf-4 -DPRINTF_DISABLE_SUPPORT_FLOAT=1 -DPRINTF_DISABLE_SUPPORT_EXPONENTIAL=1
 
 CFLAGS_INTERNAL		= 
 LDFLAGS				= -T $(SRCDIR)/link.ld -static -Bsymbolic -nostdlib -Map=linker.map -zmax-page-size=0x1000
@@ -108,7 +109,7 @@ ifeq ($(KVM), 1)
 endif
 
 ifeq ($(KASAN), 1)
-	CFLAGS += -DUSE_KAS0AN=1
+	CFLAGS += -DUSE_KASAN=1
 endif
 
 ifeq ($(DEBUG), 1)
@@ -239,7 +240,7 @@ debug-gdb-linux: debug-linux
 run-qemu-linux:
 	qemu-system-x86_64 -drive file=$(BINDIR)/$(OS_NAME).img,format=raw,index=0,media=disk \
 	-bios $(OVMF) -display gtk $(QEMU_FLAGS) $(QEMU_EXTRA_FLAGS) -vga std -smp $(SMP) \
-	-m 4G -cpu qemu64 -machine type=q35 -serial file:./debug.log -netdev user,id=u1 -device rtl8139,netdev=u1 \
+	-m 4G -cpu host -machine type=q35 -serial file:./debug.log -netdev user,id=u1 -device rtl8139,netdev=u1 \
 	-d int --no-reboot 2>qemu.log
 
 debug-qemu-linux: QEMU_FLAGS = -s -S

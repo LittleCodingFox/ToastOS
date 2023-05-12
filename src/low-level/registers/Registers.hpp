@@ -46,6 +46,8 @@ public:
     static void WriteCR4(uint64_t value);
     static uint64_t ReadMSR(uint64_t msr);
     static void WriteMSR(uint64_t msr, uint64_t value);
+    static uint64_t ReadXCR(uint32_t index);
+    static void WriteXCR(uint32_t index, uint64_t value);
     static uint64_t ReadRSP();
     static RegisterState ReadRegisters();
     static uint64_t ReadCS();

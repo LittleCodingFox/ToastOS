@@ -149,3 +149,20 @@ void Registers::WriteMSR(uint64_t msr, uint64_t value)
 
   asm volatile ("wrmsr" : /* no output */ : "a"(lo), "d"(hi), "c"(msr));
 }
+
+uint64_t Registers::ReadXCR(uint32_t index)
+{
+  uint32_t lo, hi;
+
+  asm volatile("xgetbv" : "=a"(lo), "=d"(hi) : "c"(index) : "memory");
+
+  return ((uint64_t)hi << 32) | (uint64_t)lo;
+}
+
+void Registers::WriteXCR(uint32_t index, uint64_t value)
+{
+  uint32_t lo = value;
+  uint32_t hi = value >> 32;
+
+  asm volatile("xsetbv" : : "c"(index), "a"(lo), "d"(hi) : "memory");
+}
