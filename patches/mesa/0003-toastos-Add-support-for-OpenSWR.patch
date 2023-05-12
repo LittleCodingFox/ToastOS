@@ -1,0 +1,68 @@
+From 6f4aea4a5ab6c458a424cb30b095d0a91ea8d873 Mon Sep 17 00:00:00 2001
+From: Nuno Silva <little.coding.fox@gmail.com>
+Date: Fri, 12 May 2023 12:33:20 +0100
+Subject: [PATCH] toastos: Add support for OpenSWR
+
+---
+ src/gallium/drivers/swr/rasterizer/common/os.h      | 6 +++++-
+ src/gallium/drivers/swr/rasterizer/core/threads.cpp | 6 +++---
+ 2 files changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/src/gallium/drivers/swr/rasterizer/common/os.h b/src/gallium/drivers/swr/rasterizer/common/os.h
+index ed42e1eb79e..9819283b63d 100644
+--- a/src/gallium/drivers/swr/rasterizer/common/os.h
++++ b/src/gallium/drivers/swr/rasterizer/common/os.h
+@@ -139,14 +139,18 @@ inline unsigned char _BitScanReverse64(unsigned long* Index, uint64_t Mask)
+ }
+ #endif
+ 
+-#elif defined(__APPLE__) || defined(FORCE_LINUX) || defined(__linux__) || defined(__gnu_linux__)
++#elif defined(__APPLE__) || defined(FORCE_LINUX) || defined(__linux__) || defined(__gnu_linux__) || defined(__toast__)
+ 
+ #define SWR_API
+ #define SWR_VISIBLE __attribute__((visibility("default")))
+ 
+ #include <stdlib.h>
+ #include <string.h>
++#ifdef __toast__
++#include <immintrin.h>
++#else
+ #include <x86intrin.h>
++#endif
+ #include <stdint.h>
+ #include <sys/types.h>
+ #include <unistd.h>
+diff --git a/src/gallium/drivers/swr/rasterizer/core/threads.cpp b/src/gallium/drivers/swr/rasterizer/core/threads.cpp
+index 8d4104f0af1..69fe6761a49 100644
+--- a/src/gallium/drivers/swr/rasterizer/core/threads.cpp
++++ b/src/gallium/drivers/swr/rasterizer/core/threads.cpp
+@@ -30,7 +30,7 @@
+ #include <fstream>
+ #include <string>
+ 
+-#if defined(__linux__) || defined(__gnu_linux__) || defined(__APPLE__)
++#if defined(__linux__) || defined(__gnu_linux__) || defined(__APPLE__) || defined(__toast__)
+ #include <pthread.h>
+ #include <sched.h>
+ #include <unistd.h>
+@@ -164,7 +164,7 @@ void CalculateProcessorTopology(CPUNumaNodes& out_nodes, uint32_t& out_numThread
+ 
+     free(pBufferMem);
+ 
+-#elif defined(__linux__) || defined(__gnu_linux__)
++#elif defined(__linux__) || defined(__gnu_linux__) || defined(__toast__)
+ 
+     // Parse /proc/cpuinfo to get full topology
+     std::ifstream input("/proc/cpuinfo");
+@@ -353,7 +353,7 @@ void bindThread(SWR_CONTEXT* pContext,
+         SWR_INVALID("Failed to set Thread Affinity");
+     }
+ 
+-#elif defined(__linux__) || defined(__gnu_linux__)
++#elif defined(__linux__) || defined(__gnu_linux__) || defined(__toast__)
+ 
+     cpu_set_t cpuset;
+     pthread_t thread = pthread_self();
+-- 
+2.30.2
+
