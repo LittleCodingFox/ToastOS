@@ -162,6 +162,7 @@ packages:
         - '-Dglx=disabled'
         - '-Dllvm=enabled'
         - '-Dbuildtype=release'
+        - '-Dswr-arches=avx'
         - '@THIS_SOURCE_DIR@'
     build:
       - args: ['ninja' ]
