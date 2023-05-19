@@ -42,4 +42,4 @@ Run `make bootstrap` and wait, it will build the hosted toolchain, ported softwa
 
 # Building the OS
 
-Typically you'll want to either run `make clean run-linux` or `make clean debug-linux`. You can optionally add `ENABLE_KVM=1` at the end to have a faster emulation if your system supports KVM.
+Typically you'll want to either run `make clean run-linux` or `make clean debug-linux`. You can optionally add `KVM=1` at the end for faster emulation if your system supports KVM, and `SMP=X` where `X` is the amount of virtual CPUs you want it to use.
