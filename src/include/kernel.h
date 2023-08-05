@@ -1,8 +1,6 @@
 #ifndef KERNEL_H
 #define KERNEL_H
 
-#define KPREFIX(n) k_##n
-
 #define USE_INPUT_SYSTEM    1
 
 #ifndef USE_TARFS

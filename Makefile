@@ -88,7 +88,7 @@ ASFLAGS 			= -nostdlib -fpic
 CFLAGS				= $(INCLUDEDIRS) -ffreestanding -fshort-wchar -nostdlib -mno-red-zone -Wall -fpic -fno-omit-frame-pointer \
 	-fno-stack-protector -fno-rtti -fno-exceptions -mno-3dnow -mno-mmx -mno-sse -mno-sse2 -mno-avx -fno-builtin \
 	-Werror -Wno-ambiguous-reversed-operator -Wno-c99-designator -Wno-deprecated-volatile -Wno-initializer-overrides \
-	-Wno-unused-private-field -Wno-ignored-attributes --target=x86_64-pc-none-elf -march=x86-64 \
+	-Wno-unused-private-field -Wno-ignored-attributes -march=x86-64 \
 	-g -gdwarf-4 -DPRINTF_DISABLE_SUPPORT_FLOAT=1 -DPRINTF_DISABLE_SUPPORT_EXPONENTIAL=1
 
 CFLAGS_INTERNAL		= 
@@ -110,6 +110,8 @@ endif
 
 ifeq ($(KASAN), 1)
 	CFLAGS += -DUSE_KASAN=1
+else
+	CFLAGS += --target=x86_64-pc-none-elf
 endif
 
 ifeq ($(DEBUG), 1)

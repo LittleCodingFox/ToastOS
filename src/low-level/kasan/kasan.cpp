@@ -186,7 +186,7 @@ extern "C" void __asan_alloca_poison(uintptr_t address, size_t size)
     (void)size;
 }
 
-extern "C" void __asan_alloca_unpoison(uintptr_t address, size_t size)
+extern "C" void __asan_allocas_unpoison(uintptr_t address, size_t size)
 {
     (void)address;
     (void)size;
