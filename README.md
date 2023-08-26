@@ -38,7 +38,7 @@ x86_64 OS created from scratch (very incomplete)
 
 ### Arch
 
-`sudo pacman -S gcc gettext make perl openssl ninja clang flex bison gmp mpc mpfr texinfo python-pip qemu-system-x86 help2man gperf nasm llvm mercurial groff python-mako meson`
+`sudo pacman -S gcc gettext make perl openssl ninja clang flex bison gmp mpc mpfr texinfo python-pip qemu-system-x86 help2man gperf nasm llvm mercurial groff python-mako meson python-pipx && pipx install xbstrap`
 
 # Building the toolchain
 
