@@ -36,6 +36,10 @@ x86_64 OS created from scratch (very incomplete)
 
 `sudo dnf install g++ binutils patch gcc gettext make perl openssl-devel ninja-build clang flex bison gmp-devel libmpc-devel mpfr-devel texinfo python3-pip qemu-system-x86 help2man gperf nasm llvm mercurial groff gettext-devel && pip3 install xbstrap && pip3 install mako && pip3 install meson`
 
+### Arch
+
+`sudo pacman -S gcc gettext make perl openssl ninja clang flex bison gmp mpc mpfr texinfo python-pip qemu-system-x86 help2man gperf nasm llvm mercurial groff`
+
 # Building the toolchain
 
 Run `make bootstrap` and wait, it will build the hosted toolchain, ported software, and mlibc.
