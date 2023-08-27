@@ -1,34 +1,33 @@
-From 1478320cd96471408713882a23e53de3446d4350 Mon Sep 17 00:00:00 2001
+From 63b1da841b95d93b2cf85dd6aaae133b2f83c13f Mon Sep 17 00:00:00 2001
 From: Nuno Silva <little.coding.fox@gmail.com>
-Date: Sat, 5 Feb 2022 22:42:07 +0000
+Date: Sun, 27 Aug 2023 01:21:51 +0100
 Subject: [PATCH] Add toast target
 
 ---
- clang/lib/Basic/Targets.cpp                   |   2 +
- clang/lib/Basic/Targets/OSTargets.h           |  28 ++
- clang/lib/Driver/CMakeLists.txt               |   1 +
- clang/lib/Driver/Driver.cpp                   |   4 +
- clang/lib/Driver/ToolChains/Gnu.cpp           |   3 +-
- clang/lib/Driver/ToolChains/Toast.cpp         | 405 ++++++++++++++++++
- clang/lib/Driver/ToolChains/Toast.h           |  49 +++
- llvm/cmake/modules/CrossCompile.cmake         |   4 +-
- llvm/include/llvm/ADT/Triple.h                |   1 +
- llvm/include/llvm/Support/SwapByteOrder.h     |   2 +-
- llvm/lib/Support/Triple.cpp                   |   2 +
- llvm/lib/Support/Unix/Path.inc                |   6 +-
- llvm/lib/Support/Unix/Program.inc             |   1 +
- llvm/tools/llvm-dwarfdump/Statistics.cpp      |   1 +
- llvm/tools/llvm-shlib/CMakeLists.txt          |   1 +
- llvm/utils/benchmark/src/benchmark_register.h |   1 +
- 16 files changed, 504 insertions(+), 7 deletions(-)
+ clang/lib/Basic/Targets.cpp               |   2 +
+ clang/lib/Basic/Targets/OSTargets.h       |  29 ++
+ clang/lib/Driver/CMakeLists.txt           |   1 +
+ clang/lib/Driver/Driver.cpp               |   4 +
+ clang/lib/Driver/ToolChains/Gnu.cpp       |   2 +-
+ clang/lib/Driver/ToolChains/Toast.cpp     | 391 ++++++++++++++++++++++
+ clang/lib/Driver/ToolChains/Toast.h       |  49 +++
+ llvm/cmake/modules/CrossCompile.cmake     |   4 +-
+ llvm/include/llvm/Support/SwapByteOrder.h |   2 +-
+ llvm/include/llvm/TargetParser/Triple.h   |   1 +
+ llvm/lib/Support/Unix/Path.inc            |   6 +-
+ llvm/lib/Support/Unix/Program.inc         |   1 +
+ llvm/lib/TargetParser/Triple.cpp          |   2 +
+ llvm/tools/llvm-dwarfdump/Statistics.cpp  |   1 +
+ llvm/tools/llvm-shlib/CMakeLists.txt      |   1 +
+ 15 files changed, 489 insertions(+), 7 deletions(-)
  create mode 100644 clang/lib/Driver/ToolChains/Toast.cpp
  create mode 100644 clang/lib/Driver/ToolChains/Toast.h
 
 diff --git a/clang/lib/Basic/Targets.cpp b/clang/lib/Basic/Targets.cpp
-index c063f8ca4472..1c930e93cc38 100644
+index 8400774db..0baf357b2 100644
 --- a/clang/lib/Basic/Targets.cpp
 +++ b/clang/lib/Basic/Targets.cpp
-@@ -553,6 +553,8 @@ TargetInfo *AllocateTarget(const llvm::Triple &Triple,
+@@ -590,6 +590,8 @@ TargetInfo *AllocateTarget(const llvm::Triple &Triple,
      }
      case llvm::Triple::Haiku:
        return new HaikuTargetInfo<X86_64TargetInfo>(Triple, Opts);
@@ -38,11 +37,11 @@ index c063f8ca4472..1c930e93cc38 100644
        return new NaClTargetInfo<X86_64TargetInfo>(Triple, Opts);
      case llvm::Triple::PS4:
 diff --git a/clang/lib/Basic/Targets/OSTargets.h b/clang/lib/Basic/Targets/OSTargets.h
-index 70fac030bc5d..1ac3c39cb1ba 100644
+index fd372cb12..58294595c 100644
 --- a/clang/lib/Basic/Targets/OSTargets.h
 +++ b/clang/lib/Basic/Targets/OSTargets.h
-@@ -342,6 +342,34 @@ public:
-       : OSTargetInfo<Target>(Triple, Opts) {}
+@@ -1005,6 +1005,35 @@ public:
+   }
  };
  
 +// Toast Target
@@ -73,26 +72,27 @@ index 70fac030bc5d..1ac3c39cb1ba 100644
 +  }
 +};
 +
- // Minix Target
- template <typename Target>
- class LLVM_LIBRARY_VISIBILITY MinixTargetInfo : public OSTargetInfo<Target> {
++
+ } // namespace targets
+ } // namespace clang
+ #endif // LLVM_CLANG_LIB_BASIC_TARGETS_OSTARGETS_H
 diff --git a/clang/lib/Driver/CMakeLists.txt b/clang/lib/Driver/CMakeLists.txt
-index 6f25d3588ebb..a3754ce9fe09 100644
+index ba56a9323..38f6d590d 100644
 --- a/clang/lib/Driver/CMakeLists.txt
 +++ b/clang/lib/Driver/CMakeLists.txt
-@@ -54,6 +54,7 @@ add_clang_library(clangDriver
-   ToolChains/Hexagon.cpp
-   ToolChains/Hurd.cpp
-   ToolChains/Linux.cpp
+@@ -81,6 +81,7 @@ add_clang_library(clangDriver
+   ToolChains/Solaris.cpp
+   ToolChains/SPIRV.cpp
+   ToolChains/TCE.cpp
 +  ToolChains/Toast.cpp
-   ToolChains/MipsLinux.cpp
-   ToolChains/MinGW.cpp
-   ToolChains/Minix.cpp
+   ToolChains/VEToolchain.cpp
+   ToolChains/WebAssembly.cpp
+   ToolChains/XCore.cpp
 diff --git a/clang/lib/Driver/Driver.cpp b/clang/lib/Driver/Driver.cpp
-index fb8335a3695d..daab3f377f74 100644
+index a268f2fa8..424051a40 100644
 --- a/clang/lib/Driver/Driver.cpp
 +++ b/clang/lib/Driver/Driver.cpp
-@@ -29,6 +29,7 @@
+@@ -32,6 +32,7 @@
  #include "ToolChains/Hurd.h"
  #include "ToolChains/Lanai.h"
  #include "ToolChains/Linux.h"
@@ -100,7 +100,7 @@ index fb8335a3695d..daab3f377f74 100644
  #include "ToolChains/MSP430.h"
  #include "ToolChains/MSVC.h"
  #include "ToolChains/MinGW.h"
-@@ -4853,6 +4854,9 @@ const ToolChain &Driver::getToolChain(const ArgList &Args,
+@@ -6041,6 +6042,9 @@ const ToolChain &Driver::getToolChain(const ArgList &Args,
      case llvm::Triple::Fuchsia:
        TC = std::make_unique<toolchains::Fuchsia>(*this, Target, Args);
        break;
@@ -111,25 +111,24 @@ index fb8335a3695d..daab3f377f74 100644
        TC = std::make_unique<toolchains::Solaris>(*this, Target, Args);
        break;
 diff --git a/clang/lib/Driver/ToolChains/Gnu.cpp b/clang/lib/Driver/ToolChains/Gnu.cpp
-index da197e476621..34e2696675cd 100644
+index 4f2340316..fd77ad4bd 100644
 --- a/clang/lib/Driver/ToolChains/Gnu.cpp
 +++ b/clang/lib/Driver/ToolChains/Gnu.cpp
-@@ -2025,7 +2025,8 @@ void Generic_GCC::GCCInstallationDetector::AddDefaultGCCPrefixes(
+@@ -2248,7 +2248,7 @@ void Generic_GCC::GCCInstallationDetector::AddDefaultGCCPrefixes(
        "x86_64-redhat-linux",    "x86_64-suse-linux",
        "x86_64-manbo-linux-gnu", "x86_64-linux-gnu",
        "x86_64-slackware-linux", "x86_64-unknown-linux",
--      "x86_64-amazon-linux",    "x86_64-linux-android"};
-+      "x86_64-amazon-linux",    "x86_64-linux-android",
-+      "x86_64-toast"};
-   static const char *const X32LibDirs[] = {"/libx32"};
-   static const char *const X86LibDirs[] = {"/lib32", "/lib"};
-   static const char *const X86Triples[] = {
+-      "x86_64-amazon-linux"};
++      "x86_64-amazon-linux",    "x86_64-toast" };
+   static const char *const X32Triples[] = {"x86_64-linux-gnux32",
+                                            "x86_64-pc-linux-gnux32"};
+   static const char *const X32LibDirs[] = {"/libx32", "/lib"};
 diff --git a/clang/lib/Driver/ToolChains/Toast.cpp b/clang/lib/Driver/ToolChains/Toast.cpp
 new file mode 100644
-index 000000000000..854dde66e85e
+index 000000000..5d8133a42
 --- /dev/null
 +++ b/clang/lib/Driver/ToolChains/Toast.cpp
-@@ -0,0 +1,405 @@
+@@ -0,0 +1,391 @@
 +//===--- Toast.h - Toast ToolChain Implementations --------*- C++ -*-===//
 +//
 +//                     The LLVM Compiler Infrastructure
@@ -235,13 +234,13 @@ index 000000000000..854dde66e85e
 +  // to the link paths.
 +  path_list &Paths = getFilePaths();
 +
-+  const std::string OSLibDir = getOSLibDir(Triple, Args);
-+  const std::string MultiarchTriple = getMultiarchTriple(D, Triple, SysRoot);
++  const StringRef OSLibDir = getOSLibDir(Triple, Args);
++  const StringRef MultiarchTriple = getMultiarchTriple(D, Triple, SysRoot);
 +
 +  // Add the multilib suffixed paths where they are available.
 +  if (GCCInstallation.isValid()) {
 +    const llvm::Triple &GCCTriple = GCCInstallation.getTriple();
-+    const std::string &LibPath = GCCInstallation.getParentLibPath();
++    const StringRef &LibPath = GCCInstallation.getParentLibPath();
 +    const Multilib &Multilib = GCCInstallation.getMultilib();
 +    const MultilibSet &Multilibs = GCCInstallation.getMultilibs();
 +
@@ -324,7 +323,7 @@ index 000000000000..854dde66e85e
 +
 +    // See comments above on the multilib variant for details of why this is
 +    // included even from outside the sysroot.
-+    const std::string &LibPath = GCCInstallation.getParentLibPath();
++    const StringRef &LibPath = GCCInstallation.getParentLibPath();
 +    const llvm::Triple &GCCTriple = GCCInstallation.getTriple();
 +    const Multilib &Multilib = GCCInstallation.getMultilib();
 +    addPathIfExists(D, LibPath + "/../" + GCCTriple.str() + "/lib" +
@@ -454,51 +453,37 @@ index 000000000000..854dde66e85e
 +
 +void Toast::addLibStdCxxIncludePaths(const llvm::opt::ArgList &DriverArgs,
 +                                     llvm::opt::ArgStringList &CC1Args) const {
-+  // We need a detected GCC installation on Managarm to provide libstdc++'s
-+  // headers.
++  // We need a detected GCC installation on Linux to provide libstdc++'s
++  // headers in odd Linuxish places.
 +  if (!GCCInstallation.isValid())
 +    return;
 +
-+  // By default, look for the C++ headers in an include directory adjacent to
-+  // the lib directory of the GCC installation. Note that this is expect to be
-+  // equivalent to '/usr/include/c++/X.Y' in almost all cases.
-+  StringRef LibDir = GCCInstallation.getParentLibPath();
-+  StringRef InstallDir = GCCInstallation.getInstallPath();
++  // Detect Debian g++-multiarch-incdir.diff.
 +  StringRef TripleStr = GCCInstallation.getTriple().str();
-+  const Multilib &Multilib = GCCInstallation.getMultilib();
-+  const std::string GCCMultiarchTriple = getMultiarchTriple(
-+      getDriver(), GCCInstallation.getTriple(), getDriver().SysRoot);
-+  const std::string TargetMultiarchTriple =
-+      getMultiarchTriple(getDriver(), getTriple(), getDriver().SysRoot);
-+  const GCCVersion &Version = GCCInstallation.getVersion();
++  StringRef DebianMultiarch = TripleStr;
 +
-+  // The primary search for libstdc++ supports multiarch variants.
-+  if (addLibStdCXXIncludePaths(LibDir.str() + "/../include",
-+                               "/c++/" + Version.Text, TripleStr,
-+                               GCCMultiarchTriple, TargetMultiarchTriple,
-+                               Multilib.includeSuffix(), DriverArgs, CC1Args))
++  // Try generic GCC detection first.
++  if (Generic_GCC::addGCCLibStdCxxIncludePaths(DriverArgs, CC1Args,
++                                               DebianMultiarch))
 +    return;
 +
-+  // Otherwise, fall back on a bunch of options which don't use multiarch
-+  // layouts for simplicity.
++  StringRef LibDir = GCCInstallation.getParentLibPath();
++  const Multilib &Multilib = GCCInstallation.getMultilib();
++  const GCCVersion &Version = GCCInstallation.getVersion();
++
 +  const std::string LibStdCXXIncludePathCandidates[] = {
-+      // Gentoo is weird and places its headers inside the GCC install,
-+      // so if the first attempt to find the headers fails, try these patterns.
-+      InstallDir.str() + "/include/g++-v" + Version.Text,
-+      InstallDir.str() + "/include/g++-v" + Version.MajorStr + "." +
-+          Version.MinorStr,
-+      InstallDir.str() + "/include/g++-v" + Version.MajorStr,
 +      // Android standalone toolchain has C++ headers in yet another place.
 +      LibDir.str() + "/../" + TripleStr.str() + "/include/c++/" + Version.Text,
 +      // Freescale SDK C++ headers are directly in <sysroot>/usr/include/c++,
 +      // without a subdirectory corresponding to the gcc version.
 +      LibDir.str() + "/../include/c++",
++      // Cray's gcc installation puts headers under "g++" without a
++      // version suffix.
++      LibDir.str() + "/../include/g++",
 +  };
 +
 +  for (const auto &IncludePath : LibStdCXXIncludePathCandidates) {
-+    if (addLibStdCXXIncludePaths(IncludePath, /*Suffix*/ "", TripleStr,
-+                                 /*GCCMultiarchTriple*/ "",
-+                                 /*TargetMultiarchTriple*/ "",
++    if (addLibStdCXXIncludePaths(IncludePath, TripleStr,
 +                                 Multilib.includeSuffix(), DriverArgs, CC1Args))
 +      break;
 +  }
@@ -535,9 +520,10 @@ index 000000000000..854dde66e85e
 +  }
 +  return Res;
 +}
+\ No newline at end of file
 diff --git a/clang/lib/Driver/ToolChains/Toast.h b/clang/lib/Driver/ToolChains/Toast.h
 new file mode 100644
-index 000000000000..484f45a65e2a
+index 000000000..484f45a65
 --- /dev/null
 +++ b/clang/lib/Driver/ToolChains/Toast.h
 @@ -0,0 +1,49 @@
@@ -592,12 +578,12 @@ index 000000000000..484f45a65e2a
 +#endif // LLVM_CLANG_LIB_DRIVER_TOOLCHAINS_TOAST_H
 \ No newline at end of file
 diff --git a/llvm/cmake/modules/CrossCompile.cmake b/llvm/cmake/modules/CrossCompile.cmake
-index 8a6e880c4e21..fb86a7c17994 100644
+index a46a0fd63..1f0f07fe5 100644
 --- a/llvm/cmake/modules/CrossCompile.cmake
 +++ b/llvm/cmake/modules/CrossCompile.cmake
 @@ -17,8 +17,8 @@ function(llvm_create_cross_target project_name target_name toolchain buildtype)
        -DCMAKE_TOOLCHAIN_FILE=\"${LLVM_MAIN_SRC_DIR}/cmake/platforms/${toolchain}.cmake\")
-   else()
+   elseif (NOT CMAKE_CROSSCOMPILING)
      set(CROSS_TOOLCHAIN_FLAGS_INIT
 -      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
 -      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
@@ -606,56 +592,36 @@ index 8a6e880c4e21..fb86a7c17994 100644
        )
    endif()
    set(CROSS_TOOLCHAIN_FLAGS_${target_name} ${CROSS_TOOLCHAIN_FLAGS_INIT}
-diff --git a/llvm/include/llvm/ADT/Triple.h b/llvm/include/llvm/ADT/Triple.h
-index 76a754d671fb..9d84606ea795 100644
---- a/llvm/include/llvm/ADT/Triple.h
-+++ b/llvm/include/llvm/ADT/Triple.h
-@@ -168,6 +168,7 @@ public:
-     Linux,
-     Lv2,        // PS3
-     MacOSX,
-+    Toast,
-     NetBSD,
-     OpenBSD,
-     Solaris,
 diff --git a/llvm/include/llvm/Support/SwapByteOrder.h b/llvm/include/llvm/Support/SwapByteOrder.h
-index 6cec87006c02..d6f081d58a93 100644
+index 9dd08665b..5737c9188 100644
 --- a/llvm/include/llvm/Support/SwapByteOrder.h
 +++ b/llvm/include/llvm/Support/SwapByteOrder.h
-@@ -22,7 +22,7 @@
- #include <stdlib.h>
- #endif
+@@ -20,7 +20,7 @@
+ #include <type_traits>
  
--#if defined(__linux__) || defined(__GNU__) || defined(__HAIKU__)
-+#if defined(__linux__) || defined(__GNU__) || defined(__HAIKU__) || defined(__toast__)
+ #if defined(__linux__) || defined(__GNU__) || defined(__HAIKU__) ||            \
+-    defined(__Fuchsia__) || defined(__EMSCRIPTEN__)
++    defined(__Fuchsia__) || defined(__EMSCRIPTEN__) || defined(__toast__)
  #include <endian.h>
  #elif defined(_AIX)
  #include <sys/machine.h>
-diff --git a/llvm/lib/Support/Triple.cpp b/llvm/lib/Support/Triple.cpp
-index 2c480c1094a5..9d7fd4a31018 100644
---- a/llvm/lib/Support/Triple.cpp
-+++ b/llvm/lib/Support/Triple.cpp
-@@ -201,6 +201,7 @@ StringRef Triple::getOSTypeName(OSType Kind) {
-   case Linux: return "linux";
-   case Lv2: return "lv2";
-   case MacOSX: return "macosx";
-+  case Toast: return "toast";
-   case Mesa3D: return "mesa3d";
-   case Minix: return "minix";
-   case NVCL: return "nvcl";
-@@ -495,6 +496,7 @@ static Triple::OSType parseOS(StringRef OSName) {
-     .StartsWith("linux", Triple::Linux)
-     .StartsWith("lv2", Triple::Lv2)
-     .StartsWith("macos", Triple::MacOSX)
-+    .StartsWith("toast", Triple::Toast)
-     .StartsWith("netbsd", Triple::NetBSD)
-     .StartsWith("openbsd", Triple::OpenBSD)
-     .StartsWith("solaris", Triple::Solaris)
+diff --git a/llvm/include/llvm/TargetParser/Triple.h b/llvm/include/llvm/TargetParser/Triple.h
+index 59513fa2f..8c3fad1dc 100644
+--- a/llvm/include/llvm/TargetParser/Triple.h
++++ b/llvm/include/llvm/TargetParser/Triple.h
+@@ -223,6 +223,7 @@ public:
+     WASI,       // Experimental WebAssembly OS
+     Emscripten,
+     ShaderModel, // DirectX ShaderModel
++    Toast,
+     LastOSType = ShaderModel
+   };
+   enum EnvironmentType {
 diff --git a/llvm/lib/Support/Unix/Path.inc b/llvm/lib/Support/Unix/Path.inc
-index 2a03dc682bce..7926b09d5cd3 100644
+index 3efcad4f2..e3564b8d2 100644
 --- a/llvm/lib/Support/Unix/Path.inc
 +++ b/llvm/lib/Support/Unix/Path.inc
-@@ -64,7 +64,7 @@ extern char **environ;
+@@ -74,7 +74,7 @@ extern char **environ;
  
  #include <sys/types.h>
  #if !defined(__APPLE__) && !defined(__OpenBSD__) && !defined(__FreeBSD__) &&   \
@@ -664,7 +630,7 @@ index 2a03dc682bce..7926b09d5cd3 100644
  #include <sys/statvfs.h>
  #define STATVFS statvfs
  #define FSTATVFS fstatvfs
-@@ -73,7 +73,7 @@ extern char **environ;
+@@ -83,7 +83,7 @@ extern char **environ;
  #if defined(__OpenBSD__) || defined(__FreeBSD__)
  #include <sys/mount.h>
  #include <sys/param.h>
@@ -673,7 +639,7 @@ index 2a03dc682bce..7926b09d5cd3 100644
  #if defined(HAVE_LINUX_MAGIC_H)
  #include <linux/magic.h>
  #else
-@@ -431,7 +431,7 @@ std::error_code remove(const Twine &path, bool IgnoreNonExisting) {
+@@ -472,7 +472,7 @@ std::error_code remove(const Twine &path, bool IgnoreNonExisting) {
  }
  
  static bool is_local_impl(struct STATVFS &Vfs) {
@@ -683,10 +649,10 @@ index 2a03dc682bce..7926b09d5cd3 100644
  #define NFS_SUPER_MAGIC 0x6969
  #endif
 diff --git a/llvm/lib/Support/Unix/Program.inc b/llvm/lib/Support/Unix/Program.inc
-index 520685a0e987..e6c2ddf2067f 100644
+index 897e22711..02f74d7eb 100644
 --- a/llvm/lib/Support/Unix/Program.inc
 +++ b/llvm/lib/Support/Unix/Program.inc
-@@ -39,6 +39,7 @@
+@@ -41,6 +41,7 @@
  #if HAVE_UNISTD_H
  #include <unistd.h>
  #endif
@@ -694,17 +660,40 @@ index 520685a0e987..e6c2ddf2067f 100644
  #ifdef HAVE_POSIX_SPAWN
  #include <spawn.h>
  
+diff --git a/llvm/lib/TargetParser/Triple.cpp b/llvm/lib/TargetParser/Triple.cpp
+index a68035989..0a4ae5859 100644
+--- a/llvm/lib/TargetParser/Triple.cpp
++++ b/llvm/lib/TargetParser/Triple.cpp
+@@ -237,6 +237,7 @@ StringRef Triple::getOSTypeName(OSType Kind) {
+   case PS5: return "ps5";
+   case RTEMS: return "rtems";
+   case Solaris: return "solaris";
++  case Toast: return "toast";
+   case TvOS: return "tvos";
+   case WASI: return "wasi";
+   case WatchOS: return "watchos";
+@@ -571,6 +572,7 @@ static Triple::OSType parseOS(StringRef OSName) {
+     .StartsWith("netbsd", Triple::NetBSD)
+     .StartsWith("openbsd", Triple::OpenBSD)
+     .StartsWith("solaris", Triple::Solaris)
++    .StartsWith("toast", Triple::Toast)
+     .StartsWith("win32", Triple::Win32)
+     .StartsWith("windows", Triple::Win32)
+     .StartsWith("zos", Triple::ZOS)
 diff --git a/llvm/tools/llvm-dwarfdump/Statistics.cpp b/llvm/tools/llvm-dwarfdump/Statistics.cpp
-index 5bef4d5148ca..2a237ef59646 100644
+index a967abffc..654403791 100644
 --- a/llvm/tools/llvm-dwarfdump/Statistics.cpp
 +++ b/llvm/tools/llvm-dwarfdump/Statistics.cpp
-@@ -1,3 +1,4 @@
+@@ -6,6 +6,7 @@
+ //
+ //===----------------------------------------------------------------------===//
+ 
 +#include <cmath>
+ #include "llvm-dwarfdump.h"
  #include "llvm/ADT/DenseMap.h"
- #include "llvm/ADT/StringExtras.h"
  #include "llvm/ADT/StringSet.h"
 diff --git a/llvm/tools/llvm-shlib/CMakeLists.txt b/llvm/tools/llvm-shlib/CMakeLists.txt
-index 3eb6db33a435..fee03082d46c 100644
+index 90e290435..b36ae41b7 100644
 --- a/llvm/tools/llvm-shlib/CMakeLists.txt
 +++ b/llvm/tools/llvm-shlib/CMakeLists.txt
 @@ -36,6 +36,7 @@ if(LLVM_BUILD_LLVM_DYLIB)
@@ -715,18 +704,6 @@ index 3eb6db33a435..fee03082d46c 100644
       OR ("${CMAKE_SYSTEM_NAME}" STREQUAL "OpenBSD")
       OR ("${CMAKE_SYSTEM_NAME}" STREQUAL "Fuchsia")
       OR ("${CMAKE_SYSTEM_NAME}" STREQUAL "DragonFly")
-diff --git a/llvm/utils/benchmark/src/benchmark_register.h b/llvm/utils/benchmark/src/benchmark_register.h
-index 0705e219f2fa..6001fb8e0e48 100644
---- a/llvm/utils/benchmark/src/benchmark_register.h
-+++ b/llvm/utils/benchmark/src/benchmark_register.h
-@@ -2,6 +2,7 @@
- #define BENCHMARK_REGISTER_H
- 
- #include <vector>
-+#include <limits>
- 
- #include "check.h"
- 
 -- 
-2.25.1
+2.42.0
 
